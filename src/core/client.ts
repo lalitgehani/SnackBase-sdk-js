@@ -10,7 +10,14 @@ import {
 import { AuthManager } from './auth';
 import { AuthService } from './auth-service';
 import { createStorageBackend } from './storage';
-import { User, Account, AuthEvents, LoginCredentials } from '../types/auth';
+import { 
+  User, 
+  Account, 
+  AuthEvents, 
+  LoginCredentials,
+  SAMLProvider,
+  SAMLCallbackParams
+} from '../types/auth';
 
 /**
  * Main SDK client for interacting with SnackBase API.
@@ -135,6 +142,27 @@ export class SnackBaseClient {
    */
   async logout() {
     return this.authService.logout();
+  }
+
+  /**
+   * Generate SAML SSO authorization URL.
+   */
+  async getSAMLUrl(provider: SAMLProvider, account: string, relayState?: string) {
+    return this.authService.getSAMLUrl(provider, account, relayState);
+  }
+
+  /**
+   * Handle SAML callback.
+   */
+  async handleSAMLCallback(params: SAMLCallbackParams) {
+    return this.authService.handleSAMLCallback(params);
+  }
+
+  /**
+   * Get SAML metadata.
+   */
+  async getSAMLMetadata(provider: SAMLProvider, account: string) {
+    return this.authService.getSAMLMetadata(provider, account);
   }
 
   /**

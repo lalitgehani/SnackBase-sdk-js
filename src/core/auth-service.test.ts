@@ -286,4 +286,63 @@ describe('AuthService', () => {
       vi.useRealTimers();
     });
   });
+
+  describe('SAML methods', () => {
+    it('getSAMLUrl should generate URL with correct params', async () => {
+      const getSpy = vi.spyOn(httpClient, 'get').mockResolvedValue({
+        data: { url: 'https://idp.com/sso' },
+        status: 200,
+        headers: new Headers(),
+        request: {} as any,
+      });
+
+      const result = await authService.getSAMLUrl('okta', 'test-acc', 'state-123');
+
+      expect(getSpy).toHaveBeenCalledWith('/api/v1/auth/saml/sso', {
+        params: {
+          provider: 'okta',
+          account: 'test-acc',
+          relayState: 'state-123',
+        },
+      });
+      expect(result.url).toBe('https://idp.com/sso');
+    });
+
+    it('handleSAMLCallback should authenticate user', async () => {
+      const postSpy = vi.spyOn(httpClient, 'post').mockResolvedValue({
+        data: { ...mockAuthResponse, isNewUser: false, isNewAccount: false },
+        status: 200,
+        headers: new Headers(),
+        request: {} as any,
+      });
+
+      const params = { SAMLResponse: 'base64-xml', relayState: 'state-123' };
+      const result = await authService.handleSAMLCallback(params);
+
+      expect(postSpy).toHaveBeenCalledWith('/api/v1/auth/saml/acs', params);
+      expect(result.user).toEqual(mockUser);
+      expect(authManager.isAuthenticated).toBe(true);
+      expect(authManager.token).toBe('access-token');
+    });
+
+    it('getSAMLMetadata should fetch metadata XML', async () => {
+      const mockMetadata = '<XML>metadata</XML>';
+      const getSpy = vi.spyOn(httpClient, 'get').mockResolvedValue({
+        data: mockMetadata,
+        status: 200,
+        headers: new Headers(),
+        request: {} as any,
+      });
+
+      const result = await authService.getSAMLMetadata('okta', 'test-acc');
+
+      expect(getSpy).toHaveBeenCalledWith('/api/v1/auth/saml/metadata', {
+        params: {
+          provider: 'okta',
+          account: 'test-acc',
+        },
+      });
+      expect(result).toBe(mockMetadata);
+    });
+  });
 });

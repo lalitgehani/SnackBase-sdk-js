@@ -11,7 +11,11 @@ import {
   OAuthProvider,
   OAuthUrlResponse,
   OAuthCallbackParams,
-  OAuthResponse
+  OAuthResponse,
+  SAMLProvider,
+  SAMLUrlResponse,
+  SAMLCallbackParams,
+  SAMLResponse
 } from '../types/auth';
 import { AuthenticationError } from './errors';
 
@@ -191,6 +195,51 @@ export class AuthService {
     });
 
     return authData;
+  }
+
+  /**
+   * Generate SAML SSO authorization URL for the specified provider and account.
+   */
+  async getSAMLUrl(provider: SAMLProvider, account: string, relayState?: string): Promise<SAMLUrlResponse> {
+    const response = await this.http.get<SAMLUrlResponse>('/api/v1/auth/saml/sso', {
+      params: {
+        provider,
+        account,
+        relayState,
+      },
+    });
+    return response.data;
+  }
+
+  /**
+   * Handle SAML callback (ACS) and authenticate user.
+   */
+  async handleSAMLCallback(params: SAMLCallbackParams): Promise<SAMLResponse> {
+    const response = await this.http.post<SAMLResponse>('/api/v1/auth/saml/acs', params);
+    const authData = response.data;
+
+    await this.auth.setState({
+      user: authData.user,
+      account: authData.account,
+      token: authData.token,
+      refreshToken: authData.refreshToken,
+      expiresAt: authData.expiresAt,
+    });
+
+    return authData;
+  }
+
+  /**
+   * Get SAML metadata for the specified provider and account.
+   */
+  async getSAMLMetadata(provider: SAMLProvider, account: string): Promise<string> {
+    const response = await this.http.get<string>('/api/v1/auth/saml/metadata', {
+      params: {
+        provider,
+        account,
+      },
+    });
+    return response.data;
   }
 
   /**

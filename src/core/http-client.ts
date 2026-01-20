@@ -7,6 +7,7 @@ export interface HttpRequest {
   method: HttpMethod;
   headers: Record<string, string>;
   body?: any;
+  params?: Record<string, string | number | boolean | undefined>;
   timeout?: number;
   signal?: AbortSignal;
 }
@@ -65,6 +66,7 @@ export class HttpClient {
       method: req.method || 'GET',
       headers: req.headers || {},
       body: req.body,
+      params: req.params,
       timeout: req.timeout ?? this.config.timeout,
       signal: req.signal,
     };
@@ -74,7 +76,7 @@ export class HttpClient {
       currentReq = await interceptor(currentReq);
     }
 
-    const fullUrl = this.resolveUrl(currentReq.url);
+    const fullUrl = this.resolveUrl(currentReq.url, currentReq);
     const controller = new AbortController();
     const { signal } = controller;
 
@@ -173,13 +175,25 @@ export class HttpClient {
     return this.request<T>({ ...config, url, method: 'DELETE' });
   }
 
-  private resolveUrl(url: string): string {
+  private resolveUrl(url: string, currentReq?: HttpRequest): string {
     if (url.startsWith('http://') || url.startsWith('https://')) {
       return url;
     }
     const base = this.config.baseUrl.endsWith('/') ? this.config.baseUrl : `${this.config.baseUrl}/`;
     const relative = url.startsWith('/') ? url.slice(1) : url;
-    return `${base}${relative}`;
+    let fullUrl = `${base}${relative}`;
+
+    if (currentReq?.params) {
+      const urlObj = new URL(fullUrl);
+      Object.entries(currentReq.params).forEach(([key, value]) => {
+        if (value !== undefined) {
+          urlObj.searchParams.append(key, String(value));
+        }
+      });
+      fullUrl = urlObj.toString();
+    }
+
+    return fullUrl;
   }
 
   private shouldRetry(error: any, retryCount: number): boolean {

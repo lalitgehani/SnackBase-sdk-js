@@ -82,3 +82,19 @@ export interface OAuthResponse extends AuthResponse {
   isNewUser: boolean;
   isNewAccount: boolean;
 }
+
+export type SAMLProvider = 'okta' | 'azure_ad' | 'generic_saml';
+
+export interface SAMLUrlResponse {
+  url: string;
+}
+
+export interface SAMLCallbackParams {
+  SAMLResponse: string;
+  relayState?: string;
+}
+
+export interface SAMLResponse extends AuthResponse {
+  isNewUser: boolean;
+  isNewAccount: boolean;
+}
