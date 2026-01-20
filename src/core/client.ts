@@ -1,11 +1,19 @@
-import { SnackBaseConfig, DEFAULT_CONFIG, StorageBackend } from '../types/config';
+import { SnackBaseConfig, DEFAULT_CONFIG } from '../types/config';
 import { getAutoDetectedStorage } from '../utils/platform';
+import { HttpClient } from './http-client';
+import { 
+  contentTypeInterceptor, 
+  createAuthInterceptor, 
+  errorNormalizationInterceptor, 
+  errorInterceptor 
+} from './interceptors';
 
 /**
  * Main SDK client for interacting with SnackBase API.
  */
 export class SnackBaseClient {
   private config: Required<SnackBaseConfig>;
+  private http: HttpClient;
 
   /**
    * Initialize a new SnackBaseClient instance.
@@ -19,6 +27,15 @@ export class SnackBaseClient {
       storageBackend: config.storageBackend || getAutoDetectedStorage(),
       ...config,
     } as Required<SnackBaseConfig>;
+
+    this.http = new HttpClient({
+      baseUrl: this.config.baseUrl,
+      timeout: this.config.timeout,
+      maxRetries: this.config.maxRetries,
+      retryDelay: this.config.retryDelay,
+    });
+
+    this.setupInterceptors();
   }
 
   /**
@@ -26,6 +43,43 @@ export class SnackBaseClient {
    */
   getConfig(): Required<SnackBaseConfig> {
     return { ...this.config };
+  }
+
+  /**
+   * Internal helper to access the HTTP client.
+   * @internal
+   */
+  get httpClient(): HttpClient {
+    return this.http;
+  }
+
+  /**
+   * Sets up the default interceptors for the HTTP client.
+   */
+  private setupInterceptors(): void {
+    // Request interceptors
+    this.http.addRequestInterceptor(contentTypeInterceptor);
+    this.http.addRequestInterceptor(
+      createAuthInterceptor(
+        () => this.getAccessToken(), // Placeholder for M1.3
+        this.config.apiKey
+      )
+    );
+
+    // Response interceptors
+    this.http.addResponseInterceptor(errorNormalizationInterceptor);
+
+    // Error interceptors
+    this.http.addErrorInterceptor(errorInterceptor);
+  }
+
+  /**
+   * Returns the current access token.
+   * Placeholder to be implemented in Module 1.3.
+   */
+  private getAccessToken(): string | undefined {
+    // TODO: Implement with AuthState state management (M1.3)
+    return undefined;
   }
 
   /**
