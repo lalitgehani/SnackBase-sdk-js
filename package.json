@@ -1,0 +1,22 @@
+{
+  "name": "@snackbase/sdk",
+  "version": "0.1.0",
+  "description": "JavaScript/TypeScript SDK for SnackBase",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "tsdown src/index.ts --watch",
+    "build": "tsdown src/index.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "tsdown": "^0.20.0-beta.4",
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.1"
+  }
+}
