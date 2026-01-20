@@ -7,6 +7,9 @@ import {
   errorNormalizationInterceptor, 
   errorInterceptor 
 } from './interceptors';
+import { AuthManager } from './auth';
+import { createStorageBackend } from './storage';
+import { User, Account, AuthEvents } from '../types/auth';
 
 /**
  * Main SDK client for interacting with SnackBase API.
@@ -14,6 +17,7 @@ import {
 export class SnackBaseClient {
   private config: Required<SnackBaseConfig>;
   private http: HttpClient;
+  private auth: AuthManager;
 
   /**
    * Initialize a new SnackBaseClient instance.
@@ -35,7 +39,12 @@ export class SnackBaseClient {
       retryDelay: this.config.retryDelay,
     });
 
+    this.auth = new AuthManager({
+      storage: createStorageBackend(this.config.storageBackend),
+    });
+
     this.setupInterceptors();
+    this.auth.initialize();
   }
 
   /**
@@ -61,7 +70,7 @@ export class SnackBaseClient {
     this.http.addRequestInterceptor(contentTypeInterceptor);
     this.http.addRequestInterceptor(
       createAuthInterceptor(
-        () => this.getAccessToken(), // Placeholder for M1.3
+        () => this.auth.token || undefined,
         this.config.apiKey
       )
     );
@@ -74,12 +83,41 @@ export class SnackBaseClient {
   }
 
   /**
-   * Returns the current access token.
-   * Placeholder to be implemented in Module 1.3.
+   * Returns the current authenticated user.
    */
-  private getAccessToken(): string | undefined {
-    // TODO: Implement with AuthState state management (M1.3)
-    return undefined;
+  get user(): User | null {
+    return this.auth.user;
+  }
+
+  /**
+   * Returns the current account.
+   */
+  get account(): Account | null {
+    return this.auth.account;
+  }
+
+  /**
+   * Returns whether the client is currently authenticated.
+   */
+  get isAuthenticated(): boolean {
+    return this.auth.isAuthenticated;
+  }
+
+  /**
+   * Subscribe to authentication events.
+   * @param event Event name
+   * @param listener Callback function
+   */
+  on<K extends keyof AuthEvents>(event: K, listener: AuthEvents[K]): () => void {
+    return this.auth.on(event, listener);
+  }
+
+  /**
+   * Internal access to AuthManager.
+   * @internal
+   */
+  get authManager(): AuthManager {
+    return this.auth;
   }
 
   /**
