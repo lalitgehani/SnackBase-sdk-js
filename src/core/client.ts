@@ -8,8 +8,9 @@ import {
   errorInterceptor 
 } from './interceptors';
 import { AuthManager } from './auth';
+import { AuthService } from './auth-service';
 import { createStorageBackend } from './storage';
-import { User, Account, AuthEvents } from '../types/auth';
+import { User, Account, AuthEvents, LoginCredentials } from '../types/auth';
 
 /**
  * Main SDK client for interacting with SnackBase API.
@@ -17,7 +18,8 @@ import { User, Account, AuthEvents } from '../types/auth';
 export class SnackBaseClient {
   private config: Required<SnackBaseConfig>;
   private http: HttpClient;
-  private auth: AuthManager;
+  private authManager: AuthManager;
+  private authService: AuthService;
 
   /**
    * Initialize a new SnackBaseClient instance.
@@ -39,12 +41,14 @@ export class SnackBaseClient {
       retryDelay: this.config.retryDelay,
     });
 
-    this.auth = new AuthManager({
+    this.authManager = new AuthManager({
       storage: createStorageBackend(this.config.storageBackend),
     });
 
+    this.authService = new AuthService(this.http, this.authManager);
+
     this.setupInterceptors();
-    this.auth.initialize();
+    this.authManager.initialize();
   }
 
   /**
@@ -70,7 +74,7 @@ export class SnackBaseClient {
     this.http.addRequestInterceptor(contentTypeInterceptor);
     this.http.addRequestInterceptor(
       createAuthInterceptor(
-        () => this.auth.token || undefined,
+        () => this.authManager.token || undefined,
         this.config.apiKey
       )
     );
@@ -86,21 +90,28 @@ export class SnackBaseClient {
    * Returns the current authenticated user.
    */
   get user(): User | null {
-    return this.auth.user;
+    return this.authManager.user;
   }
 
   /**
    * Returns the current account.
    */
   get account(): Account | null {
-    return this.auth.account;
+    return this.authManager.account;
   }
 
   /**
    * Returns whether the client is currently authenticated.
    */
   get isAuthenticated(): boolean {
-    return this.auth.isAuthenticated;
+    return this.authManager.isAuthenticated;
+  }
+
+  /**
+   * Access to authentication methods.
+   */
+  get auth(): AuthService {
+    return this.authService;
   }
 
   /**
@@ -109,15 +120,29 @@ export class SnackBaseClient {
    * @param listener Callback function
    */
   on<K extends keyof AuthEvents>(event: K, listener: AuthEvents[K]): () => void {
-    return this.auth.on(event, listener);
+    return this.authManager.on(event, listener);
+  }
+
+  /**
+   * Authenticate a user with email and password.
+   */
+  async login(credentials: LoginCredentials) {
+    return this.authService.login(credentials);
+  }
+
+  /**
+   * Log out the current user.
+   */
+  async logout() {
+    return this.authService.logout();
   }
 
   /**
    * Internal access to AuthManager.
    * @internal
    */
-  get authManager(): AuthManager {
-    return this.auth;
+  get internalAuthManager(): AuthManager {
+    return this.authManager;
   }
 
   /**

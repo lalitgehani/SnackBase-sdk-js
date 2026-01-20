@@ -32,3 +32,34 @@ export interface AuthEvents {
   'auth:refresh': (state: AuthState) => void;
   'auth:error': (error: Error) => void;
 }
+
+export interface LoginCredentials {
+  account: string;
+  email: string;
+  password: string;
+}
+
+export interface RegisterData {
+  email: string;
+  password: string;
+  accountName: string;
+  accountSlug?: string;
+}
+
+export interface AuthResponse {
+  user: User;
+  account: Account;
+  token?: string;
+  refreshToken?: string;
+  expiresAt?: string;
+}
+
+export interface PasswordResetRequest {
+  account: string;
+  email: string;
+}
+
+export interface PasswordResetConfirm {
+  token: string;
+  newPassword: string;
+}
