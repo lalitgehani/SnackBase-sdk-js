@@ -200,4 +200,90 @@ describe('AuthService', () => {
       expect(result.message).toBe('resent');
     });
   });
+
+  describe('OAuth methods', () => {
+    it('getOAuthUrl should generate URL and store state token', async () => {
+      const postSpy = vi.spyOn(httpClient, 'post').mockResolvedValue({
+        data: { url: 'https://oauth.provider.com/auth', state: 'state-123' },
+        status: 200,
+        headers: new Headers(),
+        request: {} as any,
+      });
+
+      const result = await authService.getOAuthUrl('google', 'https://app.com/callback');
+
+      expect(postSpy).toHaveBeenCalledWith('/api/v1/auth/oauth/google/authorize', {
+        redirectUri: 'https://app.com/callback',
+        state: undefined,
+      });
+      expect(result.url).toBe('https://oauth.provider.com/auth');
+      expect(result.state).toBe('state-123');
+    });
+
+    it('handleOAuthCallback should authenticate user with valid state', async () => {
+      // Setup state first
+      vi.spyOn(httpClient, 'post').mockResolvedValueOnce({
+        data: { url: '...', state: 'state-123' },
+        status: 200,
+        headers: new Headers(),
+        request: {} as any,
+      });
+      await authService.getOAuthUrl('google', 'https://app.com/callback');
+
+      const postSpy = vi.spyOn(httpClient, 'post').mockResolvedValue({
+        data: { ...mockAuthResponse, isNewUser: false, isNewAccount: false },
+        status: 200,
+        headers: new Headers(),
+        request: {} as any,
+      });
+
+      const result = await authService.handleOAuthCallback({
+        provider: 'google',
+        code: 'auth-code',
+        redirectUri: 'https://app.com/callback',
+        state: 'state-123',
+      });
+
+      expect(postSpy).toHaveBeenCalledWith('/api/v1/auth/oauth/google/callback', {
+        code: 'auth-code',
+        redirectUri: 'https://app.com/callback',
+        state: 'state-123',
+      });
+      expect(result.user).toEqual(mockUser);
+      expect(authManager.isAuthenticated).toBe(true);
+    });
+
+    it('handleOAuthCallback should throw error for invalid state', async () => {
+      await expect(authService.handleOAuthCallback({
+        provider: 'google',
+        code: 'auth-code',
+        redirectUri: 'https://app.com/callback',
+        state: 'invalid-state',
+      })).rejects.toThrow('Invalid or expired state token');
+    });
+
+    it('handleOAuthCallback should throw error for expired state', async () => {
+      vi.useFakeTimers();
+      
+      vi.spyOn(httpClient, 'post').mockResolvedValueOnce({
+        data: { url: '...', state: 'state-123' },
+        status: 200,
+        headers: new Headers(),
+        request: {} as any,
+      });
+      await authService.getOAuthUrl('google', 'https://app.com/callback');
+
+      // Advance time by 11 minutes
+      vi.advanceTimersByTime(11 * 60 * 1000);
+
+      await expect(authService.handleOAuthCallback({
+        provider: 'google',
+        code: 'auth-code',
+        redirectUri: 'https://app.com/callback',
+        state: 'state-123',
+      })).rejects.toThrow('Invalid or expired state token');
+
+      vi.useRealTimers();
+    });
+  });
 });

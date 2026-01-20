@@ -63,3 +63,22 @@ export interface PasswordResetConfirm {
   token: string;
   newPassword: string;
 }
+
+export type OAuthProvider = 'google' | 'github' | 'microsoft' | 'apple';
+
+export interface OAuthUrlResponse {
+  url: string;
+  state: string;
+}
+
+export interface OAuthCallbackParams {
+  provider: OAuthProvider;
+  code: string;
+  redirectUri: string;
+  state: string;
+}
+
+export interface OAuthResponse extends AuthResponse {
+  isNewUser: boolean;
+  isNewAccount: boolean;
+}
