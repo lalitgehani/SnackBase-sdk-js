@@ -97,9 +97,10 @@ function createErrorFromResponse(response: HttpResponse): SnackBaseError {
     case 409:
       return new ConflictError(message, data);
     case 422:
+      // ValidationError constructor already extracts 'field' and 'errors' from data
       return new ValidationError(message, data);
     case 429:
-      const retryAfter = response.headers.get('Retry-After');
+      const retryAfter = response.headers.get('Retry-After') || data?.retryAfter;
       return new RateLimitError(message, data, retryAfter ? parseInt(retryAfter, 10) : undefined);
     default:
       if (status >= 500) {

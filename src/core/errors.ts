@@ -5,15 +5,24 @@ export class SnackBaseError extends Error {
   public readonly code: string;
   public readonly status?: number;
   public readonly details?: any;
+  public readonly field?: string;
   public readonly retryable: boolean;
 
-  constructor(message: string, code: string, status?: number, details?: any, retryable: boolean = false) {
+  constructor(
+    message: string, 
+    code: string, 
+    status?: number, 
+    details?: any, 
+    retryable: boolean = false,
+    field?: string
+  ) {
     super(message);
     this.name = this.constructor.name;
     this.code = code;
     this.status = status;
     this.details = details;
     this.retryable = retryable;
+    this.field = field;
     Object.setPrototypeOf(this, SnackBaseError.prototype);
   }
 }
@@ -65,7 +74,7 @@ export class ValidationError extends SnackBaseError {
   public readonly fields?: Record<string, string[]>;
 
   constructor(message: string = 'Validation failed', details?: any) {
-    super(message, 'VALIDATION_ERROR', 422, details, false);
+    super(message, 'VALIDATION_ERROR', 422, details, false, details?.field);
     Object.setPrototypeOf(this, ValidationError.prototype);
     if (details?.errors) {
       this.fields = details.errors;
