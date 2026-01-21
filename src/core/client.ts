@@ -12,6 +12,7 @@ import { AuthService } from './auth-service';
 import { AccountService } from './account-service';
 import { UserService } from './user-service';
 import { CollectionService } from './collection-service';
+import { RecordService } from './record-service';
 import { createStorageBackend } from './storage';
 import { 
   User, 
@@ -33,6 +34,7 @@ export class SnackBaseClient {
   private accountService: AccountService;
   private userService: UserService;
   private collectionService: CollectionService;
+  private recordService: RecordService;
 
   /**
    * Initialize a new SnackBaseClient instance.
@@ -62,6 +64,7 @@ export class SnackBaseClient {
     this.accountService = new AccountService(this.http);
     this.userService = new UserService(this.http);
     this.collectionService = new CollectionService(this.http);
+    this.recordService = new RecordService(this.http);
 
     this.setupInterceptors();
     this.authManager.initialize();
@@ -149,6 +152,13 @@ export class SnackBaseClient {
    */
   get collections(): CollectionService {
     return this.collectionService;
+  }
+
+  /**
+   * Access to record management methods (CRUD on dynamic collections).
+   */
+  get records(): RecordService {
+    return this.recordService;
   }
 
   /**
