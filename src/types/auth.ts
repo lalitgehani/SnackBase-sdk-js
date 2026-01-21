@@ -1,20 +1,7 @@
 import { Account } from './account';
-export { Account };
+import { User, UserListResponse } from './user';
 
-export interface User {
-  id: string;
-  email: string;
-  role: string;
-  groups: string[];
-  is_active: boolean;
-  created_at: string;
-  last_login: string | null;
-}
-
-export interface UserListResponse {
-  items: User[];
-  total: number;
-}
+export { Account, User, UserListResponse };
 
 export interface AuthState {
   user: User | null;
