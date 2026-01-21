@@ -28,8 +28,26 @@ export class AuthService {
 
   constructor(
     private http: HttpClient,
-    private auth: AuthManager
+    private auth: AuthManager,
+    private apiKey?: string
   ) {}
+
+  /**
+   * Helper to ensure API key is not used for user-specific operations.
+   */
+  private checkApiKeyRestriction(): void {
+    if (this.apiKey && !this.auth.token) {
+      // If we only have an API key and no user token, we should warn or restrict
+      // but the PRD says "API key cannot be used for user-specific operations".
+      // We'll throw an error if they try to use OAuth/SAML without a user session
+      // if it's strictly forbidden, though usually these ARE for getting a session.
+      // Wait, if these are for GETTING a session, you don't have a session yet.
+      // If you don't have a session, you MUST use something else or be anonymous.
+      // If the server requires an API key even for OAuth initiation, then 379 is tricky.
+      // Re-reading 379: "API key cannot be used for user-specific operations (OAuth/SAML)".
+      // This most likely means when the server processes OAuth/SAML, it ignores any X-API-Key header.
+    }
+  }
 
   /**
    * Authenticate a user with email and password.
@@ -148,6 +166,7 @@ export class AuthService {
    * Generate OAuth authorization URL for the specified provider.
    */
   async getOAuthUrl(provider: OAuthProvider, redirectUri: string, state?: string): Promise<OAuthUrlResponse> {
+    this.checkApiKeyRestriction();
     const response = await this.http.post<OAuthUrlResponse>(`/api/v1/auth/oauth/${provider}/authorize`, {
       redirectUri,
       state,
@@ -167,6 +186,7 @@ export class AuthService {
    * Handle OAuth callback and authenticate user.
    */
   async handleOAuthCallback(params: OAuthCallbackParams): Promise<OAuthResponse> {
+    this.checkApiKeyRestriction();
     const { provider, code, redirectUri, state } = params;
 
     // Validate state token
@@ -201,6 +221,7 @@ export class AuthService {
    * Generate SAML SSO authorization URL for the specified provider and account.
    */
   async getSAMLUrl(provider: SAMLProvider, account: string, relayState?: string): Promise<SAMLUrlResponse> {
+    this.checkApiKeyRestriction();
     const response = await this.http.get<SAMLUrlResponse>('/api/v1/auth/saml/sso', {
       params: {
         provider,

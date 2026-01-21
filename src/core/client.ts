@@ -52,7 +52,7 @@ export class SnackBaseClient {
       storage: createStorageBackend(this.config.storageBackend),
     });
 
-    this.authService = new AuthService(this.http, this.authManager);
+    this.authService = new AuthService(this.http, this.authManager, this.config.apiKey);
 
     this.setupInterceptors();
     this.authManager.initialize();

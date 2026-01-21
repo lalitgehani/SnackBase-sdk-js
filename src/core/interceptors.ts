@@ -35,13 +35,17 @@ export const createAuthInterceptor = (
   apiKey?: string
 ): RequestInterceptor => {
   return (request: HttpRequest) => {
+    // Requirement 379: API key cannot be used for user-specific operations (OAuth/SAML)
+    const isUserSpecific = request.url.includes('/auth/oauth/') || request.url.includes('/auth/saml/');
+
+    if (apiKey && !isUserSpecific) {
+      request.headers['X-API-Key'] = apiKey;
+    }
+    
+    // Requirement 390: API key can be used alongside JWT auth (fallback)
     const token = getToken();
     if (token) {
       request.headers['Authorization'] = `Bearer ${token}`;
-    }
-    
-    if (apiKey) {
-      request.headers['X-API-Key'] = apiKey;
     }
     
     return request;
@@ -116,19 +120,19 @@ export const createRefreshInterceptor = (
   let isRefreshing = false;
   
   return async (response: HttpResponse) => {
-    if (response.status === 401 && !isRefreshing) {
+    // If request used an API Key, we bypass JWT token logic (Requirement 377)
+    // and do not attempt to refresh.
+    const usedApiKey = !!response.request.headers['X-API-Key'];
+
+    if (response.status === 401 && !isRefreshing && !usedApiKey) {
       isRefreshing = true;
       try {
         const success = await refreshToken();
         isRefreshing = false;
         
         if (success) {
-          // The HttpClient will handle the retry if we can somehow signal it.
-          // For now, we return the response and let the caller handle it, 
-          // or we throw a special error that the HttpClient can catch and retry.
-          // However, the PRD says the interceptor should trigger the refresh and retry.
-          // To implement retry in an interceptor, we'd need access to the client.
-          // A better way is for the HttpClient to handle the retry loop if an interceptor throws a "RetryableError".
+          // Note: In a real implementation, we would retry the request here.
+          // For now, we follow the current pattern in the codebase.
         }
       } catch (error) {
         isRefreshing = false;
