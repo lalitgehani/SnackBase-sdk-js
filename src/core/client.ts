@@ -9,6 +9,7 @@ import {
 } from './interceptors';
 import { AuthManager } from './auth';
 import { AuthService } from './auth-service';
+import { AccountService } from './account-service';
 import { createStorageBackend } from './storage';
 import { 
   User, 
@@ -27,6 +28,7 @@ export class SnackBaseClient {
   private http: HttpClient;
   private authManager: AuthManager;
   private authService: AuthService;
+  private accountService: AccountService;
 
   /**
    * Initialize a new SnackBaseClient instance.
@@ -53,6 +55,7 @@ export class SnackBaseClient {
     });
 
     this.authService = new AuthService(this.http, this.authManager, this.config.apiKey);
+    this.accountService = new AccountService(this.http);
 
     this.setupInterceptors();
     this.authManager.initialize();
@@ -119,6 +122,13 @@ export class SnackBaseClient {
    */
   get auth(): AuthService {
     return this.authService;
+  }
+
+  /**
+   * Access to account management methods.
+   */
+  get accounts(): AccountService {
+    return this.accountService;
   }
 
   /**

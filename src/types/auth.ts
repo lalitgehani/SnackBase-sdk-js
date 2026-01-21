@@ -1,3 +1,6 @@
+import { Account } from './account';
+export { Account };
+
 export interface User {
   id: string;
   email: string;
@@ -8,11 +11,9 @@ export interface User {
   last_login: string | null;
 }
 
-export interface Account {
-  id: string;
-  slug: string;
-  name: string;
-  created_at: string;
+export interface UserListResponse {
+  items: User[];
+  total: number;
 }
 
 export interface AuthState {
