@@ -15,6 +15,8 @@ import { CollectionService } from './collection-service';
 import { RecordService } from './record-service';
 import { GroupsService } from './group-service';
 import { InvitationService } from './invitation-service';
+import { ApiKeyService } from './api-key-service';
+import { AuditLogService } from './audit-log-service';
 import { createStorageBackend } from './storage';
 import { 
   User, 
@@ -39,6 +41,8 @@ export class SnackBaseClient {
   private recordService: RecordService;
   private groupsService: GroupsService;
   private invitationService: InvitationService;
+  private apiKeyService: ApiKeyService;
+  private auditLogService: AuditLogService;
 
   /**
    * Initialize a new SnackBaseClient instance.
@@ -71,6 +75,8 @@ export class SnackBaseClient {
     this.recordService = new RecordService(this.http);
     this.groupsService = new GroupsService(this.http);
     this.invitationService = new InvitationService(this.http);
+    this.apiKeyService = new ApiKeyService(this.http);
+    this.auditLogService = new AuditLogService(this.http);
 
     this.setupInterceptors();
     this.authManager.initialize();
@@ -179,6 +185,20 @@ export class SnackBaseClient {
    */
   get invitations(): InvitationService {
     return this.invitationService;
+  }
+
+  /**
+   * Access to API key management methods.
+   */
+  get apiKeys(): ApiKeyService {
+    return this.apiKeyService;
+  }
+
+  /**
+   * Access to audit log management methods.
+   */
+  get auditLogs(): AuditLogService {
+    return this.auditLogService;
   }
 
   /**
