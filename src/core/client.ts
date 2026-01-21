@@ -14,6 +14,7 @@ import { UserService } from './user-service';
 import { CollectionService } from './collection-service';
 import { RecordService } from './record-service';
 import { GroupsService } from './group-service';
+import { InvitationService } from './invitation-service';
 import { createStorageBackend } from './storage';
 import { 
   User, 
@@ -37,6 +38,7 @@ export class SnackBaseClient {
   private collectionService: CollectionService;
   private recordService: RecordService;
   private groupsService: GroupsService;
+  private invitationService: InvitationService;
 
   /**
    * Initialize a new SnackBaseClient instance.
@@ -68,6 +70,7 @@ export class SnackBaseClient {
     this.collectionService = new CollectionService(this.http);
     this.recordService = new RecordService(this.http);
     this.groupsService = new GroupsService(this.http);
+    this.invitationService = new InvitationService(this.http);
 
     this.setupInterceptors();
     this.authManager.initialize();
@@ -169,6 +172,13 @@ export class SnackBaseClient {
    */
   get groups(): GroupsService {
     return this.groupsService;
+  }
+
+  /**
+   * Access to invitation management methods.
+   */
+  get invitations(): InvitationService {
+    return this.invitationService;
   }
 
   /**
