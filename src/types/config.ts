@@ -70,6 +70,11 @@ export interface SnackBaseConfig {
    * Callback for 429 rate limit errors
    */
   onRateLimitError?: (error: any) => void;
+
+  /**
+   * Default account slug/ID for single-tenant mode (optional)
+   */
+  defaultAccount?: string;
 }
 
 export const DEFAULT_CONFIG: Partial<SnackBaseConfig> = {
@@ -80,4 +85,5 @@ export const DEFAULT_CONFIG: Partial<SnackBaseConfig> = {
   retryDelay: 1000,
   logLevel: 'error',
   enableLogging: false,
+  defaultAccount: undefined,
 };

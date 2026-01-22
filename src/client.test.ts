@@ -65,4 +65,14 @@ describe('SnackBaseClient', () => {
     expect(client2.getConfig().baseUrl).toBe('https://api2.com');
     expect(client2.getConfig().timeout).toBe(2000);
   });
+
+  it('should store defaultAccount in configuration', () => {
+    const client = new SnackBaseClient({ baseUrl: validBaseUrl, defaultAccount: 'my-account' });
+    expect(client.getConfig().defaultAccount).toBe('my-account');
+  });
+
+  it('should throw error if defaultAccount is not a string', () => {
+    // @ts-expect-error defaultAccount must be a string
+    expect(() => new SnackBaseClient({ baseUrl: validBaseUrl, defaultAccount: 123 })).toThrow('defaultAccount must be a string');
+  });
 });

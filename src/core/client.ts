@@ -283,5 +283,9 @@ export class SnackBaseClient {
     if (config.refreshBeforeExpiry !== undefined && (typeof config.refreshBeforeExpiry !== 'number' || config.refreshBeforeExpiry < 0)) {
       throw new Error('SnackBaseClient: refreshBeforeExpiry must be a non-negative number');
     }
+
+    if (config.defaultAccount !== undefined && typeof config.defaultAccount !== 'string') {
+      throw new Error('SnackBaseClient: defaultAccount must be a string');
+    }
   }
 }
