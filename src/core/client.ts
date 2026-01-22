@@ -22,6 +22,7 @@ import { CollectionRuleService } from './collection-rule-service';
 import { MacroService } from './macro-service';
 import { DashboardService } from './dashboard-service';
 import { AdminService } from './admin-service';
+import { EmailTemplateService } from './email-template-service';
 import { createStorageBackend } from './storage';
 import { 
   User, 
@@ -56,6 +57,7 @@ export class SnackBaseClient {
   private macroService: MacroService;
   private dashboardService: DashboardService;
   private adminService: AdminService;
+  private emailTemplateService: EmailTemplateService;
 
   /**
    * Initialize a new SnackBaseClient instance.
@@ -100,6 +102,7 @@ export class SnackBaseClient {
     this.macroService = new MacroService(this.http);
     this.dashboardService = new DashboardService(this.http);
     this.adminService = new AdminService(this.http);
+    this.emailTemplateService = new EmailTemplateService(this.http);
 
     this.setupInterceptors();
     this.authManager.initialize();
@@ -257,6 +260,13 @@ export class SnackBaseClient {
    */
   get admin(): AdminService {
     return this.adminService;
+  }
+
+  /**
+   * Access to email template management methods.
+   */
+  get emailTemplates(): EmailTemplateService {
+    return this.emailTemplateService;
   }
 
   /**

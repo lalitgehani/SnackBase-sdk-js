@@ -11,4 +11,5 @@ export * from './types/record';
 export * from './types/group';
 export * from './types/dashboard';
 export * from './types/admin';
+export * from './types/email-template';
 export * from './utils/platform';
