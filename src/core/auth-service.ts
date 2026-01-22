@@ -29,7 +29,8 @@ export class AuthService {
   constructor(
     private http: HttpClient,
     private auth: AuthManager,
-    private apiKey?: string
+    private apiKey?: string,
+    private defaultAccount?: string
   ) {}
 
   /**
@@ -53,7 +54,12 @@ export class AuthService {
    * Authenticate a user with email and password.
    */
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    const response = await this.http.post<AuthResponse>('/api/v1/auth/login', credentials);
+    const data = { ...credentials };
+    if (!data.account && this.defaultAccount) {
+      data.account = this.defaultAccount;
+    }
+
+    const response = await this.http.post<AuthResponse>('/api/v1/auth/login', data);
     const authData = response.data;
     
     await this.auth.setState({
@@ -71,7 +77,12 @@ export class AuthService {
    * Register a new user and account.
    */
   async register(data: RegisterData): Promise<AuthResponse> {
-    const response = await this.http.post<AuthResponse>('/api/v1/auth/register', data);
+    const payload = { ...data };
+    if (!payload.accountName && this.defaultAccount) {
+      payload.accountName = this.defaultAccount;
+    }
+
+    const response = await this.http.post<AuthResponse>('/api/v1/auth/register', payload);
     return response.data;
   }
 
@@ -134,7 +145,12 @@ export class AuthService {
    * Initiate password reset flow.
    */
   async forgotPassword(data: PasswordResetRequest): Promise<{ message: string }> {
-    const response = await this.http.post<{ message: string }>('/api/v1/auth/forgot-password', data);
+    const payload = { ...data };
+    if (!payload.account && this.defaultAccount) {
+      payload.account = this.defaultAccount;
+    }
+
+    const response = await this.http.post<{ message: string }>('/api/v1/auth/forgot-password', payload);
     return response.data;
   }
 

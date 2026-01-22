@@ -76,6 +76,24 @@ describe('AuthService', () => {
       expect(postSpy).toHaveBeenCalledWith('/api/v1/auth/register', data);
       expect(result.user).toEqual(mockUser);
     });
+
+    it('should use defaultAccount if accountName is missing in data', async () => {
+      authService = new AuthService(httpClient, authManager, undefined, 'default-acc');
+      const postSpy = vi.spyOn(httpClient, 'post').mockResolvedValue({
+        data: { user: mockUser, account: mockAccount },
+        status: 201,
+        headers: new Headers(),
+        request: {} as any,
+      });
+
+      const data = { email: 'test@example.com', password: 'password' };
+      await authService.register(data);
+
+      expect(postSpy).toHaveBeenCalledWith('/api/v1/auth/register', {
+        ...data,
+        accountName: 'default-acc',
+      });
+    });
   });
 
   describe('refreshToken', () => {
@@ -159,6 +177,19 @@ describe('AuthService', () => {
       const result = await authService.forgotPassword({ account: 'acc', email: 'test@example.com' });
       expect(postSpy).toHaveBeenCalledWith('/api/v1/auth/forgot-password', { account: 'acc', email: 'test@example.com' });
       expect(result.message).toBe('sent');
+    });
+
+    it('forgotPassword should use defaultAccount if account is missing', async () => {
+      authService = new AuthService(httpClient, authManager, undefined, 'default-acc');
+      const postSpy = vi.spyOn(httpClient, 'post').mockResolvedValue({
+        data: { message: 'sent' },
+        status: 200,
+        headers: new Headers(),
+        request: {} as any,
+      });
+
+      await authService.forgotPassword({ email: 'test@example.com' });
+      expect(postSpy).toHaveBeenCalledWith('/api/v1/auth/forgot-password', { account: 'default-acc', email: 'test@example.com' });
     });
 
     it('resetPassword should call correct endpoint', async () => {

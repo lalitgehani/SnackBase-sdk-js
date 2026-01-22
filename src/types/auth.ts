@@ -22,7 +22,7 @@ export interface AuthEvents {
 }
 
 export interface LoginCredentials {
-  account: string;
+  account?: string;
   email: string;
   password: string;
 }
@@ -30,7 +30,7 @@ export interface LoginCredentials {
 export interface RegisterData {
   email: string;
   password: string;
-  accountName: string;
+  accountName?: string;
   accountSlug?: string;
 }
 
@@ -43,7 +43,7 @@ export interface AuthResponse {
 }
 
 export interface PasswordResetRequest {
-  account: string;
+  account?: string;
   email: string;
 }
 

@@ -23,6 +23,9 @@ import {
   Account, 
   AuthEvents, 
   LoginCredentials,
+  RegisterData,
+  PasswordResetRequest,
+  PasswordResetConfirm,
   SAMLProvider,
   SAMLCallbackParams
 } from '../types/auth';
@@ -68,7 +71,12 @@ export class SnackBaseClient {
       storage: createStorageBackend(this.config.storageBackend),
     });
 
-    this.authService = new AuthService(this.http, this.authManager, this.config.apiKey);
+    this.authService = new AuthService(
+      this.http, 
+      this.authManager, 
+      this.config.apiKey,
+      this.config.defaultAccount
+    );
     this.accountService = new AccountService(this.http);
     this.userService = new UserService(this.http);
     this.collectionService = new CollectionService(this.http);
@@ -222,6 +230,55 @@ export class SnackBaseClient {
    */
   async logout() {
     return this.authService.logout();
+  }
+
+  /**
+   * Register a new user and account.
+   */
+  async register(data: RegisterData) {
+    return this.authService.register(data);
+  }
+
+  /**
+   * Refresh the access token using the refresh token.
+   */
+  async refreshToken() {
+    return this.authService.refreshToken();
+  }
+
+  /**
+   * Get the current authenticated user profile.
+   */
+  async getCurrentUser() {
+    return this.authService.getCurrentUser();
+  }
+
+  /**
+   * Initiate password reset flow.
+   */
+  async forgotPassword(data: PasswordResetRequest) {
+    return this.authService.forgotPassword(data);
+  }
+
+  /**
+   * Reset password using a token.
+   */
+  async resetPassword(data: PasswordResetConfirm) {
+    return this.authService.resetPassword(data);
+  }
+
+  /**
+   * Verify email using a token.
+   */
+  async verifyEmail(token: string) {
+    return this.authService.verifyEmail(token);
+  }
+
+  /**
+   * Resend the verification email to the current user.
+   */
+  async resendVerificationEmail() {
+    return this.authService.resendVerificationEmail();
   }
 
   /**
