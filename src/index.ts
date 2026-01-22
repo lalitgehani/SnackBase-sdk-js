@@ -14,4 +14,5 @@ export * from './types/admin';
 export * from './types/email-template';
 export * from './types/file';
 export * from './types/realtime';
+export * from './types/utils';
 export * from './utils/platform';

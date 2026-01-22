@@ -59,3 +59,8 @@ export interface RuleValidationParams {
   operation: 'list' | 'view' | 'create' | 'update' | 'delete';
   collectionFields: string[];
 }
+
+/**
+ * Permission type alias for CollectionRule (Permission System V2).
+ */
+export type Permission = CollectionRule;
