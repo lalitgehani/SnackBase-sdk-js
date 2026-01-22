@@ -75,6 +75,16 @@ export interface SnackBaseConfig {
    * Default account slug/ID for single-tenant mode (optional)
    */
   defaultAccount?: string;
+
+  /**
+   * Maximum reconnection attempts for real-time (default: 10)
+   */
+  maxRealTimeRetries?: number;
+
+  /**
+   * Initial delay for real-time reconnection in milliseconds (default: 1000)
+   */
+  realTimeReconnectionDelay?: number;
 }
 
 export const DEFAULT_CONFIG: Partial<SnackBaseConfig> = {
@@ -86,4 +96,6 @@ export const DEFAULT_CONFIG: Partial<SnackBaseConfig> = {
   logLevel: 'error',
   enableLogging: false,
   defaultAccount: undefined,
+  maxRealTimeRetries: 10,
+  realTimeReconnectionDelay: 1000,
 };

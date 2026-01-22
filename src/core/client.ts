@@ -24,6 +24,7 @@ import { DashboardService } from './dashboard-service';
 import { AdminService } from './admin-service';
 import { EmailTemplateService } from './email-template-service';
 import { FileService } from './file-service';
+import { RealTimeService } from './realtime-service';
 import { createStorageBackend } from './storage';
 import { 
   User, 
@@ -60,6 +61,7 @@ export class SnackBaseClient {
   private adminService: AdminService;
   private emailTemplateService: EmailTemplateService;
   private fileService: FileService;
+  private realtimeService: RealTimeService;
 
   /**
    * Initialize a new SnackBaseClient instance.
@@ -110,6 +112,12 @@ export class SnackBaseClient {
       () => this.config.baseUrl,
       () => this.authManager.token
     );
+    this.realtimeService = new RealTimeService({
+      baseUrl: this.config.baseUrl,
+      getToken: () => this.authManager.token,
+      maxRetries: this.config.maxRealTimeRetries,
+      reconnectionDelay: this.config.realTimeReconnectionDelay,
+    });
 
     this.setupInterceptors();
     this.authManager.initialize();
@@ -281,6 +289,13 @@ export class SnackBaseClient {
    */
   get files(): FileService {
     return this.fileService;
+  }
+
+  /**
+   * Access to real-time features and subscriptions.
+   */
+  get realtime(): RealTimeService {
+    return this.realtimeService;
   }
 
   /**
