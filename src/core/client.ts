@@ -19,6 +19,7 @@ import { ApiKeyService } from './api-key-service';
 import { AuditLogService } from './audit-log-service';
 import { RoleService } from './role-service';
 import { CollectionRuleService } from './collection-rule-service';
+import { MacroService } from './macro-service';
 import { createStorageBackend } from './storage';
 import { 
   User, 
@@ -50,6 +51,7 @@ export class SnackBaseClient {
   private auditLogService: AuditLogService;
   private roleService: RoleService;
   private collectionRuleService: CollectionRuleService;
+  private macroService: MacroService;
 
   /**
    * Initialize a new SnackBaseClient instance.
@@ -91,6 +93,7 @@ export class SnackBaseClient {
     this.auditLogService = new AuditLogService(this.http);
     this.roleService = new RoleService(this.http);
     this.collectionRuleService = new CollectionRuleService(this.http);
+    this.macroService = new MacroService(this.http);
 
     this.setupInterceptors();
     this.authManager.initialize();
@@ -227,6 +230,13 @@ export class SnackBaseClient {
    */
   get collectionRules(): CollectionRuleService {
     return this.collectionRuleService;
+  }
+
+  /**
+   * Access to macro management methods.
+   */
+  get macros(): MacroService {
+    return this.macroService;
   }
 
   /**
