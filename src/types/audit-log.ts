@@ -19,6 +19,7 @@ export interface AuditLogFilters {
   from_date?: string;
   to_date?: string;
   page?: number;
+  skip?: number;
   limit?: number;
   sort?: string;
 }
@@ -30,4 +31,5 @@ export interface AuditLogListResponse {
   total: number;
   page: number;
   limit: number;
+  audit_logging_enabled: boolean;
 }

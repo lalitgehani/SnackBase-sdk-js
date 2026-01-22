@@ -21,12 +21,14 @@ describe('AuditLogService', () => {
         operation: 'create',
         page: 1,
         limit: 10,
+        skip: 0,
       };
       const mockResponse: AuditLogListResponse = {
         items: [],
         total: 0,
         page: 1,
         limit: 10,
+        audit_logging_enabled: true,
       };
       mockHttpClient.get.mockResolvedValue({ data: mockResponse });
 
@@ -37,7 +39,15 @@ describe('AuditLogService', () => {
     });
 
     it('should call GET /api/v1/audit-logs without parameters', async () => {
-      mockHttpClient.get.mockResolvedValue({ data: { items: [], total: 0, page: 1, limit: 10 } });
+      mockHttpClient.get.mockResolvedValue({ 
+        data: { 
+          items: [], 
+          total: 0, 
+          page: 1, 
+          limit: 10, 
+          audit_logging_enabled: true 
+        } 
+      });
 
       await service.list();
 
