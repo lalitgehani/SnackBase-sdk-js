@@ -1,7 +1,5 @@
-import { Account } from './account';
-import { User, UserListResponse } from './user';
-
-export { Account, User, UserListResponse };
+export type { Account } from './account';
+export type { User, UserListResponse } from './user';
 
 export interface AuthState {
   user: User | null;

@@ -3,7 +3,7 @@ import { SnackBaseClient } from '../src/core/client';
 import * as platform from '../src/utils/platform';
 
 describe('SnackBaseClient', () => {
-  const validBaseUrl = 'https://api.snackbase.com';
+  const validBaseUrl = 'https://api.snackbase.dev';
 
   it('should initialize with a valid baseUrl', () => {
     const client = new SnackBaseClient({ baseUrl: validBaseUrl });

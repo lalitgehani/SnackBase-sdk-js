@@ -18,7 +18,12 @@
     "dev": "tsdown src/index.ts src/react/index.ts --watch",
     "build": "tsdown src/index.ts src/react/index.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext .ts,.tsx",
+    "prepublishOnly": "npm run build && npm run test"
   },
   "peerDependencies": {
     "react": "^18.0.0"

@@ -1,4 +1,7 @@
 export * from './core/client';
+
+// Type alias for convenience
+export type SnackBase = SnackBaseClient;
 export * from './types/config';
 export * from './types/auth';
 export * from './types/user';
