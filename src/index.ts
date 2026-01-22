@@ -5,4 +5,8 @@ export * from './types/user';
 export * from './types/invitation';
 export * from './types/api-key';
 export * from './types/audit-log';
+export * from './types/role';
+export * from './types/collection';
+export * from './types/record';
+export * from './types/group';
 export * from './utils/platform';

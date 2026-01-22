@@ -17,6 +17,8 @@ import { GroupsService } from './group-service';
 import { InvitationService } from './invitation-service';
 import { ApiKeyService } from './api-key-service';
 import { AuditLogService } from './audit-log-service';
+import { RoleService } from './role-service';
+import { CollectionRuleService } from './collection-rule-service';
 import { createStorageBackend } from './storage';
 import { 
   User, 
@@ -46,6 +48,8 @@ export class SnackBaseClient {
   private invitationService: InvitationService;
   private apiKeyService: ApiKeyService;
   private auditLogService: AuditLogService;
+  private roleService: RoleService;
+  private collectionRuleService: CollectionRuleService;
 
   /**
    * Initialize a new SnackBaseClient instance.
@@ -85,6 +89,8 @@ export class SnackBaseClient {
     this.invitationService = new InvitationService(this.http);
     this.apiKeyService = new ApiKeyService(this.http);
     this.auditLogService = new AuditLogService(this.http);
+    this.roleService = new RoleService(this.http);
+    this.collectionRuleService = new CollectionRuleService(this.http);
 
     this.setupInterceptors();
     this.authManager.initialize();
@@ -207,6 +213,20 @@ export class SnackBaseClient {
    */
   get auditLogs(): AuditLogService {
     return this.auditLogService;
+  }
+
+  /**
+   * Access to role management methods.
+   */
+  get roles(): RoleService {
+    return this.roleService;
+  }
+
+  /**
+   * Access to collection rule management methods.
+   */
+  get collectionRules(): CollectionRuleService {
+    return this.collectionRuleService;
   }
 
   /**
