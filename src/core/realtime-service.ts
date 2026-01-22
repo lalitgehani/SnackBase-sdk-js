@@ -238,6 +238,7 @@ export class RealTimeService {
   }
 
   private handleMessage(message: ServerMessage): void {
+    // Filter heartbeat and pong messages - don't emit as events
     if (message.type === 'heartbeat' || message.type === 'pong') {
       return;
     }
@@ -263,9 +264,25 @@ export class RealTimeService {
       return;
     }
 
+    // Emit the full message event
     this.emit('message', message);
+    
+    // Emit specific event type and wildcards
     if (message.type) {
+      // Emit specific event (e.g., "posts.create")
       this.emit(message.type, message.data);
+      
+      // Parse collection and operation for wildcard support
+      const parts = message.type.split('.');
+      if (parts.length === 2) {
+        const [collection, operation] = parts;
+        
+        // Emit collection wildcard (e.g., "posts.*")
+        this.emit(`${collection}.*`, message.data);
+      }
+      
+      // Emit global wildcard
+      this.emit('*', message.data);
     }
   }
 

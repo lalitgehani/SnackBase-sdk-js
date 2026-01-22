@@ -388,4 +388,202 @@ describe('RealTimeService', () => {
     expect(sseUrl).toContain('collections=posts%3Acreate%2Cupdate');
     expect(sseUrl).toContain('collections=users%3Adelete');
   });
+
+  describe('Event Handling (Module 3.3)', () => {
+    beforeEach(async () => {
+      const connectPromise = service.connect();
+      await vi.advanceTimersByTimeAsync(0);
+      await connectPromise;
+    });
+
+    it('should emit specific event type', async () => {
+      const specificSpy = vi.fn();
+      service.on('posts.create', specificSpy);
+
+      const mockMessage = {
+        type: 'posts.create',
+        timestamp: new Date().toISOString(),
+        data: { id: '1', title: 'Test Post' }
+      };
+
+      // @ts-ignore
+      service.socket.onmessage({ data: JSON.stringify(mockMessage) });
+
+      expect(specificSpy).toHaveBeenCalledWith(mockMessage.data);
+      expect(specificSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('should emit collection wildcard events', async () => {
+      const wildcardSpy = vi.fn();
+      service.on('posts.*', wildcardSpy);
+
+      const createMessage = {
+        type: 'posts.create',
+        timestamp: new Date().toISOString(),
+        data: { id: '1', title: 'Test Post' }
+      };
+
+      const updateMessage = {
+        type: 'posts.update',
+        timestamp: new Date().toISOString(),
+        data: { id: '1', title: 'Updated Post' }
+      };
+
+      // @ts-ignore
+      service.socket.onmessage({ data: JSON.stringify(createMessage) });
+      // @ts-ignore
+      service.socket.onmessage({ data: JSON.stringify(updateMessage) });
+
+      expect(wildcardSpy).toHaveBeenCalledTimes(2);
+      expect(wildcardSpy).toHaveBeenNthCalledWith(1, createMessage.data);
+      expect(wildcardSpy).toHaveBeenNthCalledWith(2, updateMessage.data);
+    });
+
+    it('should emit global wildcard events', async () => {
+      const globalSpy = vi.fn();
+      service.on('*', globalSpy);
+
+      const postsMessage = {
+        type: 'posts.create',
+        timestamp: new Date().toISOString(),
+        data: { id: '1', title: 'Test Post' }
+      };
+
+      const usersMessage = {
+        type: 'users.update',
+        timestamp: new Date().toISOString(),
+        data: { id: '2', name: 'John Doe' }
+      };
+
+      // @ts-ignore
+      service.socket.onmessage({ data: JSON.stringify(postsMessage) });
+      // @ts-ignore
+      service.socket.onmessage({ data: JSON.stringify(usersMessage) });
+
+      expect(globalSpy).toHaveBeenCalledTimes(2);
+      expect(globalSpy).toHaveBeenNthCalledWith(1, postsMessage.data);
+      expect(globalSpy).toHaveBeenNthCalledWith(2, usersMessage.data);
+    });
+
+    it('should emit to specific, collection wildcard, and global wildcard simultaneously', async () => {
+      const specificSpy = vi.fn();
+      const collectionSpy = vi.fn();
+      const globalSpy = vi.fn();
+
+      service.on('posts.create', specificSpy);
+      service.on('posts.*', collectionSpy);
+      service.on('*', globalSpy);
+
+      const mockMessage = {
+        type: 'posts.create',
+        timestamp: new Date().toISOString(),
+        data: { id: '1', title: 'Test Post' }
+      };
+
+      // @ts-ignore
+      service.socket.onmessage({ data: JSON.stringify(mockMessage) });
+
+      expect(specificSpy).toHaveBeenCalledWith(mockMessage.data);
+      expect(collectionSpy).toHaveBeenCalledWith(mockMessage.data);
+      expect(globalSpy).toHaveBeenCalledWith(mockMessage.data);
+    });
+
+    it('should not emit wildcard events for heartbeat messages', async () => {
+      const globalSpy = vi.fn();
+      const messageSpy = vi.fn();
+      
+      service.on('*', globalSpy);
+      service.on('message', messageSpy);
+
+      const heartbeatMessage = {
+        type: 'heartbeat',
+        timestamp: new Date().toISOString()
+      };
+
+      // @ts-ignore
+      service.socket.onmessage({ data: JSON.stringify(heartbeatMessage) });
+
+      expect(globalSpy).not.toHaveBeenCalled();
+      expect(messageSpy).not.toHaveBeenCalled();
+    });
+
+    it('should not emit wildcard events for pong messages', async () => {
+      const globalSpy = vi.fn();
+      const messageSpy = vi.fn();
+      
+      service.on('*', globalSpy);
+      service.on('message', messageSpy);
+
+      const pongMessage = {
+        type: 'pong',
+        timestamp: new Date().toISOString()
+      };
+
+      // @ts-ignore
+      service.socket.onmessage({ data: JSON.stringify(pongMessage) });
+
+      expect(globalSpy).not.toHaveBeenCalled();
+      expect(messageSpy).not.toHaveBeenCalled();
+    });
+
+    it('should only emit collection wildcard for matching collection', async () => {
+      const postsSpy = vi.fn();
+      const usersSpy = vi.fn();
+
+      service.on('posts.*', postsSpy);
+      service.on('users.*', usersSpy);
+
+      const postsMessage = {
+        type: 'posts.create',
+        timestamp: new Date().toISOString(),
+        data: { id: '1', title: 'Test Post' }
+      };
+
+      // @ts-ignore
+      service.socket.onmessage({ data: JSON.stringify(postsMessage) });
+
+      expect(postsSpy).toHaveBeenCalledWith(postsMessage.data);
+      expect(usersSpy).not.toHaveBeenCalled();
+    });
+
+    it('should handle event data structure correctly', async () => {
+      const eventSpy = vi.fn();
+      service.on('posts.create', eventSpy);
+
+      const mockData = { 
+        id: '123', 
+        title: 'Test Post',
+        content: 'This is a test',
+        created_at: new Date().toISOString()
+      };
+
+      const mockMessage = {
+        type: 'posts.create',
+        timestamp: new Date().toISOString(),
+        data: mockData
+      };
+
+      // @ts-ignore
+      service.socket.onmessage({ data: JSON.stringify(mockMessage) });
+
+      expect(eventSpy).toHaveBeenCalledWith(mockData);
+      expect(eventSpy.mock.calls[0][0]).toEqual(mockData);
+    });
+
+    it('should handle delete events with ID-only data', async () => {
+      const deleteSpy = vi.fn();
+      service.on('posts.delete', deleteSpy);
+
+      const mockMessage = {
+        type: 'posts.delete',
+        timestamp: new Date().toISOString(),
+        data: { id: '123' }
+      };
+
+      // @ts-ignore
+      service.socket.onmessage({ data: JSON.stringify(mockMessage) });
+
+      expect(deleteSpy).toHaveBeenCalledWith({ id: '123' });
+    });
+  });
 });
