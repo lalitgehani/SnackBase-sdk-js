@@ -11,9 +11,10 @@ export interface WebSocketMessage {
 }
 
 export interface ServerMessage {
-  type: string | 'heartbeat' | 'pong';
+  type: string | 'heartbeat' | 'pong' | 'subscribed' | 'unsubscribed';
   timestamp: string;
   data?: any;
+  collection?: string;
 }
 
 export interface RealTimeConfig {

@@ -209,13 +209,25 @@ describe('RealTimeService', () => {
     await vi.advanceTimersByTimeAsync(0);
     await connectPromise;
 
-    await service.subscribe('posts', ['create']);
+    const subscribePromise = service.subscribe('posts', ['create']);
     // @ts-ignore
     expect(service.socket.send).toHaveBeenCalledWith(JSON.stringify({
       action: 'subscribe',
       collection: 'posts',
       operations: ['create']
     }));
+    
+    // Simulate server confirmation to prevent timeout
+    // @ts-ignore
+    service.socket.onmessage({
+      data: JSON.stringify({
+        type: 'subscribed',
+        collection: 'posts',
+        timestamp: new Date().toISOString()
+      })
+    });
+    
+    await subscribePromise;
   });
 
   it('should resubscribe on reconnect', async () => {
@@ -264,5 +276,116 @@ describe('RealTimeService', () => {
     const socket = service.socket;
     await vi.advanceTimersByTimeAsync(30000);
     expect(socket.send).toHaveBeenCalledWith(JSON.stringify({ action: 'ping' }));
+  });
+
+  it('should wait for subscription confirmation', async () => {
+    const connectPromise = service.connect();
+    await vi.advanceTimersByTimeAsync(0);
+    await connectPromise;
+
+    const subscribePromise = service.subscribe('posts', ['create']);
+    
+    // @ts-ignore
+    expect(service.socket.send).toHaveBeenCalledWith(JSON.stringify({
+      action: 'subscribe',
+      collection: 'posts',
+      operations: ['create']
+    }));
+
+    // Simulate server confirmation
+    // @ts-ignore
+    service.socket.onmessage({
+      data: JSON.stringify({
+        type: 'subscribed',
+        collection: 'posts',
+        timestamp: new Date().toISOString()
+      })
+    });
+
+    await subscribePromise;
+    expect(service.getSubscriptions()).toContain('posts');
+  });
+
+  it('should timeout if subscription confirmation not received', async () => {
+    const connectPromise = service.connect();
+    await vi.advanceTimersByTimeAsync(0);
+    await connectPromise;
+
+    const subscribePromise = service.subscribe('posts', ['create']);
+    
+    // Add a catch handler to prevent unhandled rejection warnings
+    const caughtError = subscribePromise.catch(err => err);
+    
+    // Advance time past the 5 second timeout
+    await vi.advanceTimersByTimeAsync(5001);
+
+    await expect(subscribePromise).rejects.toThrow('Subscription to posts timed out');
+  });
+
+  it('should wait for unsubscription confirmation', async () => {
+    const connectPromise = service.connect();
+    await vi.advanceTimersByTimeAsync(0);
+    await connectPromise;
+
+    const subscribePromise = service.subscribe('posts');
+    // @ts-ignore
+    service.socket.onmessage({
+      data: JSON.stringify({
+        type: 'subscribed',
+        collection: 'posts',
+        timestamp: new Date().toISOString()
+      })
+    });
+    await subscribePromise;
+
+    const unsubscribePromise = service.unsubscribe('posts');
+    
+    // @ts-ignore
+    expect(service.socket.send).toHaveBeenCalledWith(JSON.stringify({
+      action: 'unsubscribe',
+      collection: 'posts'
+    }));
+
+    // Simulate server confirmation
+    // @ts-ignore
+    service.socket.onmessage({
+      data: JSON.stringify({
+        type: 'unsubscribed',
+        collection: 'posts',
+        timestamp: new Date().toISOString()
+      })
+    });
+
+    await unsubscribePromise;
+    expect(service.getSubscriptions()).not.toContain('posts');
+  });
+
+  it('should enforce subscription limit of 100', async () => {
+    // Add 100 subscriptions
+    for (let i = 0; i < 100; i++) {
+      await service.subscribe(`collection${i}`);
+    }
+
+    // 101st should throw
+    await expect(service.subscribe('collection100')).rejects.toThrow('Maximum 100 subscriptions per connection');
+  });
+
+  it('should include subscriptions in SSE connection URL', async () => {
+    // Subscribe before connecting
+    await service.subscribe('posts', ['create', 'update']);
+    await service.subscribe('users', ['delete']);
+
+    // Mock to force SSE fallback
+    vi.stubGlobal('WebSocket', undefined);
+
+    const connectPromise = service.connect();
+    await vi.advanceTimersByTimeAsync(0);
+    await connectPromise;
+
+    // @ts-ignore - access private sse to check URL
+    const sseUrl = service.sse.url;
+    // URL encodes colons and commas, so check for encoded versions
+    expect(sseUrl).toContain('collections=posts%3Acreate%2Cupdate');
+    expect(sseUrl).toContain('collections=users%3Adelete');
   });
 });

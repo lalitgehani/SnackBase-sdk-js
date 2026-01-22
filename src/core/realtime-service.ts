@@ -23,6 +23,7 @@ export class RealTimeService {
   private heartbeatTimer: any = null;
   private subscriptions: Set<string> = new Set();
   private subscriptionRequests: Map<string, string[]> = new Map();
+  private pendingSubscriptions: Map<string, { resolve: () => void; reject: (error: Error) => void }> = new Map();
 
   constructor(private options: RealTimeOptions) {}
 
@@ -65,22 +66,48 @@ export class RealTimeService {
       throw new Error('Maximum 100 subscriptions per connection');
     }
 
+    this.subscriptions.add(collection);
+    this.subscriptionRequests.set(collection, operations);
+
     if (this.state === 'connected' && this.socket) {
-      this.send({ action: 'subscribe', collection, operations });
-    } else {
-      // Store for when we connect
-      this.subscriptionRequests.set(collection, operations);
+      return new Promise<void>((resolve, reject) => {
+        this.pendingSubscriptions.set(`subscribe:${collection}`, { resolve, reject });
+        this.send({ action: 'subscribe', collection, operations });
+        
+        // Timeout after 5 seconds
+        setTimeout(() => {
+          if (this.pendingSubscriptions.has(`subscribe:${collection}`)) {
+            this.pendingSubscriptions.delete(`subscribe:${collection}`);
+            reject(new Error(`Subscription to ${collection} timed out`));
+          }
+        }, 5000);
+      });
     }
     
-    this.subscriptions.add(collection);
+    // If not connected, subscription will be sent on connect
+    return Promise.resolve();
   }
 
   async unsubscribe(collection: string): Promise<void> {
-    if (this.state === 'connected' && this.socket) {
-      this.send({ action: 'unsubscribe', collection });
-    }
     this.subscriptions.delete(collection);
     this.subscriptionRequests.delete(collection);
+
+    if (this.state === 'connected' && this.socket) {
+      return new Promise<void>((resolve, reject) => {
+        this.pendingSubscriptions.set(`unsubscribe:${collection}`, { resolve, reject });
+        this.send({ action: 'unsubscribe', collection });
+        
+        // Timeout after 5 seconds
+        setTimeout(() => {
+          if (this.pendingSubscriptions.has(`unsubscribe:${collection}`)) {
+            this.pendingSubscriptions.delete(`unsubscribe:${collection}`);
+            reject(new Error(`Unsubscription from ${collection} timed out`));
+          }
+        }, 5000);
+      });
+    }
+    
+    return Promise.resolve();
   }
 
   getSubscriptions(): string[] {
@@ -176,10 +203,12 @@ export class RealTimeService {
       url.pathname = '/api/v1/realtime/subscribe';
       url.searchParams.set('token', token);
       
-      // SSE subscriptions usually passed in connection if needed by backend, 
-      // but requirements say "SSE subscriptions are specified at connection time"
-      // yet doesn't specify HOW. Assuming they might be query params or just all events.
-      // For now, following the PRD literally.
+      // SSE subscriptions are specified at connection time
+      // Format: collections=posts:create,update&collections=users:delete
+      this.subscriptionRequests.forEach((operations, collection) => {
+        const value = operations.length > 0 ? `${collection}:${operations.join(',')}` : collection;
+        url.searchParams.append('collections', value);
+      });
       
       this.sse = new EventSource(url.toString());
 
@@ -210,6 +239,27 @@ export class RealTimeService {
 
   private handleMessage(message: ServerMessage): void {
     if (message.type === 'heartbeat' || message.type === 'pong') {
+      return;
+    }
+
+    // Handle subscription confirmations
+    if (message.type === 'subscribed' && message.collection) {
+      const key = `subscribe:${message.collection}`;
+      const pending = this.pendingSubscriptions.get(key);
+      if (pending) {
+        pending.resolve();
+        this.pendingSubscriptions.delete(key);
+      }
+      return;
+    }
+
+    if (message.type === 'unsubscribed' && message.collection) {
+      const key = `unsubscribe:${message.collection}`;
+      const pending = this.pendingSubscriptions.get(key);
+      if (pending) {
+        pending.resolve();
+        this.pendingSubscriptions.delete(key);
+      }
       return;
     }
 
