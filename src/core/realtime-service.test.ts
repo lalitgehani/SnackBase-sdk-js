@@ -586,4 +586,333 @@ describe('RealTimeService', () => {
       expect(deleteSpy).toHaveBeenCalledWith({ id: '123' });
     });
   });
+
+  describe('Authentication Integration (Module 3.4)', () => {
+    it('should authenticate connection with current token', async () => {
+      const mockToken = 'test-auth-token-123';
+      const authService = new RealTimeService({
+        baseUrl: 'https://api.example.com',
+        getToken: () => mockToken,
+        maxRetries: 3,
+        reconnectionDelay: 100,
+      });
+
+      const connectPromise = authService.connect();
+      await vi.advanceTimersByTimeAsync(0);
+      await connectPromise;
+
+      // @ts-ignore - access private socket to verify URL
+      const socket = authService.socket;
+      expect(socket.url).toContain(`token=${mockToken}`);
+      expect(authService.getState()).toBe('connected');
+
+      authService.disconnect();
+    });
+
+    it('should trigger re-authentication when token is refreshed', async () => {
+      // Create mock AuthManager
+      const mockAuthManager = {
+        on: vi.fn(),
+        getState: () => ({
+          user: { id: '1', email: 'test@example.com' },
+          account: { id: 'acc1', name: 'Test Account' },
+          token: 'new-token',
+          refreshToken: 'refresh-token',
+          isAuthenticated: true,
+          expiresAt: new Date(Date.now() + 3600000).toISOString(),
+        }),
+      };
+
+      let authLoginCallback: (() => void) | null = null;
+      mockAuthManager.on.mockImplementation((event: string, callback: () => void) => {
+        if (event === 'auth:login') {
+          authLoginCallback = callback;
+        }
+        return () => {};
+      });
+
+      const authService = new RealTimeService({
+        baseUrl: 'https://api.example.com',
+        getToken: () => 'initial-token',
+        authManager: mockAuthManager as any,
+        maxRetries: 3,
+        reconnectionDelay: 100,
+      });
+
+      // Connect initially
+      const connectPromise = authService.connect();
+      await vi.advanceTimersByTimeAsync(0);
+      await connectPromise;
+
+      expect(authService.getState()).toBe('connected');
+
+      // Trigger token refresh
+      authLoginCallback?.();
+
+      // Should transition to connecting
+      expect(authService.getState()).toBe('connecting');
+
+      // Advance timers to complete reconnection
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(authService.getState()).toBe('connected');
+
+      authService.disconnect();
+    });
+
+    it('should use new token on reconnection after refresh', async () => {
+      let currentToken = 'old-token';
+      const mockAuthManager = {
+        on: vi.fn(),
+        getState: () => ({
+          user: { id: '1', email: 'test@example.com' },
+          account: { id: 'acc1', name: 'Test Account' },
+          token: currentToken,
+          refreshToken: 'refresh-token',
+          isAuthenticated: true,
+          expiresAt: new Date(Date.now() + 3600000).toISOString(),
+        }),
+      };
+
+      let authLoginCallback: (() => void) | null = null;
+      mockAuthManager.on.mockImplementation((event: string, callback: () => void) => {
+        if (event === 'auth:login') {
+          authLoginCallback = callback;
+        }
+        return () => {};
+      });
+
+      const authService = new RealTimeService({
+        baseUrl: 'https://api.example.com',
+        getToken: () => currentToken,
+        authManager: mockAuthManager as any,
+        maxRetries: 3,
+        reconnectionDelay: 100,
+      });
+
+      // Initial connection
+      const connectPromise = authService.connect();
+      await vi.advanceTimersByTimeAsync(0);
+      await connectPromise;
+
+      // @ts-ignore
+      const initialSocket = authService.socket;
+      expect(initialSocket?.url).toContain('token=old-token');
+
+      // Setup promise to wait for reconnection
+      let reconnected = false;
+      authService.on('connected', () => {
+        reconnected = true;
+      });
+
+      // Simulate token refresh
+      currentToken = 'new-refreshed-token';
+      authLoginCallback?.();
+
+      // Process the reconnection
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(reconnected).toBe(true);
+      expect(authService.getState()).toBe('connected');
+
+      // @ts-ignore
+      const newSocket = authService.socket;
+      expect(newSocket?.url).toContain('token=new-refreshed-token');
+
+      authService.disconnect();
+    });
+
+    it('should emit error and not connect with expired token', async () => {
+      const expiredDate = new Date(Date.now() - 1000).toISOString(); // 1 second ago
+      const mockAuthManager = {
+        on: vi.fn(() => () => {}),
+        getState: () => ({
+          user: { id: '1', email: 'test@example.com' },
+          account: { id: 'acc1', name: 'Test Account' },
+          token: 'expired-token',
+          refreshToken: 'refresh-token',
+          isAuthenticated: true,
+          expiresAt: expiredDate,
+        }),
+      };
+
+      const authService = new RealTimeService({
+        baseUrl: 'https://api.example.com',
+        getToken: () => 'expired-token',
+        authManager: mockAuthManager as any,
+        maxRetries: 3,
+        reconnectionDelay: 100,
+      });
+
+      const errorSpy = vi.fn();
+      const authErrorSpy = vi.fn();
+      authService.on('error', errorSpy);
+      authService.on('auth_error', authErrorSpy);
+
+      await authService.connect();
+      await vi.runOnlyPendingTimersAsync();
+
+      expect(authService.getState()).toBe('error');
+      expect(errorSpy).toHaveBeenCalledWith(expect.objectContaining({
+        message: 'Authentication token has expired'
+      }));
+      expect(authErrorSpy).toHaveBeenCalledWith(expect.objectContaining({
+        message: 'Authentication token has expired'
+      }));
+
+      authService.disconnect();
+    });
+
+    it('should emit auth_error when no token is available', async () => {
+      const authService = new RealTimeService({
+        baseUrl: 'https://api.example.com',
+        getToken: () => null,
+        maxRetries: 3,
+        reconnectionDelay: 100,
+      });
+
+      const errorSpy = vi.fn();
+      const authErrorSpy = vi.fn();
+      authService.on('error', errorSpy);
+      authService.on('auth_error', authErrorSpy);
+
+      await authService.connect();
+
+      expect(authService.getState()).toBe('error');
+      expect(errorSpy).toHaveBeenCalledWith(expect.objectContaining({
+        message: 'Authentication token is required for real-time connection'
+      }));
+      expect(authErrorSpy).toHaveBeenCalledWith(expect.objectContaining({
+        message: 'Authentication token is required for real-time connection'
+      }));
+
+      authService.disconnect();
+    });
+
+    it('should not reconnect when token is expired', async () => {
+      const expiredDate = new Date(Date.now() - 1000).toISOString();
+      const mockAuthManager = {
+        on: vi.fn(() => () => {}),
+        getState: () => ({
+          user: { id: '1', email: 'test@example.com' },
+          account: { id: 'acc1', name: 'Test Account' },
+          token: 'expired-token',
+          refreshToken: 'refresh-token',
+          isAuthenticated: true,
+          expiresAt: expiredDate,
+        }),
+      };
+
+      const authService = new RealTimeService({
+        baseUrl: 'https://api.example.com',
+        getToken: () => 'expired-token',
+        authManager: mockAuthManager as any,
+        maxRetries: 3,
+        reconnectionDelay: 100,
+      });
+
+      // First connect with valid token (mock it as valid initially)
+      mockAuthManager.getState = () => ({
+        user: { id: '1', email: 'test@example.com' },
+        account: { id: 'acc1', name: 'Test Account' },
+        token: 'valid-token',
+        refreshToken: 'refresh-token',
+        isAuthenticated: true,
+        expiresAt: new Date(Date.now() + 3600000).toISOString(),
+      });
+
+      const connectPromise = authService.connect();
+      await vi.advanceTimersByTimeAsync(0);
+      await connectPromise;
+      expect(authService.getState()).toBe('connected');
+
+      // Now expire the token
+      mockAuthManager.getState = () => ({
+        user: { id: '1', email: 'test@example.com' },
+        account: { id: 'acc1', name: 'Test Account' },
+        token: 'expired-token',
+        refreshToken: 'refresh-token',
+        isAuthenticated: true,
+        expiresAt: expiredDate,
+      });
+
+      const authErrorSpy = vi.fn();
+      authService.on('auth_error', authErrorSpy);
+
+      // Simulate connection close
+      // @ts-ignore
+      authService.socket.onclose();
+
+      // Should emit auth error and not reconnect - no need to run timers since
+      // handleReconnect checks the token synchronously and emits error immediately
+      expect(authService.getState()).toBe('error');
+      expect(authErrorSpy).toHaveBeenCalledWith(expect.objectContaining({
+        message: expect.stringContaining('expired')
+      }));
+
+      authService.disconnect();
+    });
+
+    it('should not reconnect when token is missing', async () => {
+      let token: string | null = 'valid-token';
+      const authService = new RealTimeService({
+        baseUrl: 'https://api.example.com',
+        getToken: () => token,
+        maxRetries: 3,
+        reconnectionDelay: 100,
+      });
+
+      const connectPromise = authService.connect();
+      await vi.advanceTimersByTimeAsync(0);
+      await connectPromise;
+      expect(authService.getState()).toBe('connected');
+
+      // Remove token
+      token = null;
+
+      const authErrorSpy = vi.fn();
+      authService.on('auth_error', authErrorSpy);
+
+      // Simulate connection close
+      // @ts-ignore
+      authService.socket.onclose();
+
+      // Should emit auth error and not reconnect - handleReconnect checks the token synchronously
+      expect(authService.getState()).toBe('error');
+      expect(authErrorSpy).toHaveBeenCalledWith(expect.objectContaining({
+        message: expect.stringContaining('no authentication token')
+      }));
+
+      authService.disconnect();
+    });
+
+    it('should clean up auth listener on disconnect', async () => {
+      const unsubscribeMock = vi.fn();
+      const mockAuthManager = {
+        on: vi.fn(() => unsubscribeMock),
+        getState: () => ({
+          user: { id: '1', email: 'test@example.com' },
+          account: { id: 'acc1', name: 'Test Account' },
+          token: 'valid-token',
+          refreshToken: 'refresh-token',
+          isAuthenticated: true,
+          expiresAt: new Date(Date.now() + 3600000).toISOString(),
+        }),
+      };
+
+      const authService = new RealTimeService({
+        baseUrl: 'https://api.example.com',
+        getToken: () => 'valid-token',
+        authManager: mockAuthManager as any,
+        maxRetries: 3,
+        reconnectionDelay: 100,
+      });
+
+      expect(mockAuthManager.on).toHaveBeenCalledWith('auth:login', expect.any(Function));
+
+      authService.disconnect();
+
+      expect(unsubscribeMock).toHaveBeenCalled();
+    });
+  });
 });

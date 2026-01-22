@@ -5,10 +5,12 @@ import {
   WebSocketMessage,
   RealTimeEventHandler
 } from '../types/realtime';
+import { AuthManager } from './auth';
 
 export interface RealTimeOptions {
   baseUrl: string;
   getToken: () => string | null;
+  authManager?: AuthManager;
   maxRetries?: number;
   reconnectionDelay?: number;
 }
@@ -24,8 +26,17 @@ export class RealTimeService {
   private subscriptions: Set<string> = new Set();
   private subscriptionRequests: Map<string, string[]> = new Map();
   private pendingSubscriptions: Map<string, { resolve: () => void; reject: (error: Error) => void }> = new Map();
+  private authUnsubscribe?: () => void;
+  private isReconnectingForAuth = false;
 
-  constructor(private options: RealTimeOptions) {}
+  constructor(private options: RealTimeOptions) {
+    // Listen for auth state changes (token refresh)
+    if (this.options.authManager) {
+      this.authUnsubscribe = this.options.authManager.on('auth:login', () => {
+        this.handleTokenRefresh();
+      });
+    }
+  }
 
   async connect(): Promise<void> {
     if (this.state === 'connected' || this.state === 'connecting') {
@@ -42,6 +53,12 @@ export class RealTimeService {
     this.closeConnections();
     this.setState('disconnected');
     this.subscriptions.clear();
+    
+    // Clean up auth listener
+    if (this.authUnsubscribe) {
+      this.authUnsubscribe();
+      this.authUnsubscribe = undefined;
+    }
   }
 
   getState(): RealTimeState {
@@ -116,15 +133,33 @@ export class RealTimeService {
 
   private async doConnect(): Promise<void> {
     // Don't attempt to connect if already in error state
-    if (this.state === 'error') {
+    if (this.state === 'error' && !this.isReconnectingForAuth) {
       return;
     }
 
     const token = this.options.getToken();
     if (!token) {
       this.setState('error');
-      this.emit('error', new Error('Authentication token is required for real-time connection'));
+      const error = new Error('Authentication token is required for real-time connection');
+      this.emit('error', error);
+      this.emit('auth_error', error);
       return;
+    }
+
+    // Check if token is expired
+    if (this.options.authManager) {
+      const authState = this.options.authManager.getState();
+      if (authState.expiresAt) {
+        const expiry = new Date(authState.expiresAt).getTime();
+        const now = Date.now();
+        if (expiry <= now) {
+          this.setState('error');
+          const error = new Error('Authentication token has expired');
+          this.emit('error', error);
+          this.emit('auth_error', error);
+          return;
+        }
+      }
     }
 
     let webSocketAttempted = false;
@@ -289,6 +324,33 @@ export class RealTimeService {
   private handleReconnect(): void {
     if (this.state === 'disconnected') return;
 
+    // Don't reconnect if token is missing or expired (unless we're reconnecting for auth refresh)
+    if (!this.isReconnectingForAuth) {
+      const token = this.options.getToken();
+      if (!token) {
+        this.setState('error');
+        const error = new Error('Cannot reconnect: no authentication token available');
+        this.emit('error', error);
+        this.emit('auth_error', error);
+        return;
+      }
+
+      if (this.options.authManager) {
+        const authState = this.options.authManager.getState();
+        if (authState.expiresAt) {
+          const expiry = new Date(authState.expiresAt).getTime();
+          const now = Date.now();
+          if (expiry <= now) {
+            this.setState('error');
+            const error = new Error('Cannot reconnect: authentication token has expired');
+            this.emit('error', error);
+            this.emit('auth_error', error);
+            return;
+          }
+        }
+      }
+    }
+
     this.setState('connecting');
     const maxRetries = this.options.maxRetries ?? 10;
     
@@ -355,6 +417,25 @@ export class RealTimeService {
     if (this.sse) {
       this.sse.close();
       this.sse = null;
+    }
+  }
+
+  /**
+   * Handle token refresh by reconnecting with new token
+   */
+  private handleTokenRefresh(): void {
+    // Only reconnect if currently connected
+    if (this.state === 'connected') {
+      this.isReconnectingForAuth = true;
+      this.clearTimers();
+      this.closeConnections();
+      this.setState('connecting');
+      this.retryCount = 0; // Reset retry count for auth refresh
+      
+      // Reconnect with new token
+      this.doConnect().finally(() => {
+        this.isReconnectingForAuth = false;
+      });
     }
   }
 }

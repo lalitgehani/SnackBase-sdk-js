@@ -115,6 +115,7 @@ export class SnackBaseClient {
     this.realtimeService = new RealTimeService({
       baseUrl: this.config.baseUrl,
       getToken: () => this.authManager.token,
+      authManager: this.authManager,
       maxRetries: this.config.maxRealTimeRetries,
       reconnectionDelay: this.config.realTimeReconnectionDelay,
     });

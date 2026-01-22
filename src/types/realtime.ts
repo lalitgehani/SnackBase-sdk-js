@@ -53,6 +53,7 @@ export interface RealTimeEvents {
   connected: () => void;
   disconnected: () => void;
   error: (error: Error) => void;
+  auth_error: (error: Error) => void;
   message: (data: ServerMessage) => void;
   [key: string]: RealTimeEventHandler;
 }
