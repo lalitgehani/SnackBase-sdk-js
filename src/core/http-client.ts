@@ -1,4 +1,5 @@
 import { TimeoutError, NetworkError } from './errors';
+import { Logger } from './logger';
 
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
@@ -28,13 +29,14 @@ export interface HttpClientConfig {
   timeout?: number;
   maxRetries?: number;
   retryDelay?: number;
+  logger?: Logger;
 }
 
 /**
  * Robust HTTP client wrapping the fetch API.
  */
 export class HttpClient {
-  private config: Required<HttpClientConfig>;
+  private config: Required<Omit<HttpClientConfig, 'logger'>> & { logger?: Logger };
   private requestInterceptors: RequestInterceptor[] = [];
   private responseInterceptors: ResponseInterceptor[] = [];
   private errorInterceptors: ErrorInterceptor[] = [];
@@ -71,88 +73,123 @@ export class HttpClient {
       signal: req.signal,
     };
 
-    // Apply request interceptors
-    for (const interceptor of this.requestInterceptors) {
-      currentReq = await interceptor(currentReq);
-    }
+    const startTime = Date.now();
+    const requestId = Math.random().toString(36).substring(7);
 
-    const fullUrl = this.resolveUrl(currentReq.url, currentReq);
-    const controller = new AbortController();
-    const { signal } = controller;
-
-    if (currentReq.signal) {
-      currentReq.signal.addEventListener('abort', () => controller.abort());
-    }
-
-    const timeoutId = setTimeout(() => controller.abort(), currentReq.timeout);
-
-    let retryCount = 0;
-    
-    const executeFetch = async (): Promise<HttpResponse<T>> => {
-      try {
-        const fetchOptions: RequestInit = {
-          method: currentReq.method,
-          headers: currentReq.headers,
-          body: currentReq.body ? JSON.stringify(currentReq.body) : undefined,
-          signal,
-        };
-
-        const response = await fetch(fullUrl, fetchOptions);
-        clearTimeout(timeoutId);
-
-        let data: any;
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
-          data = await response.json();
-        } else {
-          data = await response.text();
-        }
-
-        let httpResponse: HttpResponse<T> = {
-          data,
-          status: response.status,
-          headers: response.headers,
-          request: currentReq,
-        };
-
-        // Apply response interceptors
-        for (const interceptor of this.responseInterceptors) {
-          httpResponse = await interceptor(httpResponse);
-        }
-
-        return httpResponse;
-      } catch (error: any) {
-        clearTimeout(timeoutId);
-
-        let processedError = error;
-        if (error.name === 'AbortError') {
-          processedError = new TimeoutError(`Request timed out after ${currentReq.timeout}ms`);
-        } else if (!(error instanceof Error)) {
-          processedError = new NetworkError(error.message || 'Network request failed', error);
-        }
-
-        // Apply error interceptors
-        for (const interceptor of this.errorInterceptors) {
-          try {
-            processedError = await interceptor(processedError);
-          } catch (interceptorError) {
-            processedError = interceptorError;
-          }
-        }
-
-        // Retry logic
-        if (this.shouldRetry(processedError, retryCount)) {
-          retryCount++;
-          const delay = this.calculateRetryDelay(retryCount);
-          await new Promise(resolve => setTimeout(resolve, delay));
-          return executeFetch();
-        }
-
-        throw processedError;
+    try {
+      // Apply request interceptors
+      for (const interceptor of this.requestInterceptors) {
+        currentReq = await interceptor(currentReq);
       }
-    };
 
-    return executeFetch();
+      const fullUrl = this.resolveUrl(currentReq.url, currentReq);
+      
+      if (this.config.logger) {
+        this.config.logger.debug(`[${requestId}] Request: ${currentReq.method} ${fullUrl}`, {
+          headers: currentReq.headers,
+          body: currentReq.body,
+        });
+      }
+
+      const controller = new AbortController();
+      const { signal } = controller;
+
+      if (currentReq.signal) {
+        currentReq.signal.addEventListener('abort', () => controller.abort());
+      }
+
+      const timeoutId = setTimeout(() => controller.abort(), currentReq.timeout);
+
+      let retryCount = 0;
+      
+      const executeFetch = async (): Promise<HttpResponse<T>> => {
+        try {
+          const fetchOptions: RequestInit = {
+            method: currentReq.method,
+            headers: currentReq.headers,
+            body: currentReq.body ? JSON.stringify(currentReq.body) : undefined,
+            signal,
+          };
+
+          const response = await fetch(fullUrl, fetchOptions);
+          clearTimeout(timeoutId);
+
+          let data: any;
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            data = await response.json();
+          } else {
+            data = await response.text();
+          }
+
+          let httpResponse: HttpResponse<T> = {
+            data,
+            status: response.status,
+            headers: response.headers,
+            request: currentReq,
+          };
+
+          const duration = Date.now() - startTime;
+          if (this.config.logger) {
+            this.config.logger.debug(`[${requestId}] Response: ${response.status} (${duration}ms)`, {
+              status: response.status,
+              headers: response.headers,
+              data,
+            });
+
+            if (duration > 1000) {
+              this.config.logger.warn(`[${requestId}] Slow request detected: ${currentReq.method} ${fullUrl} took ${duration}ms`);
+            }
+          }
+
+          // Apply response interceptors
+          for (const interceptor of this.responseInterceptors) {
+            httpResponse = await interceptor(httpResponse);
+          }
+
+          return httpResponse;
+        } catch (error: any) {
+          clearTimeout(timeoutId);
+
+          let processedError = error;
+          if (error.name === 'AbortError') {
+            processedError = new TimeoutError(`Request timed out after ${currentReq.timeout}ms`);
+          } else if (!(error instanceof Error)) {
+            processedError = new NetworkError(error.message || 'Network request failed', error);
+          }
+
+          // Apply error interceptors
+          for (const interceptor of this.errorInterceptors) {
+            try {
+              processedError = await interceptor(processedError);
+            } catch (interceptorError) {
+              processedError = interceptorError;
+            }
+          }
+
+          // Retry logic
+          if (this.shouldRetry(processedError, retryCount)) {
+            retryCount++;
+            const delay = this.calculateRetryDelay(retryCount);
+            if (this.config.logger) {
+              this.config.logger.info(`[${requestId}] Retrying request (attempt ${retryCount}/${this.config.maxRetries})...`);
+            }
+            await new Promise(resolve => setTimeout(resolve, delay));
+            return executeFetch();
+          }
+
+          throw processedError;
+        }
+      };
+
+      return await executeFetch();
+    } catch (error: any) {
+       const duration = Date.now() - startTime;
+       if (this.config.logger) {
+        this.config.logger.error(`[${requestId}] Request failed (${duration}ms): ${error.message}`, error);
+      }
+      throw error;
+    }
   }
 
   public async get<T = any>(url: string, config?: Partial<HttpRequest>): Promise<HttpResponse<T>> {

@@ -6,6 +6,7 @@ import {
   RealTimeEventHandler
 } from '../types/realtime';
 import { AuthManager } from './auth';
+import { Logger } from './logger';
 
 export interface RealTimeOptions {
   baseUrl: string;
@@ -13,6 +14,7 @@ export interface RealTimeOptions {
   authManager?: AuthManager;
   maxRetries?: number;
   reconnectionDelay?: number;
+  logger?: Logger;
 }
 
 export class RealTimeService {
@@ -45,10 +47,19 @@ export class RealTimeService {
 
     this.setState('connecting');
     this.retryCount = 0;
+    
+    if (this.options.logger) {
+      this.options.logger.info('RealTimeService: Connecting...');
+    }
+
     return this.doConnect();
   }
 
   disconnect(): void {
+    if (this.options.logger) {
+      this.options.logger.info('RealTimeService: Disconnecting...');
+    }
+    
     this.clearTimers();
     this.closeConnections();
     this.setState('disconnected');
@@ -86,6 +97,10 @@ export class RealTimeService {
     this.subscriptions.add(collection);
     this.subscriptionRequests.set(collection, operations);
 
+    if (this.options.logger) {
+      this.options.logger.debug(`RealTimeService: Subscribing to ${collection}`, { operations });
+    }
+
     if (this.state === 'connected' && this.socket) {
       return new Promise<void>((resolve, reject) => {
         this.pendingSubscriptions.set(`subscribe:${collection}`, { resolve, reject });
@@ -95,7 +110,11 @@ export class RealTimeService {
         setTimeout(() => {
           if (this.pendingSubscriptions.has(`subscribe:${collection}`)) {
             this.pendingSubscriptions.delete(`subscribe:${collection}`);
-            reject(new Error(`Subscription to ${collection} timed out`));
+            const error = new Error(`Subscription to ${collection} timed out`);
+            if (this.options.logger) {
+              this.options.logger.warn(`RealTimeService: ${error.message}`);
+            }
+            reject(error);
           }
         }, 5000);
       });
@@ -109,6 +128,10 @@ export class RealTimeService {
     this.subscriptions.delete(collection);
     this.subscriptionRequests.delete(collection);
 
+    if (this.options.logger) {
+      this.options.logger.debug(`RealTimeService: Unsubscribing from ${collection}`);
+    }
+
     if (this.state === 'connected' && this.socket) {
       return new Promise<void>((resolve, reject) => {
         this.pendingSubscriptions.set(`unsubscribe:${collection}`, { resolve, reject });
@@ -118,7 +141,11 @@ export class RealTimeService {
         setTimeout(() => {
           if (this.pendingSubscriptions.has(`unsubscribe:${collection}`)) {
             this.pendingSubscriptions.delete(`unsubscribe:${collection}`);
-            reject(new Error(`Unsubscription from ${collection} timed out`));
+            const error = new Error(`Unsubscription from ${collection} timed out`);
+             if (this.options.logger) {
+              this.options.logger.warn(`RealTimeService: ${error.message}`);
+            }
+            reject(error);
           }
         }, 5000);
       });
@@ -143,6 +170,9 @@ export class RealTimeService {
       const error = new Error('Authentication token is required for real-time connection');
       this.emit('error', error);
       this.emit('auth_error', error);
+      if (this.options.logger) {
+        this.options.logger.error(`RealTimeService: ${error.message}`);
+      }
       return;
     }
 
@@ -157,6 +187,9 @@ export class RealTimeService {
           const error = new Error('Authentication token has expired');
           this.emit('error', error);
           this.emit('auth_error', error);
+           if (this.options.logger) {
+            this.options.logger.error(`RealTimeService: ${error.message}`);
+          }
           return;
         }
       }
@@ -175,6 +208,9 @@ export class RealTimeService {
       if (webSocketAttempted && !this.sse) {
         // Fallback to SSE if WebSocket failed and we haven't tried SSE yet
         try {
+           if (this.options.logger) {
+            this.options.logger.info(`RealTimeService: WebSocket connection failed, falling back to SSE`);
+          }
           await this.connectSSE(token);
         } catch (sseErr) {
           this.handleError(sseErr as Error);
@@ -201,6 +237,9 @@ export class RealTimeService {
         this.startHeartbeat();
         this.resubscribe();
         connectionResolved = true;
+        if (this.options.logger) {
+          this.options.logger.info(`RealTimeService: WebSocket connected`);
+        }
         resolve();
       };
 
@@ -218,6 +257,9 @@ export class RealTimeService {
         if (!connectionResolved) {
           reject(new Error('WebSocket closed during connection'));
         } else if (this.state !== 'disconnected') {
+           if (this.options.logger) {
+            this.options.logger.info(`RealTimeService: WebSocket closed, reconnecting...`);
+          }
           this.handleReconnect();
         }
       };
@@ -250,6 +292,9 @@ export class RealTimeService {
       this.sse.onopen = () => {
         this.setState('connected');
         this.retryCount = 0;
+         if (this.options.logger) {
+          this.options.logger.info(`RealTimeService: SSE connected`);
+        }
         resolve();
       };
 
@@ -266,6 +311,9 @@ export class RealTimeService {
         if (this.state === 'connecting') {
           reject(e);
         } else {
+           if (this.options.logger) {
+            this.options.logger.info(`RealTimeService: SSE connection error, reconnecting...`);
+          }
           this.handleReconnect();
         }
       };
@@ -273,6 +321,10 @@ export class RealTimeService {
   }
 
   private handleMessage(message: ServerMessage): void {
+    if (this.options.logger && message.type !== 'heartbeat' && message.type !== 'pong') {
+      this.options.logger.debug(`RealTimeService: Received message`, message);
+    }
+
     // Filter heartbeat and pong messages - don't emit as events
     if (message.type === 'heartbeat' || message.type === 'pong') {
       return;
@@ -332,6 +384,9 @@ export class RealTimeService {
         const error = new Error('Cannot reconnect: no authentication token available');
         this.emit('error', error);
         this.emit('auth_error', error);
+         if (this.options.logger) {
+          this.options.logger.error(`RealTimeService: ${error.message}`);
+        }
         return;
       }
 
@@ -345,6 +400,9 @@ export class RealTimeService {
             const error = new Error('Cannot reconnect: authentication token has expired');
             this.emit('error', error);
             this.emit('auth_error', error);
+             if (this.options.logger) {
+              this.options.logger.error(`RealTimeService: ${error.message}`);
+            }
             return;
           }
         }
@@ -356,12 +414,20 @@ export class RealTimeService {
     
     if (this.retryCount >= maxRetries) {
       this.setState('error');
-      this.emit('error', new Error('Maximum reconnection attempts reached'));
+      const error = new Error('Maximum reconnection attempts reached');
+      this.emit('error', error);
+      if (this.options.logger) {
+        this.options.logger.error(`RealTimeService: ${error.message}`);
+      }
       return;
     }
 
     const delay = Math.min(30000, (this.options.reconnectionDelay ?? 1000) * Math.pow(2, this.retryCount));
     this.retryCount++;
+
+    if (this.options.logger) {
+      this.options.logger.info(`RealTimeService: Reconnecting in ${delay}ms (attempt ${this.retryCount}/${maxRetries})`);
+    }
 
     this.reconnectTimer = setTimeout(() => {
       this.doConnect();
@@ -370,10 +436,16 @@ export class RealTimeService {
 
   private handleError(error: Error): void {
     this.emit('error', error);
+     if (this.options.logger) {
+      this.options.logger.error(`RealTimeService: Error: ${error.message}`, error);
+    }
     this.handleReconnect();
   }
 
   private setState(state: RealTimeState): void {
+    if (this.state !== state && this.options.logger) {
+      this.options.logger.debug(`RealTimeService: State changed from ${this.state} to ${state}`);
+    }
     this.state = state;
     this.emit(state as any);
   }
@@ -383,6 +455,9 @@ export class RealTimeService {
   }
 
   private send(message: WebSocketMessage): void {
+    if (this.options.logger) {
+      this.options.logger.debug(`RealTimeService: Sending message`, message);
+    }
     // Use 1 directly instead of WebSocket.OPEN constant
     // to ensure compatibility in all environments
     if (this.socket && this.socket.readyState === 1) {
@@ -426,6 +501,9 @@ export class RealTimeService {
   private handleTokenRefresh(): void {
     // Only reconnect if currently connected
     if (this.state === 'connected') {
+      if (this.options.logger) {
+        this.options.logger.info(`RealTimeService: Token refreshed, reconnecting...`);
+      }
       this.isReconnectingForAuth = true;
       this.clearTimers();
       this.closeConnections();

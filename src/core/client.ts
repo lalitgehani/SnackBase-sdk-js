@@ -1,6 +1,7 @@
 import { SnackBaseConfig, DEFAULT_CONFIG } from '../types/config';
 import { getAutoDetectedStorage } from '../utils/platform';
 import { HttpClient } from './http-client';
+import { Logger, LogLevel as LoggerLevel } from './logger';
 import { 
   contentTypeInterceptor, 
   createAuthInterceptor, 
@@ -44,6 +45,7 @@ import {
 export class SnackBaseClient {
   private config: Required<SnackBaseConfig>;
   private http: HttpClient;
+  private logger: Logger;
   private authManager: AuthManager;
   private authService: AuthService;
   private accountService: AccountService;
@@ -76,11 +78,33 @@ export class SnackBaseClient {
       ...config,
     } as Required<SnackBaseConfig>;
 
+    // Initialize Logger
+    let logLevel = LoggerLevel.NONE;
+    if (this.config.enableLogging) {
+      switch (this.config.logLevel) {
+        case 'debug': logLevel = LoggerLevel.DEBUG; break;
+        case 'info': logLevel = LoggerLevel.INFO; break;
+        case 'warn': logLevel = LoggerLevel.WARN; break;
+        case 'error': logLevel = LoggerLevel.ERROR; break;
+        default: logLevel = LoggerLevel.ERROR;
+      }
+    }
+    this.logger = new Logger(logLevel);
+
+    // Expose debug object in browser environment
+    if (typeof window !== 'undefined') {
+      (window as any).snackbase_debug = {
+        logger: this.logger,
+        client: this,
+      };
+    }
+
     this.http = new HttpClient({
       baseUrl: this.config.baseUrl,
       timeout: this.config.timeout,
       maxRetries: this.config.maxRetries,
       retryDelay: this.config.retryDelay,
+      logger: this.logger,
     });
 
     this.authManager = new AuthManager({
@@ -118,6 +142,7 @@ export class SnackBaseClient {
       authManager: this.authManager,
       maxRetries: this.config.maxRealTimeRetries,
       reconnectionDelay: this.config.realTimeReconnectionDelay,
+      logger: this.logger,
     });
 
     this.setupInterceptors();
