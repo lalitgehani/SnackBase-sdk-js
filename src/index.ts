@@ -15,4 +15,6 @@ export * from './types/email-template';
 export * from './types/file';
 export * from './types/realtime';
 export * from './types/utils';
+export * from './types/query';
+export * from './core/query-builder';
 export * from './utils/platform';

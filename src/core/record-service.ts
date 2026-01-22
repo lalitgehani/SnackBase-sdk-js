@@ -1,4 +1,5 @@
 import { HttpClient } from './http-client';
+import { QueryBuilder } from './query-builder';
 import { 
   BaseRecord, 
   RecordListParams, 
@@ -48,6 +49,15 @@ export class RecordService {
       { params: formattedParams }
     );
     return response.data;
+  }
+
+  /**
+   * Create a query builder for the collection.
+   * @template T The record type
+   * @param collection Collection name
+   */
+  query<T = any>(collection: string): QueryBuilder<T> {
+    return new QueryBuilder<T>(this, collection);
   }
 
   /**
