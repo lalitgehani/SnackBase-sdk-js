@@ -10,4 +10,5 @@ export * from './types/collection';
 export * from './types/record';
 export * from './types/group';
 export * from './types/dashboard';
+export * from './types/admin';
 export * from './utils/platform';

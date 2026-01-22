@@ -21,6 +21,7 @@ import { RoleService } from './role-service';
 import { CollectionRuleService } from './collection-rule-service';
 import { MacroService } from './macro-service';
 import { DashboardService } from './dashboard-service';
+import { AdminService } from './admin-service';
 import { createStorageBackend } from './storage';
 import { 
   User, 
@@ -54,6 +55,7 @@ export class SnackBaseClient {
   private collectionRuleService: CollectionRuleService;
   private macroService: MacroService;
   private dashboardService: DashboardService;
+  private adminService: AdminService;
 
   /**
    * Initialize a new SnackBaseClient instance.
@@ -97,6 +99,7 @@ export class SnackBaseClient {
     this.collectionRuleService = new CollectionRuleService(this.http);
     this.macroService = new MacroService(this.http);
     this.dashboardService = new DashboardService(this.http);
+    this.adminService = new AdminService(this.http);
 
     this.setupInterceptors();
     this.authManager.initialize();
@@ -247,6 +250,13 @@ export class SnackBaseClient {
    */
   get dashboard(): DashboardService {
     return this.dashboardService;
+  }
+
+  /**
+   * Access to system administration and configuration methods.
+   */
+  get admin(): AdminService {
+    return this.adminService;
   }
 
   /**
