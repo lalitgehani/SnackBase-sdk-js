@@ -2,21 +2,42 @@
   "name": "@snackbase/sdk",
   "version": "0.1.0",
   "description": "JavaScript/TypeScript SDK for SnackBase",
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./react": {
+      "import": "./dist/react/index.mjs",
+      "require": "./dist/react/index.js",
+      "types": "./dist/react/index.d.ts"
+    }
+  },
   "scripts": {
-    "dev": "tsdown src/index.ts --watch",
-    "build": "tsdown src/index.ts",
+    "dev": "tsdown src/index.ts src/react/index.ts --watch",
+    "build": "tsdown src/index.ts src/react/index.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },
+  "peerDependencies": {
+    "react": "^18.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@vitejs/plugin-react": "^5.1.2",
+    "jsdom": "^27.4.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "tsdown": "^0.20.0-beta.4",
     "typescript": "^5.3.3",
+    "vite": "^7.3.1",
     "vitest": "^1.2.1"
   }
 }
