@@ -23,6 +23,7 @@ import { MacroService } from './macro-service';
 import { DashboardService } from './dashboard-service';
 import { AdminService } from './admin-service';
 import { EmailTemplateService } from './email-template-service';
+import { FileService } from './file-service';
 import { createStorageBackend } from './storage';
 import { 
   User, 
@@ -58,6 +59,7 @@ export class SnackBaseClient {
   private dashboardService: DashboardService;
   private adminService: AdminService;
   private emailTemplateService: EmailTemplateService;
+  private fileService: FileService;
 
   /**
    * Initialize a new SnackBaseClient instance.
@@ -103,6 +105,11 @@ export class SnackBaseClient {
     this.dashboardService = new DashboardService(this.http);
     this.adminService = new AdminService(this.http);
     this.emailTemplateService = new EmailTemplateService(this.http);
+    this.fileService = new FileService(
+      this.http,
+      () => this.config.baseUrl,
+      () => this.authManager.token
+    );
 
     this.setupInterceptors();
     this.authManager.initialize();
@@ -267,6 +274,13 @@ export class SnackBaseClient {
    */
   get emailTemplates(): EmailTemplateService {
     return this.emailTemplateService;
+  }
+
+  /**
+   * Access to file management methods.
+   */
+  get files(): FileService {
+    return this.fileService;
   }
 
   /**
