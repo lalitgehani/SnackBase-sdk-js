@@ -1,0 +1,32 @@
+# Source and tests
+src/
+tests/
+
+# Dependencies and logs
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+coverage/
+.nyc_output/
+
+# Config files and scripts
+.github/
+.vscode/
+.idea/
+.claude/
+.gitignore
+.npmrc
+tsconfig.json
+vitest.config.ts
+vitest.integration.config.ts
+
+# Documentation and project files
+docs/
+examples/
+CLAUDE.md
+PRD_*.md
+*.md
+!README.md
+!CHANGELOG.md
+!LICENSE
