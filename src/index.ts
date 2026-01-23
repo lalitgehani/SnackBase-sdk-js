@@ -19,3 +19,6 @@ export * from './types/query';
 export * from './types/migration';
 export * from './core/query-builder';
 export * from './utils/platform';
+
+// Type alias for convenience
+export type { SnackBaseClient as SnackBase } from './core/client';
