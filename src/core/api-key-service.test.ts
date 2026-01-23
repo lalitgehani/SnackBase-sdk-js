@@ -17,7 +17,7 @@ describe('ApiKeyService', () => {
   });
 
   describe('list', () => {
-    it('should call GET /api/v1/api-keys and return data', async () => {
+    it('should call GET /api/v1/admin/api-keys and return data', async () => {
       const mockKeys: ApiKey[] = [
         {
           id: 'key-1',
@@ -34,13 +34,13 @@ describe('ApiKeyService', () => {
 
       const result = await apiKeyService.list();
 
-      expect(mockHttpClient.get).toHaveBeenCalledWith('/api/v1/api-keys');
+      expect(mockHttpClient.get).toHaveBeenCalledWith('/api/v1/admin/api-keys');
       expect(result).toEqual(mockKeys);
     });
   });
 
   describe('get', () => {
-    it('should call GET /api/v1/api-keys/:id and return data', async () => {
+    it('should call GET /api/v1/admin/api-keys/:id and return data', async () => {
       const mockKey: ApiKey = {
         id: 'key-1',
         name: 'Test Key',
@@ -55,13 +55,13 @@ describe('ApiKeyService', () => {
 
       const result = await apiKeyService.get('key-1');
 
-      expect(mockHttpClient.get).toHaveBeenCalledWith('/api/v1/api-keys/key-1');
+      expect(mockHttpClient.get).toHaveBeenCalledWith('/api/v1/admin/api-keys/key-1');
       expect(result).toEqual(mockKey);
     });
   });
 
   describe('create', () => {
-    it('should call POST /api/v1/api-keys with data and return new key', async () => {
+    it('should call POST /api/v1/admin/api-keys with data and return new key', async () => {
       const createData: ApiKeyCreate = { name: 'New Key' };
       const mockNewKey: ApiKey = {
         id: 'key-2',
@@ -78,18 +78,18 @@ describe('ApiKeyService', () => {
 
       const result = await apiKeyService.create(createData);
 
-      expect(mockHttpClient.post).toHaveBeenCalledWith('/api/v1/api-keys', createData);
+      expect(mockHttpClient.post).toHaveBeenCalledWith('/api/v1/admin/api-keys', createData);
       expect(result).toEqual(mockNewKey);
     });
   });
 
   describe('revoke', () => {
-    it('should call DELETE /api/v1/api-keys/:id and return success', async () => {
+    it('should call DELETE /api/v1/admin/api-keys/:id and return success', async () => {
       mockHttpClient.delete.mockResolvedValue({});
 
       const result = await apiKeyService.revoke('key-1');
 
-      expect(mockHttpClient.delete).toHaveBeenCalledWith('/api/v1/api-keys/key-1');
+      expect(mockHttpClient.delete).toHaveBeenCalledWith('/api/v1/admin/api-keys/key-1');
       expect(result).toEqual({ success: true });
     });
   });

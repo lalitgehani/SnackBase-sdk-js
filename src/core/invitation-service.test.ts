@@ -59,28 +59,28 @@ describe('InvitationService', () => {
   });
 
   describe('getPublic', () => {
-    it('should call GET /api/v1/invitations/public/:token', async () => {
+    it('should call GET /api/v1/invitations/:token', async () => {
       const mockInvitation = { id: 'inv-1', email: 'user@example.com', status: 'pending' };
       mockHttpClient.get.mockResolvedValue({ data: mockInvitation });
 
       const result = await invitationService.getPublic('test-token');
 
-      expect(mockHttpClient.get).toHaveBeenCalledWith('/api/v1/invitations/public/test-token');
+      expect(mockHttpClient.get).toHaveBeenCalledWith('/api/v1/invitations/test-token');
       expect(result).toEqual(mockInvitation);
     });
   });
 
   describe('accept', () => {
-    it('should call POST /api/v1/invitations/accept/:token with password', async () => {
-      const mockAuthResponse = { 
-        user: { id: 'user-1', email: 'user@example.com' }, 
-        token: 'jwt-token' 
+    it('should call POST /api/v1/invitations/:token/accept with password', async () => {
+      const mockAuthResponse = {
+        user: { id: 'user-1', email: 'user@example.com' },
+        token: 'jwt-token'
       };
       mockHttpClient.post.mockResolvedValue({ data: mockAuthResponse });
 
       const result = await invitationService.accept('test-token', 'new-password');
 
-      expect(mockHttpClient.post).toHaveBeenCalledWith('/api/v1/invitations/accept/test-token', {
+      expect(mockHttpClient.post).toHaveBeenCalledWith('/api/v1/invitations/test-token/accept', {
         password: 'new-password'
       });
       expect(result).toEqual(mockAuthResponse);

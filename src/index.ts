@@ -1,7 +1,4 @@
 export * from './core/client';
-
-// Type alias for convenience
-export type SnackBase = SnackBaseClient;
 export * from './types/config';
 export * from './types/auth';
 export * from './types/user';
@@ -19,5 +16,6 @@ export * from './types/file';
 export * from './types/realtime';
 export * from './types/utils';
 export * from './types/query';
+export * from './types/migration';
 export * from './core/query-builder';
 export * from './utils/platform';

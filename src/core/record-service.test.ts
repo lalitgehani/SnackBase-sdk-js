@@ -38,7 +38,7 @@ describe('RecordService', () => {
 
       const result = await recordService.list('posts');
 
-      expect(getSpy).toHaveBeenCalledWith('/api/v1/collections/posts/records', { params: {} });
+      expect(getSpy).toHaveBeenCalledWith('/api/v1/records/posts', { params: {} });
       expect(result).toEqual(mockResponse);
     });
 
@@ -60,7 +60,7 @@ describe('RecordService', () => {
       });
 
       expect(httpClient.get).toHaveBeenCalledWith(
-        '/api/v1/collections/posts/records',
+        '/api/v1/records/posts',
         {
           params: {
             skip: 20,
@@ -86,7 +86,7 @@ describe('RecordService', () => {
 
       const result = await recordService.get('posts', 'rec-1');
 
-      expect(getSpy).toHaveBeenCalledWith('/api/v1/collections/posts/records/rec-1', { params: {} });
+      expect(getSpy).toHaveBeenCalledWith('/api/v1/records/posts/rec-1', { params: {} });
       expect(result).toEqual(mockRecord);
     });
 
@@ -104,7 +104,7 @@ describe('RecordService', () => {
       });
 
       expect(httpClient.get).toHaveBeenCalledWith(
-        '/api/v1/collections/posts/records/rec-1',
+        '/api/v1/records/posts/rec-1',
         {
           params: {
             fields: 'id,title',
@@ -127,7 +127,7 @@ describe('RecordService', () => {
       const data = { name: 'Test Record' };
       const result = await recordService.create('posts', data);
 
-      expect(postSpy).toHaveBeenCalledWith('/api/v1/collections/posts/records', data);
+      expect(postSpy).toHaveBeenCalledWith('/api/v1/records/posts', data);
       expect(result).toEqual(mockRecord);
     });
   });
@@ -144,7 +144,7 @@ describe('RecordService', () => {
       const data = { name: 'Updated Name' };
       const result = await recordService.update('posts', 'rec-1', data);
 
-      expect(putSpy).toHaveBeenCalledWith('/api/v1/collections/posts/records/rec-1', data);
+      expect(putSpy).toHaveBeenCalledWith('/api/v1/records/posts/rec-1', data);
       expect(result).toEqual(mockRecord);
     });
   });
@@ -161,7 +161,7 @@ describe('RecordService', () => {
       const data = { name: 'Patched Name' };
       const result = await recordService.patch('posts', 'rec-1', data);
 
-      expect(patchSpy).toHaveBeenCalledWith('/api/v1/collections/posts/records/rec-1', data);
+      expect(patchSpy).toHaveBeenCalledWith('/api/v1/records/posts/rec-1', data);
       expect(result).toEqual(mockRecord);
     });
   });
@@ -177,7 +177,7 @@ describe('RecordService', () => {
 
       const result = await recordService.delete('posts', 'rec-1');
 
-      expect(deleteSpy).toHaveBeenCalledWith('/api/v1/collections/posts/records/rec-1');
+      expect(deleteSpy).toHaveBeenCalledWith('/api/v1/records/posts/rec-1');
       expect(result.success).toBe(true);
     });
   });

@@ -26,6 +26,7 @@ import { AdminService } from './admin-service';
 import { EmailTemplateService } from './email-template-service';
 import { FileService } from './file-service';
 import { RealTimeService } from './realtime-service';
+import { MigrationService } from './migration-service';
 import { createStorageBackend } from './storage';
 import { 
   User, 
@@ -64,6 +65,7 @@ export class SnackBaseClient {
   private emailTemplateService: EmailTemplateService;
   private fileService: FileService;
   private realtimeService: RealTimeService;
+  private migrationService: MigrationService;
 
   /**
    * Initialize a new SnackBaseClient instance.
@@ -144,6 +146,7 @@ export class SnackBaseClient {
       reconnectionDelay: this.config.realTimeReconnectionDelay,
       logger: this.logger,
     });
+    this.migrationService = new MigrationService(this.http);
 
     this.setupInterceptors();
     this.authManager.initialize();
@@ -322,6 +325,13 @@ export class SnackBaseClient {
    */
   get realtime(): RealTimeService {
     return this.realtimeService;
+  }
+
+  /**
+   * Access to migration status and history.
+   */
+  get migrations(): MigrationService {
+    return this.migrationService;
   }
 
   /**

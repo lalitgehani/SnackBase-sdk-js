@@ -44,7 +44,7 @@ export class InvitationService {
    * No authentication required.
    */
   async getPublic(token: string): Promise<Invitation> {
-    const response = await this.http.get<Invitation>(`/api/v1/invitations/public/${token}`);
+    const response = await this.http.get<Invitation>(`/api/v1/invitations/${token}`);
     return response.data;
   }
 
@@ -53,7 +53,7 @@ export class InvitationService {
    * Creates the user account and returns authentication tokens.
    */
   async accept(token: string, password: string): Promise<AuthResponse> {
-    const response = await this.http.post<AuthResponse>(`/api/v1/invitations/accept/${token}`, {
+    const response = await this.http.post<AuthResponse>(`/api/v1/invitations/${token}/accept`, {
       password,
     });
     return response.data;

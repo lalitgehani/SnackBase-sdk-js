@@ -45,7 +45,7 @@ export class RecordService {
     }
 
     const response = await this.http.get<RecordListResponse<T>>(
-      `/api/v1/collections/${collection}/records`,
+      `/api/v1/records/${collection}`,
       { params: formattedParams }
     );
     return response.data;
@@ -87,7 +87,7 @@ export class RecordService {
     }
 
     const response = await this.http.get<T & BaseRecord>(
-      `/api/v1/collections/${collection}/records/${recordId}`,
+      `/api/v1/records/${collection}/${recordId}`,
       { params: formattedParams }
     );
     return response.data;
@@ -104,7 +104,7 @@ export class RecordService {
     data: Partial<T>
   ): Promise<T & BaseRecord> {
     const response = await this.http.post<T & BaseRecord>(
-      `/api/v1/collections/${collection}/records`,
+      `/api/v1/records/${collection}`,
       data
     );
     return response.data;
@@ -123,7 +123,7 @@ export class RecordService {
     data: Partial<T>
   ): Promise<T & BaseRecord> {
     const response = await this.http.put<T & BaseRecord>(
-      `/api/v1/collections/${collection}/records/${recordId}`,
+      `/api/v1/records/${collection}/${recordId}`,
       data
     );
     return response.data;
@@ -142,7 +142,7 @@ export class RecordService {
     data: Partial<T>
   ): Promise<T & BaseRecord> {
     const response = await this.http.patch<T & BaseRecord>(
-      `/api/v1/collections/${collection}/records/${recordId}`,
+      `/api/v1/records/${collection}/${recordId}`,
       data
     );
     return response.data;
@@ -157,7 +157,7 @@ export class RecordService {
     collection: string, 
     recordId: string
   ): Promise<{ success: boolean }> {
-    await this.http.delete(`/api/v1/collections/${collection}/records/${recordId}`);
+    await this.http.delete(`/api/v1/records/${collection}/${recordId}`);
     return { success: true };
   }
 }

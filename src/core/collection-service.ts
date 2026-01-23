@@ -21,6 +21,14 @@ export class CollectionService {
   }
 
   /**
+   * List collection names only.
+   */
+  async listNames(): Promise<string[]> {
+    const response = await this.http.get<string[]>('/api/v1/collections/names');
+    return response.data;
+  }
+
+  /**
    * Get schema details for a specific collection.
    */
   async get(collectionId: string): Promise<Collection> {
