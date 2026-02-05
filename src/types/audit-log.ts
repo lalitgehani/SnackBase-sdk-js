@@ -24,7 +24,7 @@ export interface AuditLogFilters {
   sort?: string;
 }
 
-export type AuditLogExportFormat = 'csv' | 'json';
+export type AuditLogExportFormat = 'csv' | 'json' | 'pdf';
 
 export interface AuditLogListResponse {
   items: AuditLog[];

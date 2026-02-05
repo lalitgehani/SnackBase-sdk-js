@@ -68,15 +68,24 @@ const client = new SnackBaseClient({
 
 ```typescript
 // Sign up a new user
-const auth = await client.auth.authenticateWithPassword({
+const auth = await client.auth.register({
+  email: "user@example.com",
+  password: "securepassword",
+  passwordConfirm: "securepassword",
+});
+
+console.log("Registered:", auth.user);
+
+// Login with email and password
+const authState = await client.auth.login({
   email: "user@example.com",
   password: "securepassword",
 });
 
-console.log("Logged in:", auth.user);
+console.log("Logged in:", authState.user);
 
 // Access token is stored automatically
-console.log("Token:", client.authManager.getToken());
+console.log("Token:", client.token);
 ```
 
 #### OAuth Authentication
@@ -195,6 +204,52 @@ const unsubscribeFiltered = client.realtime.subscribe(
 unsubscribe();
 unsubscribeFiltered();
 ```
+
+## Available Services
+
+The SnackBase SDK provides 17+ services for different aspects of your application:
+
+| Service | Access | Description |
+|---------|--------|-------------|
+| `auth` | `client.auth` | User authentication, registration, password management |
+| `users` | `client.users` | User account management |
+| `accounts` | `client.accounts` | Multi-account project management |
+| `collections` | `client.collections` | Collection and schema management |
+| `records` | `client.records` | CRUD operations on dynamic collections |
+| `realtime` | `client.realtime` | Real-time subscriptions and events |
+| `files` | `client.files` | File upload and download |
+| `apiKeys` | `client.apiKeys` | API key management for service-to-service auth |
+| `auditLogs` | `client.auditLogs` | Audit log viewing and export |
+| `admin` | `client.admin` | System administration and configuration |
+| `collectionRules` | `client.collectionRules` | Collection-level access rules |
+| `dashboard` | `client.dashboard` | Dashboard statistics and metrics |
+| `emailTemplates` | `client.emailTemplates` | Email template management |
+| `groups` | `client.groups` | User group management |
+| `invitations` | `client.invitations` | User invitation management |
+| `macros` | `client.macros` | SQL macro management for rules |
+| `migrations` | `client.migrations` | Database migration status |
+| `roles` | `client.roles` | Role and permission management |
+
+**Example:**
+
+```typescript
+// Manage users
+const users = await client.users.list();
+
+// View audit logs
+const logs = await client.auditLogs.list({ table_name: 'users' });
+
+// Get dashboard stats
+const stats = await client.dashboard.getStats();
+
+// Manage invitations
+const invitation = await client.invitations.create({
+  email: 'newuser@example.com',
+  role_id: 'role-id'
+});
+```
+
+For complete API documentation, see the [API Reference](./api-reference.md).
 
 ## Platform-Specific Setup
 
@@ -375,15 +430,15 @@ import { client } from "@/lib/snackbase";
 Listen to authentication state changes:
 
 ```typescript
-client.authManager.on("auth:login", (state) => {
+client.on("auth:login", (state) => {
   console.log("User logged in:", state.user);
 });
 
-client.authManager.on("auth:logout", () => {
+client.on("auth:logout", () => {
   console.log("User logged out");
 });
 
-client.authManager.on("auth:error", (error) => {
+client.on("auth:error", (error) => {
   console.error("Auth error:", error);
 });
 ```

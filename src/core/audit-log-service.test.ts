@@ -97,5 +97,32 @@ describe('AuditLogService', () => {
         },
       });
     });
+
+    it('should export audit logs in PDF format', async () => {
+      const filters: AuditLogFilters = {
+        table_name: 'users',
+        from_date: '2024-01-01T00:00:00Z',
+        to_date: '2024-12-31T23:59:59Z'
+      };
+
+      const mockPdfData = 'JVBERi0xLjQKJeLjz9MKM...'; // Base64 PDF data
+      mockHttpClient.get.mockResolvedValue({ data: mockPdfData });
+
+      const result = await service.export(filters, 'pdf');
+
+      expect(mockHttpClient.get).toHaveBeenCalledWith(
+        '/api/v1/audit-logs/export',
+        {
+          params: {
+            table_name: 'users',
+            from_date: '2024-01-01T00:00:00Z',
+            to_date: '2024-12-31T23:59:59Z',
+            format: 'pdf'
+          }
+        }
+      );
+      expect(typeof result).toBe('string');
+      expect(result).toBe(mockPdfData);
+    });
   });
 });

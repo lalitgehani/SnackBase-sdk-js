@@ -272,18 +272,18 @@ import { useSubscription } from "@snackbase/sdk/react";
 function LivePosts() {
   const [posts, setPosts] = useState<Post[]>([]);
 
-  useSubscription("posts", "create", (newPost) => {
-    setPosts((prev) => [...prev, newPost]);
+  useSubscription("posts", "create", (event) => {
+    setPosts((prev) => [...prev, event.record]);
   });
 
-  useSubscription("posts", "update", (updatedPost) => {
+  useSubscription("posts", "update", (event) => {
     setPosts((prev) =>
-      prev.map((p) => (p.id === updatedPost.id ? updatedPost : p)),
+      prev.map((p) => (p.id === event.record.id ? event.record : p)),
     );
   });
 
-  useSubscription("posts", "delete", (deletedPost) => {
-    setPosts((prev) => prev.filter((p) => p.id !== deletedPost.id));
+  useSubscription("posts", "delete", (event) => {
+    setPosts((prev) => prev.filter((p) => p.id !== event.record.id));
   });
 
   return (
@@ -296,6 +296,16 @@ function LivePosts() {
 }
 ```
 
+**Parameters:**
+
+```typescript
+function useSubscription(
+  collection: string,      // Collection name
+  event: string,           // Event type: 'create', 'update', 'delete', or '*'
+  callback: (data: any) => void  // Callback function
+): UseSubscriptionResult
+```
+
 **useSubscription Return Value:**
 
 ```typescript
@@ -304,6 +314,8 @@ interface UseSubscriptionResult {
   error: Error | null;
 }
 ```
+
+**Note:** The callback receives the event data directly, which includes the `record` property.
 
 ### useSnackBase
 
@@ -318,13 +330,36 @@ function CustomComponent() {
   const handleCustomAction = async () => {
     // Access any SDK method directly
     const users = await client.users.list();
-    const dashboard = await client.dashboard.getMetrics();
+    const dashboard = await client.dashboard.getStats();
 
     console.log("Users:", users);
     console.log("Dashboard:", dashboard);
   };
 
   return <button onClick={handleCustomAction}>Custom Action</button>;
+}
+```
+
+**Note:** For filtered subscriptions or advanced real-time features, use the `client.realtime` API directly:
+
+```tsx
+function FilteredPosts() {
+  const client = useSnackBase();
+
+  useEffect(() => {
+    // Subscribe with server-side filter
+    const unsubscribe = client.realtime.subscribe(
+      "posts",
+      { filter: 'status = "published"' },
+      (event) => {
+        console.log("Published post changed:", event.record);
+      }
+    );
+
+    return unsubscribe;
+  }, [client]);
+
+  return <div>...</div>;
 }
 ```
 
