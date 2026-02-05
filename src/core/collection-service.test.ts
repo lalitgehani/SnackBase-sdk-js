@@ -114,4 +114,138 @@ describe('CollectionService', () => {
       expect(result.success).toBe(true);
     });
   });
+
+  describe('export', () => {
+    it('should export all collections when no params provided', async () => {
+      const mockExportData = {
+        version: '1.0',
+        exported_at: new Date().toISOString(),
+        exported_by: 'admin@example.com',
+        collections: []
+      };
+
+      const getSpy = vi.spyOn(httpClient, 'get').mockResolvedValue({
+        data: mockExportData,
+        status: 200,
+        headers: new Headers(),
+        request: {} as any,
+      });
+
+      const result = await collectionService.export();
+
+      expect(getSpy).toHaveBeenCalledWith('/api/v1/collections/export', { params: {} });
+      expect(result).toEqual(mockExportData);
+    });
+
+    it('should export specific collections when collection_ids provided', async () => {
+      const collectionIds = ['id1', 'id2'];
+      const mockExportData = {
+        version: '1.0',
+        exported_at: new Date().toISOString(),
+        exported_by: 'admin@example.com',
+        collections: []
+      };
+
+      const getSpy = vi.spyOn(httpClient, 'get').mockResolvedValue({
+        data: mockExportData,
+        status: 200,
+        headers: new Headers(),
+        request: {} as any,
+      });
+
+      const result = await collectionService.export({ collection_ids: collectionIds });
+
+      expect(getSpy).toHaveBeenCalledWith('/api/v1/collections/export', { 
+        params: { collection_ids: 'id1,id2' } 
+      });
+      expect(result).toEqual(mockExportData);
+    });
+
+    it('should handle empty collection_ids array', async () => {
+      const getSpy = vi.spyOn(httpClient, 'get').mockResolvedValue({
+        data: { collections: [] },
+        status: 200,
+        headers: new Headers(),
+        request: {} as any,
+      });
+
+      await collectionService.export({ collection_ids: [] });
+
+      expect(getSpy).toHaveBeenCalledWith('/api/v1/collections/export', { params: {} });
+    });
+  });
+
+  describe('import', () => {
+    const mockImportData = {
+      version: '1.0',
+      exported_at: new Date().toISOString(),
+      exported_by: 'admin@example.com',
+      collections: []
+    };
+
+    const mockImportResult = {
+      success: true,
+      imported_count: 1,
+      skipped_count: 0,
+      updated_count: 0,
+      failed_count: 0,
+      collections: [],
+      migrations_created: ['rev1']
+    };
+
+    it('should import collections with error strategy', async () => {
+      const postSpy = vi.spyOn(httpClient, 'post').mockResolvedValue({
+        data: mockImportResult,
+        status: 200,
+        headers: new Headers(),
+        request: {} as any,
+      });
+
+      const request = { data: mockImportData, strategy: 'error' as const };
+      const result = await collectionService.import(request);
+
+      expect(postSpy).toHaveBeenCalledWith('/api/v1/collections/import', request);
+      expect(result).toEqual(mockImportResult);
+    });
+
+    it('should import collections with skip strategy', async () => {
+      vi.spyOn(httpClient, 'post').mockResolvedValue({
+        data: { ...mockImportResult, imported_count: 0, skipped_count: 1 },
+        status: 200,
+        headers: new Headers(),
+        request: {} as any,
+      });
+
+      const result = await collectionService.import({ data: mockImportData, strategy: 'skip' });
+
+      expect(result.skipped_count).toBe(1);
+    });
+
+    it('should import collections with update strategy', async () => {
+      vi.spyOn(httpClient, 'post').mockResolvedValue({
+        data: { ...mockImportResult, imported_count: 0, updated_count: 1 },
+        status: 200,
+        headers: new Headers(),
+        request: {} as any,
+      });
+
+      const result = await collectionService.import({ data: mockImportData, strategy: 'update' });
+
+      expect(result.updated_count).toBe(1);
+    });
+
+    it('should handle import failures', async () => {
+      vi.spyOn(httpClient, 'post').mockResolvedValue({
+        data: { ...mockImportResult, success: false, failed_count: 1 },
+        status: 200,
+        headers: new Headers(),
+        request: {} as any,
+      });
+
+      const result = await collectionService.import({ data: mockImportData });
+
+      expect(result.success).toBe(false);
+      expect(result.failed_count).toBe(1);
+    });
+  });
 });
