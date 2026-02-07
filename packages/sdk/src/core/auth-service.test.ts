@@ -91,7 +91,7 @@ describe('AuthService', () => {
 
       expect(postSpy).toHaveBeenCalledWith('/api/v1/auth/register', {
         ...data,
-        accountName: 'default-acc',
+        account_name: 'default-acc',
       });
     });
   });
@@ -109,7 +109,7 @@ describe('AuthService', () => {
 
       const result = await authService.refreshToken();
 
-      expect(postSpy).toHaveBeenCalledWith('/api/v1/auth/refresh', { refreshToken: 'old-refresh-token' });
+      expect(postSpy).toHaveBeenCalledWith('/api/v1/auth/refresh', { refresh_token: 'old-refresh-token' });
       expect(result.token).toBe('new-access-token');
       expect(authManager.token).toBe('new-access-token');
     });
