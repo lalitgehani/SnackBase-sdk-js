@@ -1,10 +1,11 @@
 import { Command } from 'commander';
 import prompts from 'prompts';
-import { red, green, blue, bold, cyan } from 'kolorist';
+import { red, green, blue, bold, cyan, yellow } from 'kolorist';
 import fs from 'fs-extra';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import validateProjectName from 'validate-npm-package-name';
+import { initGit, installDependencies, detectPkgManager } from './post-process';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -40,48 +41,65 @@ async function init() {
     .description('Scaffold a SnackBase-powered application')
     .argument('[project-name]', 'Project name')
     .option('-t, --template <template-name>', 'Template name')
+    .option('--git', 'Initialize git repository')
+    .option('--install', 'Install dependencies')
+    .option('--yes', 'Skip all prompts')
     .parse(process.argv);
 
+  const options = program.opts();
   let targetDir = program.args[0];
-  let template = program.opts().template;
+  let template = options.template;
+  const useGit = options.git;
+  const useInstall = options.install;
+  const skipPrompts = options.yes;
 
   const defaultProjectName = targetDir || 'snackbase-app';
 
-  let result: prompts.Answers<'projectName' | 'template'>;
+  if (skipPrompts) {
+    targetDir = targetDir || defaultProjectName;
+    template = template || templates[0].name;
+  }
 
-  try {
-    result = await prompts(
-      [
-        {
-          type: targetDir ? null : 'text',
-          name: 'projectName',
-          message: 'Project name:',
-          initial: defaultProjectName,
-          onState: (state) => {
-            targetDir = state.value.trim() || defaultProjectName;
+  let result: prompts.Answers<'projectName' | 'template'> = {
+    projectName: targetDir,
+    template: template,
+  };
+
+  if (!skipPrompts) {
+    try {
+      result = await prompts(
+        [
+          {
+            type: targetDir ? null : 'text',
+            name: 'projectName',
+            message: 'Project name:',
+            initial: defaultProjectName,
+            onState: (state) => {
+              targetDir = state.value.trim() || defaultProjectName;
+            },
           },
-        },
+          {
+            type: () =>
+              template && templates.some((t) => t.name === template) ? null : 'select',
+            name: 'template',
+            message: 'Select a template:',
+            initial: 0,
+            choices: templates.map((t) => ({
+              title: t.color(t.display),
+              value: t.name,
+            })),
+          },
+        ],
         {
-          type: () =>
-            template && templates.some((t) => t.name === template) ? null : 'select',
-          name: 'template',
-          message: 'Select a template:',
-          initial: 0,
-          choices: templates.map((t) => ({
-            title: t.color(t.display),
-            value: t.name,
-          })),
-        },
-      ],
-      {
-        onCancel: () => {
-          throw new Error(red('✖') + ' Operation cancelled');
-        },
-      }
-    );
-  } catch (cancelled: any) {
-    console.log(cancelled.message);
-    return;
+          onCancel: () => {
+            throw new Error(red('✖') + ' Operation cancelled');
+          },
+        }
+      );
+    } catch (cancelled: any) {
+      console.log(cancelled.message);
+      return;
+    }
   }
 
   const { projectName = targetDir, template: selectedTemplate = template } = result;
@@ -146,12 +164,41 @@ async function init() {
     await fs.writeFile(path.join(root, 'README.md'), `# ${projectName}\n\nCreated with \`create-snackbase-app\`.`);
   }
 
+  // Post-process actions
+  if (useGit) {
+    console.log(`\nInitializing git repository...`);
+    if (initGit(root)) {
+      console.log(green(`✓ Git repository initialized`));
+    } else {
+      console.log(yellow(`⚠ Failed to initialize git repository`));
+    }
+  }
+
+  if (useInstall) {
+    const pkgManager = detectPkgManager();
+    console.log(`\nInstalling dependencies with ${pkgManager}...`);
+    try {
+      await installDependencies(root, pkgManager);
+      console.log(green(`✓ Dependencies installed`));
+    } catch (e) {
+      console.log(red(`✖ Failed to install dependencies: ${e}`));
+    }
+  }
+
   console.log(`\n${green('Done.')} Now run:\n`);
   if (root !== process.cwd()) {
     console.log(`  cd ${path.relative(process.cwd(), root)}`);
   }
-  console.log('  npm install');
+  
+  if (!useInstall) {
+    console.log('  npm install');
+  }
   console.log('  npm run dev\n');
+  
+  console.log(`${cyan('Set up SnackBase:')}`);
+  console.log(`  Create a ${blue('.env')} file with:`);
+  console.log(`  ${bold('VITE_SNACKBASE_URL')}=https://your-snackbase-instance.com`);
+  console.log(`  ${bold('VITE_SNACKBASE_API_KEY')}=your-api-key\n`);
 }
 
 async function copyRecursive(src: string, dest: string, variables: Record<string, string>) {
