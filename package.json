@@ -3,12 +3,13 @@
   "private": true,
   "description": "Monorepo for SnackBase SDK and React integration",
   "scripts": {
-    "dev": "pnpm -r --parallel dev",
-    "build": "pnpm -r build",
+    "build": "pnpm -r --filter './packages/{sdk,react}' build",
+    "dev": "pnpm -r --parallel --filter './packages/{sdk,react}' dev",
     "test": "vitest",
+    "test:watch": "vitest --watch",
     "test:unit": "vitest run --project sdk --project react",
     "test:integration": "vitest run --project integration",
-    "typecheck": "pnpm -r typecheck",
+    "typecheck": "pnpm -r --filter './packages/**' typecheck",
     "lint": "eslint packages --ext .ts,.tsx",
     "clean": "pnpm -r clean && rm -rf node_modules"
   },
