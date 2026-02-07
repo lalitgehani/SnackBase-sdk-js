@@ -1,0 +1,11 @@
+{
+  "name": "@snackbase/examples",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Example documentation and samples for SnackBase",
+  "keywords": [
+    "snackbase",
+    "examples"
+  ],
+  "license": "MIT"
+}

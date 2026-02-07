@@ -39,6 +39,8 @@ importers:
         specifier: ^1.2.1
         version: 1.6.1(jsdom@27.4.0)
 
+  packages/examples: {}
+
   packages/react:
     dependencies:
       '@snackbase/sdk':
