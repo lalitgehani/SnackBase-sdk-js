@@ -1,11 +1,18 @@
----
-name: records
-description: Record CRUD operations, filtering, pagination, and bulk operations
-metadata:
-  tags: record, crud, filter, query, pagination, bulk
----
-
 The `records` service provides dynamic CRUD operations for any collection. Use generics for type safety.
+
+## Table of Contents
+
+- [Type-Safe Operations](#type-safe-operations)
+- [Create a Record](#create-a-record)
+- [Get a Record](#get-a-record)
+- [Update a Record](#update-a-record) (PATCH, PUT)
+- [Delete a Record](#delete-a-record)
+- [List Records](#list-records) (Pagination, Sorting, Field Selection)
+- [Filtering](#filtering) (Exact Match, Comparison, String, Logical Operators, Object Format)
+- [Bulk Operations](#bulk-operations) (Create, Update, Delete)
+- [Aggregation](#aggregation)
+- [Base Record Properties](#base-record-properties)
+- [Dynamic Collections](#dynamic-collections)
 
 ## Type-Safe Operations
 

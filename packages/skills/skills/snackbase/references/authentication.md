@@ -1,11 +1,15 @@
----
-name: authentication
-description: Authentication flows, OAuth, SAML, and session management in SnackBase SDK
-metadata:
-  tags: auth, authentication, oauth, saml, login, logout, session
----
-
 The SDK supports multiple authentication methods: email/password, OAuth, SAML, and API keys. Auth state is automatically managed and persisted to storage.
+
+## Table of Contents
+
+- [Email/Password Authentication](#emailpassword-authentication) (Login, Logout, Registration)
+- [OAuth Flow](#oauth-flow) (Redirect, Callback)
+- [SAML Flow](#saml-flow)
+- [Session Management](#session-management) (Get State, Check Expiry)
+- [Auth Events](#auth-events)
+- [Password Reset](#password-reset) (Request, Complete)
+- [Email Verification](#email-verification)
+- [Dual Authentication](#dual-authentication) (API Key + JWT)
 
 ## Email/Password Authentication
 

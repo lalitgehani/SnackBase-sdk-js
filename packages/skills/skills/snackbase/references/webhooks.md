@@ -1,11 +1,16 @@
----
-name: webhooks
-description: Webhook management, signature verification, and event handling
-metadata:
-  tags: webhook, event, notification, signature
----
-
 Webhooks allow your application to receive real-time notifications when events occur in SnackBase.
+
+## Table of Contents
+
+- [Create a Webhook](#create-a-webhook)
+- [Webhook Events](#webhook-events)
+- [List / Get / Update / Delete Webhooks](#list-webhooks)
+- [Secret Management](#get-webhook-secret) (Get, Rotate)
+- [Trigger a Test Webhook](#trigger-a-test-webhook)
+- [Handling Webhook Requests](#handling-webhook-requests) (Express.js, Next.js)
+- [Webhook Event Structure](#webhook-event-structure)
+- [Security Best Practices](#security-best-practices)
+- [Webhook Properties](#webhook-properties)
 
 ## Create a Webhook
 
@@ -95,73 +100,44 @@ console.log(result.response); // Response body from your endpoint
 
 ## Handling Webhook Requests
 
-### Express.js Example
+### Signature Verification Pattern
+
+Verify the `x-snackbase-signature` header using HMAC-SHA256:
 
 ```typescript
 import crypto from 'crypto';
-import express from 'express';
 
-const app = express();
-app.use(express.raw({ type: 'application/json' }));
+function verifyWebhookSignature(payload: string | Buffer, signature: string, secret: string): boolean {
+  const expected = crypto.createHmac('sha256', secret).update(payload).digest('hex');
+  return signature === expected;
+}
+```
 
-app.post('/webhooks/snackbase', (req, res) => {
+### Express.js
+
+```typescript
+app.post('/webhooks/snackbase', express.raw({ type: 'application/json' }), (req, res) => {
   const signature = req.headers['x-snackbase-signature'] as string;
-  const payload = req.body;
-
-  // Verify signature
-  const expectedSignature = crypto
-    .createHmac('sha256', WEBHOOK_SECRET)
-    .update(payload)
-    .digest('hex');
-
-  if (signature !== expectedSignature) {
+  if (!verifyWebhookSignature(req.body, signature, WEBHOOK_SECRET)) {
     return res.status(401).send('Invalid signature');
   }
-
-  // Parse event
-  const event = JSON.parse(payload.toString());
-
-  switch (event.type) {
-    case 'record.created':
-      console.log('Record created:', event.data);
-      break;
-    case 'record.updated':
-      console.log('Record updated:', event.data);
-      break;
-    case 'record.deleted':
-      console.log('Record deleted:', event.data);
-      break;
-  }
-
+  const event = JSON.parse(req.body.toString());
+  // Handle event.type and event.data
   res.status(200).send('OK');
 });
 ```
 
-### Next.js App Router Example
+### Next.js App Router
 
 ```typescript
-import { NextRequest } from 'next/server';
-import crypto from 'crypto';
-
 export async function POST(request: NextRequest) {
-  const signature = request.headers.get('x-snackbase-signature');
+  const signature = request.headers.get('x-snackbase-signature')!;
   const payload = await request.text();
-
-  // Verify signature
-  const expectedSignature = crypto
-    .createHmac('sha256', process.env.WEBHOOK_SECRET!)
-    .update(payload)
-    .digest('hex');
-
-  if (signature !== expectedSignature) {
+  if (!verifyWebhookSignature(payload, signature, process.env.WEBHOOK_SECRET!)) {
     return new Response('Invalid signature', { status: 401 });
   }
-
   const event = JSON.parse(payload);
-
-  // Handle event...
-  console.log('Received:', event.type, event.data);
-
+  // Handle event.type and event.data
   return new Response('OK', { status: 200 });
 }
 ```

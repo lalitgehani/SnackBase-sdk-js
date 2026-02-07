@@ -1,11 +1,15 @@
----
-name: collections
-description: Collection CRUD operations, schema management, and versioning
-metadata:
-  tags: collection, schema, crud, versioning
----
-
 Collections define the structure for storing records. Use the `collections` service for all schema operations.
+
+## Table of Contents
+
+- [Create a Collection](#create-a-collection)
+- [List Collections](#list-collections)
+- [Get a Collection](#get-a-collection)
+- [Update a Collection](#update-a-collection)
+- [Delete a Collection](#delete-a-collection)
+- [Export Collections](#export-collections)
+- [Import Collections](#import-collections)
+- [Collection Properties](#collection-properties) (interfaces, field types)
 
 ## Create a Collection
 

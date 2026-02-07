@@ -1,11 +1,12 @@
----
-name: testing
-description: Testing patterns, mocking, and Vitest setup for SnackBase SDK
-metadata:
-  tags: test, testing, mock, vitest, unit-test
----
-
 The SDK uses Vitest for testing. Services should be tested by mocking the `HttpClient`.
+
+## Table of Contents
+
+- [Test Setup](#test-setup) (Mock HttpClient Pattern)
+- [Testing Service Methods](#testing-service-methods) (List, Get, Create, Update, Delete)
+- [Testing Error Handling](#testing-error-handling)
+- [Testing Records with Generics](#testing-records-with-generics)
+- [Running Tests](#running-tests)
 
 ## Test Setup
 
@@ -182,95 +183,6 @@ describe('RecordService', () => {
       const result = await service.list<Task>('tasks');
 
       expect(result.items[0].title).toBe('Task 1');
-    });
-  });
-});
-```
-
-## Test File Template
-
-```typescript
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { FooService } from './foo-service';
-import type { Foo, FooCreate, FooUpdate } from '../types/foo';
-
-describe('FooService', () => {
-  const mockHttp = {
-    get: vi.fn(),
-    post: vi.fn(),
-    patch: vi.fn(),
-    delete: vi.fn()
-  };
-
-  let service: FooService;
-
-  beforeEach(() => {
-    vi.clearAllMocks();
-    service = new FooService(mockHttp as any);
-  });
-
-  describe('list', () => {
-    it('should return list of items', async () => {
-      const mockData = {
-        items: [{ id: '1', name: 'Foo 1' }],
-        total: 1,
-        skip: 0,
-        limit: 20
-      };
-      mockHttp.get.mockResolvedValue({ data: mockData });
-
-      const result = await service.list();
-
-      expect(mockHttp.get).toHaveBeenCalledWith('/api/v1/foos', { params: undefined });
-      expect(result).toEqual(mockData);
-    });
-  });
-
-  describe('get', () => {
-    it('should get item by ID', async () => {
-      const mockItem = { id: '1', name: 'Foo 1' };
-      mockHttp.get.mockResolvedValue({ data: mockItem });
-
-      const result = await service.get('1');
-
-      expect(mockHttp.get).toHaveBeenCalledWith('/api/v1/foos/1');
-      expect(result).toEqual(mockItem);
-    });
-  });
-
-  describe('create', () => {
-    it('should create a new item', async () => {
-      const createData: FooCreate = { name: 'New Foo' };
-      const mockItem: Foo = { id: '1', ...createData };
-      mockHttp.post.mockResolvedValue({ data: mockItem });
-
-      const result = await service.create(createData);
-
-      expect(mockHttp.post).toHaveBeenCalledWith('/api/v1/foos', createData);
-      expect(result).toEqual(mockItem);
-    });
-  });
-
-  describe('update', () => {
-    it('should update an item', async () => {
-      const updateData: FooUpdate = { name: 'Updated' };
-      const mockItem: Foo = { id: '1', name: 'Updated' };
-      mockHttp.patch.mockResolvedValue({ data: mockItem });
-
-      const result = await service.update('1', updateData);
-
-      expect(mockHttp.patch).toHaveBeenCalledWith('/api/v1/foos/1', updateData);
-      expect(result).toEqual(mockItem);
-    });
-  });
-
-  describe('delete', () => {
-    it('should delete an item', async () => {
-      mockHttp.delete.mockResolvedValue({ success: true });
-
-      await service.delete('1');
-
-      expect(mockHttp.delete).toHaveBeenCalledWith('/api/v1/foos/1');
     });
   });
 });

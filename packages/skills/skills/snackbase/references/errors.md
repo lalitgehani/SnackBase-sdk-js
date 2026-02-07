@@ -1,11 +1,16 @@
----
-name: errors
-description: Error handling, retry behavior, and specific error types in SnackBase SDK
-metadata:
-  tags: error, exception, retry, handling, 401, 403, 404
----
-
 All errors extend `SnackBaseError`. The HTTP layer automatically converts error responses to typed exceptions.
+
+## Table of Contents
+
+- [Error Hierarchy](#error-hierarchy)
+- [Handling Specific Errors](#handling-specific-errors)
+- [ValidationError Details](#validationerror-details)
+- [Retry Behavior](#retry-behavior) (table, manual pattern)
+- [Token Refresh](#token-refresh)
+- [Rate Limiting](#rate-limiting)
+- [Error Properties](#error-properties)
+- [Logging Errors](#logging-errors)
+- [Global Error Handler](#global-error-handler)
 
 ## Error Hierarchy
 

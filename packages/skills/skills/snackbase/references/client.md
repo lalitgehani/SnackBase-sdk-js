@@ -1,11 +1,12 @@
----
-name: client
-description: Client initialization, configuration, and setup for SnackBase SDK
-metadata:
-  tags: client, initialization, configuration, setup
----
-
 The `SnackBaseClient` is the main entry point for the SDK. It validates configuration, creates the HTTP client with interceptors, manages authentication state, and instantiates all services.
+
+## Table of Contents
+
+- [Basic Initialization](#basic-initialization)
+- [Configuration Options](#configuration-options) (Server-side, Client-side, React Native, Multi-tenant)
+- [Accessing Services](#accessing-services)
+- [Environment Best Practices](#environment-best-practices)
+- [Singleton Pattern](#singleton-pattern)
 
 ## Basic Initialization
 

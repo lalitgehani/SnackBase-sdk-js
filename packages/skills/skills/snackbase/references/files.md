@@ -1,11 +1,15 @@
----
-name: files
-description: File upload, download, and progress tracking in SnackBase SDK
-metadata:
-  tags: file, upload, download, progress, storage
----
-
 The `files` service handles file uploads and downloads with support for progress tracking.
+
+## Table of Contents
+
+- [Upload a File](#upload-a-file)
+- [Upload Options](#upload-options)
+- [Download a File](#download-a-file)
+- [File Record](#file-record) (interface)
+- [Complete Example: React Component](#complete-example-react-component)
+- [File Size Limits](#file-size-limits)
+- [Supported File Types](#supported-file-types)
+- [Linking Files to Records](#linking-files-to-records)
 
 ## Upload a File
 

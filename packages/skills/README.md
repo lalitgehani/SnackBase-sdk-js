@@ -8,27 +8,37 @@ This package contains specialized knowledge and best practices for working with 
 
 - **snackbase**: Comprehensive guide to using the SnackBase JavaScript/TypeScript SDK, including authentication, CRUD operations, and service-specific rules.
 
+## Installation
+
+### Option 1: npx (Recommended)
+
+Automatically install the skill to `.claude/skills/`:
+
+```bash
+npx @snackbase/skills
+```
+
+### Option 2: npm/pnpm install
+
+Install as a dev dependency (runs automatically on install):
+
+```bash
+pnpm add -D @snackbase/skills
+# or
+npm install -D @snackbase/skills
+```
+
+### Option 3: Manual
+
+Clone the repo and copy `skills/snackbase/` to `.claude/skills/snackbase/`.
+
 ## Usage with AI Agents
 
-### Claude Code
+Once installed, restart Claude Code to load the skill.
 
-To use these skills with Claude Code, add the path to the `skills/` directory in this package to your Claude Code configuration.
+### Other Agents (Windsurf, Cursor, etc.)
 
-1. Install the package:
-
-   ```bash
-   pnpm add -D @snackbase/skills
-   ```
-
-2. Add the skill path to your agent's environment or configuration:
-   ```bash
-   # Example: Adding to current session
-   export CLAUDE_SKILLS_PATH=$(pwd)/node_modules/@snackbase/skills/skills
-   ```
-
-### Other Agents (Windsurf, etc.)
-
-Check your agent's documentation for "Agent Skills" support and point it to the `skills/` directory within this package.
+Check your agent's documentation for "Agent Skills" support. Most agents look for skills in `.claude/skills/` automatically.
 
 ## Development
 

@@ -4,12 +4,18 @@
   "private": false,
   "description": "Claude AI skills for SnackBase",
   "license": "MIT",
+  "type": "module",
   "repository": {
     "type": "git",
     "url": "https://github.com/lalitgehani/SnackBase-js.git",
     "directory": "packages/skills"
   },
   "files": [
-    "skills"
-  ]
+    "skills",
+    "install.js"
+  ],
+  "bin": "./install.js",
+  "scripts": {
+    "postinstall": "node install.js"
+  }
 }

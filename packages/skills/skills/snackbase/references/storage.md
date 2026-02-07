@@ -1,11 +1,15 @@
----
-name: storage
-description: Storage configuration and platform-specific backends for auth state persistence
-metadata:
-  tags: storage, persistence, auth-state, localstorage, sessionstorage
----
-
 The SDK provides platform-agnostic storage abstraction for persisting authentication state.
+
+## Table of Contents
+
+- [Storage Backends](#storage-backends) (Memory, LocalStorage, SessionStorage, AsyncStorage)
+- [Platform Auto-Detection](#platform-auto-detection)
+- [Custom Storage Backend](#custom-storage-backend)
+- [Storage Interface](#storage-interface)
+- [Storage Keys](#storage-keys)
+- [Clearing Storage](#clearing-storage)
+- [Multi-Tab Synchronization](#multi-tab-synchronization)
+- [SSR Considerations](#ssr-considerations)
 
 ## Storage Backends
 
@@ -138,41 +142,6 @@ Manually clear stored auth state:
 ```typescript
 // Clear auth state only
 await client.auth.logout();
-```
-
-## Storage Best Practices
-
-### Web Applications
-
-```typescript
-import { LocalStorageBackend } from '@snackbase/sdk';
-
-const client = new SnackBaseClient({
-  apiKey: apiKey,
-  storageBackend: new LocalStorageBackend()
-});
-```
-
-### Server-Side Applications
-
-```typescript
-import { MemoryStorage } from '@snackbase/sdk';
-
-const client = new SnackBaseClient({
-  apiKey: apiKey,
-  storageBackend: new MemoryStorage()
-});
-```
-
-### React Native
-
-```typescript
-import { AsyncStorage } from '@react-native-async-storage/async-storage';
-
-const client = new SnackBaseClient({
-  apiKey: apiKey,
-  storageBackend: AsyncStorage
-});
 ```
 
 ## Multi-Tab Synchronization
