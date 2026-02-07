@@ -107,13 +107,20 @@ async function init() {
   const templateDir = path.resolve(__dirname, '../templates', selectedTemplate);
   
   if (fs.existsSync(templateDir)) {
-    // Get latest SDK version from packages/sdk/package.json if available, or fallback
+    // Get latest SDK and React version from packages if available, or fallback
     let sdkVersion = '0.2.0';
+    let reactPackageVersion = '0.2.0';
     try {
       const sdkPkgPath = path.resolve(__dirname, '../../../sdk/package.json');
       if (fs.existsSync(sdkPkgPath)) {
         const sdkPkg = await fs.readJSON(sdkPkgPath);
         sdkVersion = sdkPkg.version;
+      }
+      
+      const reactPkgPath = path.resolve(__dirname, '../../../react/package.json');
+      if (fs.existsSync(reactPkgPath)) {
+        const reactPkg = await fs.readJSON(reactPkgPath);
+        reactPackageVersion = reactPkg.version;
       }
     } catch (e) {
       // Ignore and use fallback
@@ -123,6 +130,7 @@ async function init() {
       PROJECT_NAME: projectName,
       PROJECT_DESCRIPTION: `SnackBase app created from ${selectedTemplate} template`,
       SDK_VERSION: sdkVersion,
+      REACT_VERSION: reactPackageVersion,
     };
 
     await copyRecursive(templateDir, root, variables);
