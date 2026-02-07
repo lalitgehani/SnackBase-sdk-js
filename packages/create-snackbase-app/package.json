@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "type": "module",
   "bin": {
-    "create-snackbase-app": "./dist/index.js"
+    "create-snackbase-app": "./dist/index.mjs"
   },
   "files": [
     "dist",

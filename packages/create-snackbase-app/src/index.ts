@@ -104,14 +104,30 @@ async function init() {
 
   await fs.ensureDir(root);
 
-  // For Phase 1, we just create a basic structure if templates aren't ready
-  // In Phase 2+, we will copy from templates/
   const templateDir = path.resolve(__dirname, '../templates', selectedTemplate);
   
   if (fs.existsSync(templateDir)) {
-    await fs.copy(templateDir, root);
+    // Get latest SDK version from packages/sdk/package.json if available, or fallback
+    let sdkVersion = '0.2.0';
+    try {
+      const sdkPkgPath = path.resolve(__dirname, '../../../sdk/package.json');
+      if (fs.existsSync(sdkPkgPath)) {
+        const sdkPkg = await fs.readJSON(sdkPkgPath);
+        sdkVersion = sdkPkg.version;
+      }
+    } catch (e) {
+      // Ignore and use fallback
+    }
+
+    const variables = {
+      PROJECT_NAME: projectName,
+      PROJECT_DESCRIPTION: `SnackBase app created from ${selectedTemplate} template`,
+      SDK_VERSION: sdkVersion,
+    };
+
+    await copyRecursive(templateDir, root, variables);
   } else {
-    // Basic placeholder for Phase 1
+    // Basic placeholder for Phase 1 (fallback)
     await fs.writeJSON(path.join(root, 'package.json'), {
       name: projectName,
       version: '0.0.0',
@@ -128,6 +144,29 @@ async function init() {
   }
   console.log('  npm install');
   console.log('  npm run dev\n');
+}
+
+async function copyRecursive(src: string, dest: string, variables: Record<string, string>) {
+  const stats = await fs.stat(src);
+  if (stats.isDirectory()) {
+    await fs.ensureDir(dest);
+    const files = await fs.readdir(src);
+    for (const file of files) {
+      if (file === 'node_modules' || file === 'dist' || file === '.git' || file === 'package-lock.json') continue;
+      await copyRecursive(path.join(src, file), path.join(dest, file), variables);
+    }
+  } else {
+    const filename = path.basename(src);
+    if (filename === 'package.json' || filename === 'README.md' || filename === '.env.example' || filename === 'index.html') {
+      let content = await fs.readFile(src, 'utf8');
+      for (const [key, value] of Object.entries(variables)) {
+        content = content.replace(new RegExp(`{${key}}`, 'g'), value);
+      }
+      await fs.writeFile(dest, content);
+    } else {
+      await fs.copy(src, dest);
+    }
+  }
 }
 
 init().catch((e) => {
