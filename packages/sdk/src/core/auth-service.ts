@@ -62,15 +62,28 @@ export class AuthService {
     const response = await this.http.post<AuthResponse>('/api/v1/auth/login', data);
     const authData = response.data;
     
+    console.log('Login Response:', JSON.stringify(authData, null, 2));
+
+    // Map snake_case to camelCase
+    const refreshToken = authData.refresh_token || authData.refreshToken;
+    let expiresAt = authData.expiresAt;
+    if (authData.expires_in && !expiresAt) {
+      expiresAt = new Date(Date.now() + authData.expires_in * 1000).toISOString();
+    }
+
     await this.auth.setState({
-      user: authData.user,
-      account: authData.account,
-      token: authData.token,
-      refreshToken: authData.refreshToken,
-      expiresAt: authData.expiresAt,
+      user: authData.user || null,
+      account: authData.account || null,
+      token: authData.token || null,
+      refreshToken: refreshToken || null,
+      expiresAt: expiresAt || null,
     });
 
-    return authData;
+    return {
+      ...authData,
+      refreshToken,
+      expiresAt,
+    };
   }
 
   /**
@@ -78,8 +91,8 @@ export class AuthService {
    */
   async register(data: RegisterData): Promise<AuthResponse> {
     const payload = { ...data };
-    if (!payload.accountName && this.defaultAccount) {
-      payload.accountName = this.defaultAccount;
+    if (!payload.account_name && this.defaultAccount) {
+      payload.account_name = this.defaultAccount;
     }
 
     const response = await this.http.post<AuthResponse>('/api/v1/auth/register', payload);
@@ -96,19 +109,28 @@ export class AuthService {
     }
 
     const response = await this.http.post<AuthResponse>('/api/v1/auth/refresh', {
-      refreshToken,
+      refresh_token: refreshToken,
     });
     const authData = response.data;
 
+    // Map snake_case to camelCase
+    const newRefreshToken = authData.refresh_token || authData.refreshToken;
+    let expiresAt = authData.expiresAt;
+    if (authData.expires_in && !expiresAt) {
+      expiresAt = new Date(Date.now() + authData.expires_in * 1000).toISOString();
+    }
+
     await this.auth.setState({
-      user: authData.user,
-      account: authData.account,
-      token: authData.token,
-      refreshToken: authData.refreshToken,
-      expiresAt: authData.expiresAt,
+      token: authData.token || null,
+      refreshToken: newRefreshToken || null,
+      expiresAt: expiresAt || null,
     });
 
-    return authData;
+    return {
+      ...authData,
+      refreshToken: newRefreshToken,
+      expiresAt,
+    };
   }
 
   /**
@@ -133,12 +155,36 @@ export class AuthService {
     const response = await this.http.get<AuthResponse>('/api/v1/auth/me');
     const authData = response.data;
     
+    console.log('GetMe Response:', JSON.stringify(authData, null, 2));
+
+    // Map properties from /me response if they are at root
+    const user: User | null = authData.user || (authData.user_id ? {
+      id: authData.user_id,
+      email: authData.email || '',
+      role: authData.role || 'user',
+      groups: [],
+      is_active: true,
+      created_at: '',
+      last_login: null
+    } as User : null);
+
+    const account: Account | null = authData.account || (authData.account_id ? {
+      id: authData.account_id,
+      slug: '',
+      name: '',
+      created_at: ''
+    } as Account : null);
+
     await this.auth.setState({
-      user: authData.user,
-      account: authData.account,
+      user,
+      account,
     });
 
-    return authData;
+    return {
+      ...authData,
+      user: user || undefined,
+      account: account || undefined
+    } as AuthResponse;
   }
 
   /**

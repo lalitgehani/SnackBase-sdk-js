@@ -10,7 +10,7 @@ export const TEST_CONFIG = {
   baseUrl: process.env.SNACKBASE_URL || 'http://localhost:8090',
   apiKey: process.env.SNACKBASE_API_KEY,
   testEmail: process.env.SNACKBASE_TEST_EMAIL || `test-${Date.now()}@example.com`,
-  testPassword: process.env.SNACKBASE_TEST_PASSWORD || 'testpassword123',
+  testPassword: process.env.SNACKBASE_TEST_PASSWORD || 'TestPass123!',
   timeout: 30000,
 };
 
@@ -40,6 +40,13 @@ export function createTestEmail() {
 }
 
 /**
+ * Create a unique test account name
+ */
+export function createTestAccountName() {
+  return `Account ${Date.now()}_${Math.random().toString(36).substring(7)}`;
+}
+
+/**
  * Create a unique test collection name
  */
 export function createTestCollectionName() {
@@ -58,6 +65,19 @@ export function trackUser(userId: string) {
  */
 export function trackCollection(collectionId: string) {
   testResources.collections.add(collectionId);
+}
+
+/**
+ * Manually verify a user's email (requires API key)
+ */
+export async function verifyUser(userId: string) {
+  if (TEST_CONFIG.apiKey) {
+    const adminClient = new SnackBaseClient({
+      baseUrl: TEST_CONFIG.baseUrl,
+      apiKey: TEST_CONFIG.apiKey,
+    });
+    await adminClient.users.verifyEmail(userId);
+  }
 }
 
 /**

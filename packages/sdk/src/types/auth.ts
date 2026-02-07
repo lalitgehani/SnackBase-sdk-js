@@ -30,16 +30,23 @@ export interface LoginCredentials {
 export interface RegisterData {
   email: string;
   password: string;
-  accountName?: string;
-  accountSlug?: string;
+  account_name?: string;
+  account_slug?: string;
 }
 
 export interface AuthResponse {
-  user: User;
-  account: Account;
+  user?: User;
+  account?: Account;
   token?: string;
+  refresh_token?: string;
   refreshToken?: string;
+  expires_in?: number;
   expiresAt?: string;
+  // Fields for /me response root
+  user_id?: string;
+  account_id?: string;
+  email?: string;
+  role?: string;
 }
 
 export interface PasswordResetRequest {

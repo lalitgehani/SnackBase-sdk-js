@@ -35,11 +35,21 @@ export interface Collection {
 export interface CollectionCreate {
   name: string;
   fields: FieldDefinition[];
+  list_rule?: string | null;
+  view_rule?: string | null;
+  create_rule?: string | null;
+  update_rule?: string | null;
+  delete_rule?: string | null;
 }
 
 export interface CollectionUpdate {
   name?: string;
   fields?: FieldDefinition[];
+  list_rule?: string | null;
+  view_rule?: string | null;
+  create_rule?: string | null;
+  update_rule?: string | null;
+  delete_rule?: string | null;
 }
 
 /**

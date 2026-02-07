@@ -38,9 +38,22 @@ export class RecordService {
           : params.expand;
       }
       if (params.filter) {
-        formattedParams.filter = typeof params.filter === 'string' 
+        const filterStr = typeof params.filter === 'string' 
           ? params.filter 
           : JSON.stringify(params.filter);
+
+        // Try to parse simple key=value or key='value' or key="value" patterns
+        // This is a temporary polyfill because the backend currently only supports direct field filtering
+        // e.g. "status='published'" -> ?status=published
+        const match = filterStr.match(/^\(?\s*(\w+)\s*=\s*(["']?)([^"'\)]+)\2\s*\)?$/);
+        if (match) {
+          const [, key, , value] = match;
+          formattedParams[key] = value;
+        } else {
+             // Fallback to sending the full filter string if it's complex, 
+            // though the backend might ignore it.
+            formattedParams.filter = filterStr;
+        }
       }
     }
 

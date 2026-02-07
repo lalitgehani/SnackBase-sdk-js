@@ -5,9 +5,9 @@
   "scripts": {
     "dev": "pnpm -r --parallel dev",
     "build": "pnpm -r build",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:integration": "vitest run --workspace vitest.workspace.ts --include 'packages/sdk/tests/integration/**/*.test.ts'",
+    "test": "vitest",
+    "test:unit": "vitest run --project sdk --project react",
+    "test:integration": "vitest run --project integration",
     "typecheck": "pnpm -r typecheck",
     "lint": "eslint packages --ext .ts,.tsx",
     "clean": "pnpm -r clean && rm -rf node_modules"

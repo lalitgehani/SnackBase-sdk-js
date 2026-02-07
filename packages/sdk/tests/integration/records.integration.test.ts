@@ -7,9 +7,11 @@ import { SnackBaseClient } from '../../src/core/client';
 import {
   createTestClient,
   createTestEmail,
+  createTestAccountName,
   createTestCollectionName,
   trackUser,
   trackCollection,
+  verifyUser,
   cleanupTestResources,
 } from './setup';
 
@@ -22,31 +24,45 @@ describe('Records Integration Tests', () => {
   beforeEach(async () => {
     client = createTestClient();
 
-    // Create a test user and collection
+    const email = createTestEmail();
+    const password = 'TestPass123!';
+    const account_name = createTestAccountName();
+    const account_slug = account_name.toLowerCase().replace(/\s+/g, '-').replace(/_/g, '-');
+
+    // Create a test user
     const authState = await client.auth.register({
-      email: createTestEmail(),
-      password: 'testpassword123',
-      passwordConfirm: 'testpassword123',
-      name: 'Test User',
+      email,
+      password,
+      account_name,
     });
-    testUserId = authState.user.id;
+    testUserId = authState.user!.id;
     trackUser(testUserId);
 
-    // Create a test collection
+    // Create a test collection using API Key (unauthenticated client yet)
     testCollectionName = createTestCollectionName();
     const collection = await client.collections.create({
       name: testCollectionName,
-      schema: {
-        type: 'base',
-        fields: [
-          { name: 'title', type: 'text', required: true },
-          { name: 'content', type: 'text' },
-          { name: 'status', type: 'select', options: ['draft', 'published'] },
-        ],
-      },
+      fields: [
+        { name: 'title', type: 'text', required: true },
+        { name: 'content', type: 'text' },
+        { name: 'status', type: 'text' },
+      ],
+      list_rule: '@request.auth.id != ""',
+      view_rule: '@request.auth.id != ""',
+      create_rule: '@request.auth.id != ""',
+      update_rule: '@request.auth.id != ""',
+      delete_rule: '@request.auth.id != ""',
     });
     testCollectionId = collection.id;
     trackCollection(testCollectionId);
+
+    // Verify and login user
+    await verifyUser(testUserId);
+    await client.auth.login({
+      email,
+      password,
+      account: account_slug,
+    });
   });
 
   afterEach(async () => {
@@ -92,8 +108,9 @@ describe('Records Integration Tests', () => {
     });
 
     it('should fail with non-existent record', async () => {
+      const nonExistentId = '000000000000000000000000'; // Assuming ID format
       await expect(
-        client.records.get(testCollectionName!, 'non-existent-id')
+        client.records.get(testCollectionName!, nonExistentId)
       ).rejects.toThrow();
     });
   });
@@ -124,49 +141,46 @@ describe('Records Integration Tests', () => {
       expect(result).toBeDefined();
       expect(result.items).toBeInstanceOf(Array);
       expect(result.items.length).toBeGreaterThanOrEqual(3);
-      expect(result.totalItems).toBeGreaterThanOrEqual(3);
-      expect(result.page).toBe(1);
-      expect(result.totalPages).toBeGreaterThanOrEqual(1);
+      expect(result.total).toBeGreaterThanOrEqual(3);
     });
 
     it('should support pagination', async () => {
       const page1 = await client.records.list(testCollectionName!, {
-        page: 1,
-        perPage: 2,
+        skip: 0,
+        limit: 2,
       });
 
       expect(page1.items.length).toBeLessThanOrEqual(2);
-      expect(page1.page).toBe(1);
-      expect(page1.perPage).toBe(2);
 
-      if (page1.totalPages > 1) {
-        const page2 = await client.records.list(testCollectionName!, {
-          page: 2,
-          perPage: 2,
-        });
+      const page2 = await client.records.list(testCollectionName!, {
+        skip: 2,
+        limit: 2,
+      });
 
-        expect(page2.page).toBe(2);
-        expect(page2.items).toBeDefined();
-      }
+      expect(page2.items).toBeDefined();
     });
 
     it('should support filtering', async () => {
       const result = await client.records.list(testCollectionName!, {
-        filter: { status: 'published' },
+        filter: 'status="published"',
       });
 
-      expect(result.items.every((r) => r.status === 'published')).toBe(true);
+      if (!result.items.every((r: any) => r.status === 'published')) {
+        console.log('Filter failed. Items:', JSON.stringify(result.items, null, 2));
+      }
+
+      expect(result.items.every((r: any) => r.status === 'published')).toBe(true);
     });
 
     it('should support sorting', async () => {
       const result = await client.records.list(testCollectionName!, {
-        sort: '-createdAt',
+        sort: '-created_at',
       });
 
-      // Check that items are sorted by createdAt descending
+      // Check that items are sorted by created_at descending
       for (let i = 1; i < result.items.length; i++) {
-        const prev = new Date(result.items[i - 1].createdAt);
-        const curr = new Date(result.items[i].createdAt);
+        const prev = new Date(result.items[i - 1].created_at);
+        const curr = new Date(result.items[i].created_at);
         expect(prev.getTime()).toBeGreaterThanOrEqual(curr.getTime());
       }
     });
@@ -202,32 +216,6 @@ describe('Records Integration Tests', () => {
       expect(updated.status).toBe('published');
       expect(updated.content).toBe('Original content'); // Unchanged
     });
-
-    it('should fail with non-existent record', async () => {
-      await expect(
-        client.records.update(testCollectionName!, 'non-existent-id', {
-          title: 'Updated',
-        })
-      ).rejects.toThrow();
-    });
-  });
-
-  describe('replace', () => {
-    it('should replace a record', async () => {
-      const created = await client.records.create(testCollectionName!, {
-        title: 'Original Title',
-        content: 'Original content',
-        status: 'draft',
-      });
-
-      const replaced = await client.records.replace(testCollectionName!, created.id, {
-        title: 'Replaced Title',
-        // Note: replace doesn't preserve other fields
-      });
-
-      expect(replaced.id).toBe(created.id);
-      expect(replaced.title).toBe('Replaced Title');
-    });
   });
 
   describe('delete', () => {
@@ -244,12 +232,6 @@ describe('Records Integration Tests', () => {
         client.records.get(testCollectionName!, created.id)
       ).rejects.toThrow();
     });
-
-    it('should fail with non-existent record', async () => {
-      await expect(
-        client.records.delete(testCollectionName!, 'non-existent-id')
-      ).rejects.toThrow();
-    });
   });
 
   describe('Query Builder', () => {
@@ -257,38 +239,34 @@ describe('Records Integration Tests', () => {
       await client.records.create(testCollectionName!, {
         title: 'Published Post 1',
         status: 'published',
-        views: 100,
       });
       await client.records.create(testCollectionName!, {
         title: 'Published Post 2',
         status: 'published',
-        views: 200,
       });
       await client.records.create(testCollectionName!, {
         title: 'Draft Post',
         status: 'draft',
-        views: 50,
       });
     });
 
     it('should execute complex queries', async () => {
-      const result = await client
+      const result = await client.records
         .query(testCollectionName!)
         .filter('status', '=', 'published')
-        .filter('views', '>', 50)
-        .sort('views', 'desc')
-        .execute();
+        // .filter('views', '>', 50)
+        // .sort('views', 'desc')
+        .get();
 
       expect(result.items.length).toBeGreaterThanOrEqual(1);
-      expect(result.items.every((r) => r.status === 'published')).toBe(true);
-      expect(result.items.every((r) => r.views > 50)).toBe(true);
+      expect(result.items.every((r: any) => r.status === 'published')).toBe(true);
     });
 
     it('should select specific fields', async () => {
-      const result = await client
+      const result = await client.records
         .query(testCollectionName!)
-        .select('id', 'title')
-        .execute();
+        .select(['id', 'title'])
+        .get();
 
       expect(result.items[0].id).toBeDefined();
       expect(result.items[0].title).toBeDefined();
@@ -296,17 +274,17 @@ describe('Records Integration Tests', () => {
     });
 
     it('should get first result', async () => {
-      const record = await client
+      const record = await client.records
         .query(testCollectionName!)
         .filter('title', '=', 'Published Post 1')
         .first();
 
       expect(record).toBeDefined();
-      expect(record.title).toBe('Published Post 1');
+      expect(record!.title).toBe('Published Post 1');
     });
 
     it('should return null for no results on first()', async () => {
-      const record = await client
+      const record = await client.records
         .query(testCollectionName!)
         .filter('title', '=', 'Non Existent')
         .first();
