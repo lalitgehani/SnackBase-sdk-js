@@ -52,9 +52,8 @@ pids
 *.sw?
 
 # Exclude all markdown files except README.md
-*.md
+/*.md
 !README.md
 !CLAUDE.md
 !CHANGELOG.md
-!docs/**/*.md
-!examples/**/*.md
+.claude

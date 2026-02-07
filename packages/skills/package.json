@@ -1,0 +1,15 @@
+{
+  "name": "@snackbase/skills",
+  "version": "0.0.0",
+  "private": false,
+  "description": "Claude AI skills for SnackBase",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/snackbase/SnackBase-js.git",
+    "directory": "packages/skills"
+  },
+  "files": [
+    "skills"
+  ]
+}
