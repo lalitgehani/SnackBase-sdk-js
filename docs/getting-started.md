@@ -135,10 +135,8 @@ const post = await client.records.get("posts", "record-id");
 
 // List records with filters
 const posts = await client.records.list("posts", {
-  filter: {
-    status: "published",
-  },
-  sort: "-createdAt",
+  filter: 'status="published"',
+  sort: "-created_at",
   expand: "author",
 });
 ```
@@ -158,6 +156,44 @@ const updated = await client.records.update("posts", "record-id", {
 await client.records.delete("posts", "record-id");
 ```
 
+### Collection Export/Import
+
+Export and import collections for backup or migration:
+
+```typescript
+// Export all collections (requires superadmin)
+const exportData = await client.collections.export();
+console.log(`Exported ${exportData.collections.length} collections`);
+console.log(`Exported by: ${exportData.exported_by} at ${exportData.exported_at}`);
+
+// Export specific collections
+const filteredExport = await client.collections.export({
+  collection_ids: ["col-123", "col-456"],
+});
+
+// Import collections (requires superadmin)
+const importResult = await client.collections.import({
+  data: exportData,
+  strategy: "error", // or "skip" or "update"
+});
+
+console.log(`Imported: ${importResult.imported_count}`);
+console.log(`Updated: ${importResult.updated_count}`);
+console.log(`Failed: ${importResult.failed_count}`);
+
+// Import with skip strategy (skip existing collections)
+const skipResult = await client.collections.import({
+  data: exportData,
+  strategy: "skip",
+});
+
+// Import with update strategy (update existing collections)
+const updateResult = await client.collections.import({
+  data: exportData,
+  strategy: "update",
+});
+```
+
 ### Query Builder
 
 For complex queries, use the fluent query builder:
@@ -169,13 +205,13 @@ const results = await client
   .expand("author", "tags")
   .filter("status", "=", "published")
   .filter("views", ">", 100)
-  .sort("createdAt", "desc")
-  .page(1)
-  .perPage(20)
+  .sort("created_at", "desc")
+  .skip(0)
+  .limit(20)
   .execute();
 
-console.log(`Found ${results.totalItems} posts`);
-console.log("Page", results.page, "of", results.totalPages);
+console.log(`Found ${results.total} posts`);
+console.log(`Showing ${results.items.length} of ${results.total}`);
 ```
 
 ### Real-Time Subscriptions
@@ -189,7 +225,7 @@ const unsubscribe = client.realtime.subscribe("posts", (event) => {
   console.log("Record:", event.record);
 });
 
-// Subscribe with a filter
+// Subscribe with a filter (uses SQL-style expression)
 const unsubscribeFiltered = client.realtime.subscribe(
   "posts",
   {
@@ -214,12 +250,12 @@ The SnackBase SDK provides 17+ services for different aspects of your applicatio
 | `auth`            | `client.auth`            | User authentication, registration, password management |
 | `users`           | `client.users`           | User account management                                |
 | `accounts`        | `client.accounts`        | Multi-account project management                       |
-| `collections`     | `client.collections`     | Collection and schema management                       |
+| `collections`     | `client.collections`     | Collection schema, export, and import                  |
 | `records`         | `client.records`         | CRUD operations on dynamic collections                 |
 | `realtime`        | `client.realtime`        | Real-time subscriptions and events                     |
 | `files`           | `client.files`           | File upload and download                               |
 | `apiKeys`         | `client.apiKeys`         | API key management for service-to-service auth         |
-| `auditLogs`       | `client.auditLogs`       | Audit log viewing and export                           |
+| `auditLogs`       | `client.auditLogs`       | Audit log viewing and export (JSON, CSV, PDF)          |
 | `admin`           | `client.admin`           | System administration and configuration                |
 | `collectionRules` | `client.collectionRules` | Collection-level access rules                          |
 | `dashboard`       | `client.dashboard`       | Dashboard statistics and metrics                       |
@@ -247,6 +283,15 @@ const invitation = await client.invitations.create({
   email: "newuser@example.com",
   role_id: "role-id",
 });
+
+// Export audit logs as JSON
+const jsonLogs = await client.auditLogs.export({ table_name: "users" }, "json");
+
+// Export audit logs as CSV
+const csvLogs = await client.auditLogs.export({ table_name: "users" }, "csv");
+
+// Export audit logs as PDF (returns base64-encoded PDF)
+const pdfLogs = await client.auditLogs.export({ table_name: "users" }, "pdf");
 ```
 
 For complete API documentation, see the [API Reference](./api-reference.md).
@@ -281,7 +326,7 @@ For complete API documentation, see the [API Reference](./api-reference.md).
 See the [React Integration Guide](./react-integration.md) for detailed information.
 
 ```tsx
-import { SnackBaseProvider } from "@snackbase/sdk/react";
+import { SnackBaseProvider } from "@snackbase/react";
 
 function App() {
   return (
@@ -391,9 +436,9 @@ interface Post {
   title: string;
   content: string;
   status: "draft" | "published";
-  authorId: string;
-  createdAt: string;
-  updatedAt: string;
+  author_id: string;
+  created_at: string;
+  updated_at: string;
 }
 
 // Use generics for type-safe operations
@@ -476,20 +521,21 @@ const published = allPosts.items.filter((p) => p.status === "published");
 Use pagination for large datasets:
 
 ```typescript
-let page = 1;
+let skip = 0;
+const limit = 50;
 let hasMore = true;
 
 while (hasMore) {
   const results = await client.records.list("posts", {
-    page,
-    perPage: 50,
+    skip,
+    limit,
   });
 
   // Process results
   processPage(results.items);
 
-  hasMore = page < results.totalPages;
-  page++;
+  hasMore = results.items.length === limit;
+  skip += limit;
 }
 ```
 

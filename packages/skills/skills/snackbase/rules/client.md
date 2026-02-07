@@ -10,9 +10,10 @@ The `SnackBaseClient` is the main entry point for the SDK. It validates configur
 ## Basic Initialization
 
 ```typescript
-import { SnackBaseClient } from 'snackbase-js';
+import { SnackBaseClient } from '@snackbase/sdk';
 
 const client = new SnackBaseClient({
+  baseUrl: 'https://your-project.snackbase.dev',
   apiKey: 'sk_test_xxx'
 });
 ```
@@ -24,9 +25,9 @@ const client = new SnackBaseClient({
 ```typescript
 const client = new SnackBaseClient({
   apiKey: process.env.SNACKBASE_API_KEY,
-  baseUrl: 'https://api.snackbase.app', // Optional, defaults to production
-  timeout: 30000, // Optional, request timeout in ms
-  storage: 'memory' // Optional, defaults to memory for non-browser
+  baseUrl: 'https://api.snackbase.app', // Required
+  timeout: 30000, // Optional, request timeout in ms (default: 30000)
+  storageBackend: new MemoryStorage() // Optional, defaults to memory for Node.js
 });
 ```
 
@@ -35,7 +36,7 @@ const client = new SnackBaseClient({
 ```typescript
 const client = new SnackBaseClient({
   baseUrl: 'https://your-project.snackbase.dev',
-  storage: 'localStorage' // or 'sessionStorage' or 'memory'
+  // storageBackend is auto-detected (localStorage)
 });
 
 // Authenticate with JWT for user-specific operations
@@ -45,11 +46,11 @@ await client.auth.login({ email, password });
 ### React Native
 
 ```typescript
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AsyncStorage } from '@react-native-async-storage/async-storage';
 
 const client = new SnackBaseClient({
   baseUrl: 'https://your-project.snackbase.dev',
-  storage: AsyncStorage
+  storageBackend: AsyncStorage
 });
 
 // Authenticate with JWT
@@ -101,9 +102,10 @@ For most applications, create a single client instance:
 
 ```typescript
 // lib/snackbase.ts
-import { SnackBaseClient } from 'snackbase-js';
+import { SnackBaseClient } from '@snackbase/sdk';
 
 export const client = new SnackBaseClient({
-  apiKey: process.env.SNACKBASE_API_KEY!
+  baseUrl: process.env.SNACKBASE_URL!,
+  apiKey: process.env.SNACKBASE_API_KEY
 });
 ```

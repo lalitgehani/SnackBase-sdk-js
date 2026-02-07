@@ -15,7 +15,7 @@ npm install @snackbase/sdk react
 Wrap your application with `SnackBaseProvider`:
 
 ```tsx
-import { SnackBaseProvider } from "@snackbase/sdk/react";
+import { SnackBaseProvider } from "@snackbase/react";
 import type { SnackBaseConfig } from "@snackbase/sdk";
 
 const config: SnackBaseConfig = {
@@ -37,7 +37,7 @@ function App() {
 For production apps, use environment variables:
 
 ```tsx
-import { SnackBaseProvider } from "@snackbase/sdk/react";
+import { SnackBaseProvider } from "@snackbase/react";
 
 const config = {
   baseUrl: process.env.NEXT_PUBLIC_SNACKBASE_URL || "http://localhost:8090",
@@ -60,7 +60,7 @@ function App() {
 Manages authentication state and methods.
 
 ```tsx
-import { useAuth } from "@snackbase/sdk/react";
+import { useAuth } from "@snackbase/react";
 
 function LoginForm() {
   const { login, logout, user, isAuthenticated, isLoading } = useAuth();
@@ -125,7 +125,7 @@ interface UseAuthResult {
 Fetches a list of records from a collection.
 
 ```tsx
-import { useQuery } from "@snackbase/sdk/react";
+import { useQuery } from "@snackbase/react";
 
 function PostList() {
   const { data, loading, error, refetch } = useQuery<Post>("posts", {
@@ -172,7 +172,7 @@ interface UseQueryResult<T> {
 Fetches a single record by ID.
 
 ```tsx
-import { useRecord } from "@snackbase/sdk/react";
+import { useRecord } from "@snackbase/react";
 
 function PostPage({ postId }: { postId: string }) {
   const {
@@ -215,7 +215,7 @@ interface UseRecordResult<T> {
 Performs CRUD operations on a collection.
 
 ```tsx
-import { useMutation } from "@snackbase/sdk/react";
+import { useMutation } from "@snackbase/react";
 
 function CreatePost() {
   const { create, loading, error } = useMutation<Post>("posts");
@@ -267,7 +267,7 @@ Subscribes to real-time updates on a collection.
 
 ```tsx
 import { useState } from "react";
-import { useSubscription } from "@snackbase/sdk/react";
+import { useSubscription } from "@snackbase/react";
 
 function LivePosts() {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -322,7 +322,7 @@ interface UseSubscriptionResult {
 Access the underlying SnackBase client instance.
 
 ```tsx
-import { useSnackBase } from "@snackbase/sdk/react";
+import { useSnackBase } from "@snackbase/react";
 
 function CustomComponent() {
   const client = useSnackBase();
@@ -372,7 +372,7 @@ import {
   useQuery,
   useMutation,
   useRecord,
-} from "@snackbase/sdk/react";
+} from "@snackbase/react";
 import { useState } from "react";
 
 // Types
@@ -381,8 +381,8 @@ interface Post {
   title: string;
   content: string;
   status: "draft" | "published";
-  createdAt: string;
-  updatedAt: string;
+  created_at: string;
+  updated_at: string;
 }
 
 // App Provider
@@ -529,7 +529,7 @@ Combining `useQuery` and `useSubscription` for live data:
 
 ```tsx
 import { useState, useEffect } from "react";
-import { useQuery, useSubscription } from "@snackbase/sdk/react";
+import { useQuery, useSubscription } from "@snackbase/react";
 
 function LivePostList() {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -582,7 +582,7 @@ function LivePostList() {
 // app/providers.tsx
 "use client";
 
-import { SnackBaseProvider } from "@snackbase/sdk/react";
+import { SnackBaseProvider } from "@snackbase/react";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -612,7 +612,7 @@ export default function RootLayout({
 // app/page.tsx
 ("use client");
 
-import { useQuery } from "@snackbase/sdk/react";
+import { useQuery } from "@snackbase/react";
 
 export default function Page() {
   const { data, loading } = useQuery<Post>("posts");
@@ -668,14 +668,14 @@ export interface Post {
   title: string;
   content: string;
   status: "draft" | "published";
-  authorId: string;
+  author_id: string;
   tags: string[];
-  createdAt: string;
-  updatedAt: string;
+  created_at: string;
+  updated_at: string;
 }
 
 // Component.tsx
-import { useQuery, useMutation } from "@snackbase/sdk/react";
+import { useQuery, useMutation } from "@snackbase/react";
 import { Post } from "./types";
 
 function PostComponent() {
@@ -700,7 +700,7 @@ function PostComponent() {
 ## Error Handling
 
 ```tsx
-import { useQuery, useMutation } from "@snackbase/sdk/react";
+import { useQuery, useMutation } from "@snackbase/react";
 import { ValidationError, AuthenticationError } from "@snackbase/sdk";
 
 function PostList() {
@@ -733,7 +733,7 @@ function PostList() {
 
 ```tsx
 import { useCallback } from "react";
-import { useSubscription } from "@snackbase/sdk/react";
+import { useSubscription } from "@snackbase/react";
 
 function PostList() {
   const [posts, setPosts] = useState<Post[]>([]);

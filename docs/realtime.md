@@ -195,7 +195,7 @@ const client = new SnackBaseClient({
 ### Using `useSubscription` Hook
 
 ```tsx
-import { useSubscription, useSnackBase } from "@snackbase/sdk/react";
+import { useSubscription, useSnackBase } from "@snackbase/react";
 
 function PostList() {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -230,7 +230,7 @@ function PostList() {
 ### Filtered Subscriptions in React
 
 ```tsx
-import { useSubscription } from "@snackbase/sdk/react";
+import { useSubscription } from "@snackbase/react";
 
 function PublishedPosts() {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -267,7 +267,7 @@ function PublishedPosts() {
 ### Query-Based Subscriptions in React
 
 ```tsx
-import { useSnackBase, useSubscription } from "@snackbase/sdk/react";
+import { useSnackBase, useSubscription } from "@snackbase/react";
 import { useEffect, useState } from "react";
 
 function TrendingPosts() {
@@ -432,7 +432,7 @@ client.realtime.subscribe("posts", handler);
 
 ```tsx
 import { useState, useEffect } from "react";
-import { useSnackBase, useSubscription } from "@snackbase/sdk/react";
+import { useSnackBase, useSubscription } from "@snackbase/react";
 
 function DocumentEditor({ documentId }: { documentId: string }) {
   const { client } = useSnackBase();
@@ -482,7 +482,7 @@ function DocumentEditor({ documentId }: { documentId: string }) {
 
 ```tsx
 import { useState, useEffect } from "react";
-import { useSubscription } from "@snackbase/sdk/react";
+import { useSubscription } from "@snackbase/react";
 
 function LiveDashboard() {
   const [metrics, setMetrics] = useState({

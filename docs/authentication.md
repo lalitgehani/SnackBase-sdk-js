@@ -127,7 +127,7 @@ const authState = await client.auth.authenticateWithOAuth({
 
 ```tsx
 import { useEffect } from "react";
-import { useAuth } from "@snackbase/sdk/react";
+import { useAuth } from "@snackbase/react";
 
 function OAuthCallback() {
   const { client } = useAuth();
@@ -499,7 +499,7 @@ async function initializeApp() {
 For React applications, use the provided hooks:
 
 ```tsx
-import { useAuth } from "@snackbase/sdk/react";
+import { useAuth } from "@snackbase/react";
 
 function LoginPage() {
   const { login, loading, error } = useAuth();

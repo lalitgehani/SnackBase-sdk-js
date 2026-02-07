@@ -12,10 +12,12 @@ The SDK provides platform-agnostic storage abstraction for persisting authentica
 ### MemoryStorage (Default for Node.js)
 
 ```typescript
+import { MemoryStorage } from '@snackbase/sdk';
+
 const client = new SnackBaseClient({
   baseUrl: 'https://api.snackbase.app',
   apiKey: process.env.SNACKBASE_API_KEY, // Server-side only
-  storage: 'memory'
+  storageBackend: new MemoryStorage()
 });
 
 // Auth state is lost when process exits
@@ -24,9 +26,11 @@ const client = new SnackBaseClient({
 ### LocalStorage (Default for Web)
 
 ```typescript
+import { LocalStorageBackend } from '@snackbase/sdk';
+
 const client = new SnackBaseClient({
   baseUrl: 'https://your-project.snackbase.dev',
-  storage: 'localStorage'
+  storageBackend: new LocalStorageBackend()
 });
 
 // Auth state persists across browser sessions
@@ -37,9 +41,11 @@ await client.auth.login({ email, password });
 ### SessionStorage (Web)
 
 ```typescript
+import { SessionStorageBackend } from '@snackbase/sdk';
+
 const client = new SnackBaseClient({
   baseUrl: 'https://your-project.snackbase.dev',
-  storage: 'sessionStorage'
+  storageBackend: new SessionStorageBackend()
 });
 
 // Auth state is cleared when tab is closed
@@ -50,11 +56,11 @@ await client.auth.login({ email, password });
 ### AsyncStorage (React Native)
 
 ```typescript
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AsyncStorage } from '@react-native-async-storage/async-storage';
 
 const client = new SnackBaseClient({
   baseUrl: 'https://your-project.snackbase.dev',
-  storage: AsyncStorage
+  storageBackend: AsyncStorage
 });
 
 // Persistent storage in React Native apps
@@ -82,7 +88,9 @@ const client = new SnackBaseClient({
 Implement the storage interface for custom backends:
 
 ```typescript
-const customStorage: StorageBackend = {
+import type { Storage } from '@snackbase/sdk';
+
+const customStorage: Storage = {
   async getItem(key: string): Promise<string | null> {
     // Your implementation
     return await redis.get(key);
@@ -101,8 +109,18 @@ const customStorage: StorageBackend = {
 
 const client = new SnackBaseClient({
   baseUrl: 'https://api.snackbase.app',
-  storage: customStorage
+  storageBackend: customStorage
 });
+```
+
+## Storage Interface
+
+```typescript
+interface Storage {
+  getItem(key: string): Promise<string | null>;
+  setItem(key: string, value: string): Promise<void>;
+  removeItem(key: string): Promise<void>;
+}
 ```
 
 ## Storage Keys
@@ -112,7 +130,6 @@ The SDK uses these storage keys:
 | Key | Content |
 |-----|---------|
 | `snackbase_auth` | Auth state (JSON string) |
-| `snackbase_refresh` | Refresh token (if separate) |
 
 ## Clearing Storage
 
@@ -121,9 +138,6 @@ Manually clear stored auth state:
 ```typescript
 // Clear auth state only
 await client.auth.logout();
-
-// Clear all storage (if using custom storage)
-await storage.clear();
 ```
 
 ## Storage Best Practices
@@ -131,41 +145,33 @@ await storage.clear();
 ### Web Applications
 
 ```typescript
-// Use localStorage for persistent sessions
+import { LocalStorageBackend } from '@snackbase/sdk';
+
 const client = new SnackBaseClient({
   apiKey: apiKey,
-  storage: 'localStorage'
-});
-```
-
-### Public Kiosks/Terminals
-
-```typescript
-// Use sessionStorage for temporary sessions
-const client = new SnackBaseClient({
-  apiKey: apiKey,
-  storage: 'sessionStorage'
+  storageBackend: new LocalStorageBackend()
 });
 ```
 
 ### Server-Side Applications
 
 ```typescript
-// Use memory storage (default for Node.js)
+import { MemoryStorage } from '@snackbase/sdk';
+
 const client = new SnackBaseClient({
-  apiKey: apiKey
-  // storage: 'memory' // Explicit but optional
+  apiKey: apiKey,
+  storageBackend: new MemoryStorage()
 });
 ```
 
 ### React Native
 
 ```typescript
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AsyncStorage } from '@react-native-async-storage/async-storage';
 
 const client = new SnackBaseClient({
   apiKey: apiKey,
-  storage: AsyncStorage
+  storageBackend: AsyncStorage
 });
 ```
 
@@ -178,10 +184,10 @@ window.addEventListener('storage', (e) => {
   if (e.key === 'snackbase_auth') {
     const newState = JSON.parse(e.newValue || 'null');
 
-    if (newState && !client.auth.getState()?.isAuthenticated) {
+    if (newState && !client.isAuthenticated) {
       // User logged in from another tab
       window.location.reload();
-    } else if (!newState && client.auth.getState()?.isAuthenticated) {
+    } else if (!newState && client.isAuthenticated) {
       // User logged out from another tab
       window.location.href = '/login';
     }
@@ -195,30 +201,22 @@ When using the SDK with server-side rendering:
 
 ```typescript
 // Server-side (Node.js)
-import { SnackBaseClient } from 'snackbase-js';
+import { SnackBaseClient, MemoryStorage } from '@snackbase/sdk';
 
 const serverClient = new SnackBaseClient({
   baseUrl: process.env.SNACKBASE_URL!,
   apiKey: process.env.SNACKBASE_API_KEY,
-  storage: 'memory' // Explicitly use memory on server
+  storageBackend: new MemoryStorage()
 });
 
 // Client-side (Browser)
+import { SnackBaseClient, LocalStorageBackend } from '@snackbase/sdk';
+
 const browserClient = new SnackBaseClient({
   baseUrl: process.env.NEXT_PUBLIC_SNACKBASE_URL!,
-  storage: 'localStorage'
+  storageBackend: new LocalStorageBackend()
 });
 
 // Authenticate browser client with JWT
 await browserClient.auth.login({ email, password });
-```
-
-## Storage Interface
-
-```typescript
-interface StorageBackend {
-  getItem(key: string): Promise<string | null>;
-  setItem(key: string, value: string): Promise<void>;
-  removeItem(key: string): Promise<void>;
-}
 ```

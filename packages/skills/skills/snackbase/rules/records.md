@@ -17,8 +17,10 @@ interface Task {
   title: string;
   status: 'todo' | 'in-progress' | 'done';
   priority: number;
-  dueDate?: string;
-  assigneeId?: string;
+  due_date?: string;
+  assignee_id?: string;
+  created_at: string;
+  updated_at: string;
 }
 ```
 
@@ -101,58 +103,51 @@ console.log(result.limit);   // Max records returned
 
 ## Filtering
 
+The SDK supports SQL-style filter expressions:
+
 ### Exact Match
 
 ```typescript
-filter: { status: 'todo' }
+filter: 'status="todo"'
 ```
 
 ### Comparison Operators
 
 ```typescript
-filter: {
-  priority: { gt: 3 },        // Greater than
-  priority: { gte: 4 },       // Greater than or equal
-  priority: { lt: 3 },        // Less than
-  priority: { lte: 2 },       // Less than or equal
-  createdAt: { lte: '2025-01-01' }
-}
+filter: 'priority > 3'
+filter: 'priority >= 4'
+filter: 'priority < 3'
+filter: 'created_at <= "2025-01-01"'
 ```
 
 ### String Operators
 
 ```typescript
-filter: {
-  name: { startsWith: 'John' },
-  email: { contains: '@company.com' },
-  title: { endsWith: 'bug' }
-}
-```
-
-### Array Operations
-
-```typescript
-filter: {
-  tags: { contains: 'urgent' } // Check if array contains value
-}
+filter: 'name LIKE "John%"'    // Starts with
+filter: 'email LIKE "%@company.com"'  // Contains
+filter: 'title LIKE "%bug"'    // Ends with
 ```
 
 ### Logical Operators
 
 ```typescript
-// OR
-filter: {
-  OR: [
-    { status: 'urgent' },
-    { priority: { gte: 4 } }
-  ]
-}
+// AND (implicit)
+filter: 'status="todo" AND priority > 3'
 
-// AND (implicit in object)
-filter: {
-  status: 'todo',
-  priority: { gte: 3 }
-}
+// OR
+filter: '(status="urgent" OR priority >= 4)'
+
+// NOT
+filter: 'NOT status="archived"'
+```
+
+### Using Object Format (Auto-Converted)
+
+For simple exact matches, you can pass an object:
+
+```typescript
+filter: { status: 'todo' }
+// Auto-converted to: 'status="todo"'
 ```
 
 ## Bulk Operations
@@ -217,11 +212,10 @@ All records have these base properties:
 ```typescript
 interface BaseRecord {
   id: string;           // Unique ID
-  accountId: string;    // Tenant ID
-  createdBy: string;    // User ID who created
-  updatedBy: string;    // User ID who last updated
-  createdAt: string;    // ISO timestamp
-  updatedAt: string;    // ISO timestamp
+  collection_id: string; // Collection ID
+  collection_name: string; // Collection name
+  created_at: string;    // ISO timestamp
+  updated_at: string;    // ISO timestamp
 }
 ```
 

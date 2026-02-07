@@ -36,7 +36,7 @@ await client.auth.logout();
 const result = await client.auth.register({
   email: 'newuser@example.com',
   password: 'SecurePassword123!',
-  accountName: 'My Account'
+  account_name: 'My Account'
 });
 ```
 
@@ -156,19 +156,23 @@ client.auth.on('auth:login', handleLogin);
 ### Request Reset
 
 ```typescript
-await client.auth.requestPasswordReset('user@example.com');
+await client.auth.forgotPassword({ email: 'user@example.com' });
 ```
 
 ### Complete Reset
 
 ```typescript
-await client.auth.resetPassword('reset_token_from_email', 'NewPassword123!');
+await client.auth.resetPassword({
+  token: 'reset_token_from_email',
+  newPassword: 'NewPassword123!',
+  newPasswordConfirm: 'NewPassword123!'
+});
 ```
 
 ## Email Verification
 
 ```typescript
-await client.auth.verifyEmail('user@example.com', 'verification_token');
+await client.auth.verifyEmail('verification_token');
 ```
 
 ## Dual Authentication

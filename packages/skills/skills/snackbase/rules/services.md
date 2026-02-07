@@ -41,24 +41,21 @@ export class ExampleService {
 **Constructor**: Receives http, authManager, apiKey, and defaultAccount
 
 ```typescript
-async login(email: string, password: string): Promise<AuthResult>
-async logout(): Promise<void>
-async register(data: RegisterRequest): Promise<AuthResult>
-async verifyEmail(email: string, token: string): Promise<void>
-async requestPasswordReset(email: string): Promise<void>
-async resetPassword(token: string, newPassword: string): Promise<void>
+async login(credentials: LoginCredentials): Promise<AuthResponse>
+async logout(): Promise<{ success: boolean }>
+async register(data: RegisterData): Promise<AuthResponse>
+async verifyEmail(token: string): Promise<void>
+async forgotPassword(data: PasswordResetRequest): Promise<void>
+async resetPassword(data: PasswordResetConfirm): Promise<void>
+async refreshToken(): Promise<AuthResponse>
+async getCurrentUser(): Promise<AuthResponse>
 
 // OAuth
-oauthAuthorize(config: OAuthConfig): string
-oauthExchange(provider: string, data: OAuthExchangeRequest): Promise<AuthResult>
+async authenticateWithOAuth(data: OAuthData): Promise<AuthResponse>
 
 // SAML
-samlAuthorize(config: SAMLConfig): string
-
-// Session
-getState(): AuthState | null
-on(event: AuthEvent, callback: (state: AuthState) => void): void
-off(event: AuthEvent, callback: (state: AuthState) => void): void
+async getSAMLUrl(provider: SAMLProvider, account: string, relayState?: string): Promise<SAMLUrlResponse>
+async handleSAMLCallback(params: SAMLCallbackParams): Promise<AuthResponse>
 ```
 
 ## UserService
@@ -69,9 +66,18 @@ async get(userId: string): Promise<User>
 async create(data: UserCreate): Promise<User>
 async update(userId: string, data: UserUpdate): Promise<User>
 async delete(userId: string): Promise<void>
-async me(): Promise<User>
-async updateMe(data: UserUpdateMe): Promise<User>
-async changePassword(data: ChangePasswordRequest): Promise<void>
+```
+
+**Note**: `getCurrentUser()` is available on the main client or via AuthService.
+
+**List Response Format**:
+```typescript
+interface UserListResponse {
+  items: User[];
+  total: number;
+  skip: number;
+  limit: number;
+}
 ```
 
 ## AccountService
@@ -81,20 +87,41 @@ async list(params?: AccountListParams): Promise<AccountListResponse>
 async get(accountId: string): Promise<Account>
 async create(data: AccountCreate): Promise<Account>
 async update(accountId: string, data: AccountUpdate): Promise<Account>
-async delete(accountId: string): Promise<void>
-async switchAccount(accountId: string): Promise<AuthState>
+async delete(accountId: string): Promise<{ success: boolean }>
+async getUsers(accountId: string, params?: AccountUserListParams): Promise<UserListResponse>
+```
+
+**List Response Format**:
+```typescript
+interface AccountListResponse {
+  items: Account[];
+  total: number;
+  skip: number;
+  limit: number;
+}
 ```
 
 ## CollectionService
 
 ```typescript
-async list(params?: CollectionListParams): Promise<CollectionListResponse>
-async get(collectionIdOrSlug: string): Promise<Collection>
+async list(): Promise<Collection[]>
+async listNames(): Promise<string[]>  // Get collection names only
+async get(collectionIdOrName: string): Promise<Collection>
 async create(data: CollectionCreate): Promise<Collection>
-async update(collectionIdOrSlug: string, data: CollectionUpdate): Promise<Collection>
-async delete(collectionIdOrSlug: string): Promise<void>
-async export(collectionIdOrSlug: string): Promise<CollectionExport>
-async import(data: CollectionImport): Promise<CollectionImportResult>
+async update(collectionId: string, data: CollectionUpdate): Promise<Collection>
+async delete(collectionId: string): Promise<{ success: boolean }>
+async export(params?: CollectionExportParams): Promise<CollectionExportData>
+async import(request: CollectionImportRequest): Promise<CollectionImportResult>
+```
+
+**Export Format**:
+```typescript
+interface CollectionExportData {
+  version: string;
+  exported_at: string;
+  exported_by: string;
+  collections: CollectionExportItem[];
+}
 ```
 
 ## RecordService
@@ -111,7 +138,8 @@ async list<T = any>(
 // Get single record
 async get<T = any>(
   collection: string,
-  recordId: string
+  recordId: string,
+  options?: { fields?: string[]; expand?: string[] }
 ): Promise<T & BaseRecord>
 
 // Create record
@@ -120,48 +148,45 @@ async create<T = any>(
   data: T
 ): Promise<T & BaseRecord>
 
-// Update record (partial)
+// Update record (partial, uses PATCH)
 async update<T = any>(
   collection: string,
   recordId: string,
   data: Partial<T>
 ): Promise<T & BaseRecord>
 
-// Replace record (full)
-async replace<T = any>(
-  collection: string,
-  recordId: string,
-  data: T
-): Promise<T & BaseRecord>
-
 // Delete record
 async delete(
   collection: string,
   recordId: string
-): Promise<boolean>
-
-// Bulk operations
-async bulkCreate<T = any>(
-  collection: string,
-  items: T[]
-): Promise<(T & BaseRecord)[]>
-
-async bulkUpdate<T = any>(
-  collection: string,
-  updates: Array<{ id: string; changes: Partial<T> }>
-): Promise<(T & BaseRecord)[]>
-
-async bulkDelete(
-  collection: string,
-  recordIds: string[]
-): Promise<{ deleted: string[]; failed: string[] }>
-
-// Aggregation
-async aggregate<T = any>(
-  collection: string,
-  query: AggregationQuery
-): Promise<AggregationResult<T>>
+): Promise<void>
 ```
+
+**List Response Format**:
+```typescript
+interface RecordListResponse<T> {
+  items: (T & BaseRecord)[];
+  total: number;
+  skip: number;
+  limit: number;
+}
+```
+
+**List Parameters**:
+```typescript
+interface RecordListParams {
+  skip?: number;
+  limit?: number;
+  sort?: string;
+  filter?: string | Record<string, any>;
+  fields?: string[];
+  expand?: string[];
+}
+```
+
+**Filter Format**:
+- SQL-style expression: `'status="published" AND priority > 3'`
+- Or object (auto-converted): `{ status: 'published' }`
 
 ## FileService
 
@@ -195,10 +220,22 @@ async rotateSecret(webhookId: string): Promise<{ secret: string }>
 ## AuditLogService
 
 ```typescript
-async list(params?: AuditLogListParams): Promise<AuditLogListResponse>
-async get(logId: string): Promise<AuditLogEntry>
-async export(params: AuditLogExportRequest): Promise<AuditLogExport>
-async getExport(exportId: string): Promise<AuditLogExport>
+async list(params?: AuditLogFilters): Promise<AuditLogListResponse>
+async get(logId: string): Promise<AuditLog>
+async export(params?: AuditLogFilters, format?: AuditLogExportFormat): Promise<string>
+```
+
+**Export Formats**: `'json'` (default), `'csv'`, `'pdf'`
+
+**List Response Format**:
+```typescript
+interface AuditLogListResponse {
+  items: AuditLog[];
+  total: number;
+  skip: number;
+  limit: number;
+  audit_logging_enabled: boolean;
+}
 ```
 
 ## PermissionService

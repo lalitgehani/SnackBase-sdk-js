@@ -393,10 +393,9 @@ interface UserListParams {
 ```typescript
 interface UserListResponse {
   items: User[];
-  totalItems: number;
-  page: number;
-  perPage: number;
-  totalPages: number;
+  total: number;
+  skip: number;
+  limit: number;
 }
 ```
 
@@ -519,8 +518,6 @@ List records from a collection.
 
 ```typescript
 interface RecordListParams {
-  page?: number;
-  perPage?: number;
   skip?: number;
   limit?: number;
   sort?: string;
@@ -730,10 +727,9 @@ interface AccountListParams {
 ```typescript
 interface AccountListResponse {
   items: Account[];
-  totalItems: number;
-  page: number;
-  perPage: number;
-  totalPages: number;
+  total: number;
+  skip: number;
+  limit: number;
 }
 ```
 
@@ -848,7 +844,6 @@ interface AuditLogFilters {
   operation?: string;
   from_date?: string;
   to_date?: string;
-  page?: number;
   skip?: number;
   limit?: number;
   sort?: string;
@@ -861,7 +856,7 @@ interface AuditLogFilters {
 interface AuditLogListResponse {
   items: AuditLog[];
   total: number;
-  page: number;
+  skip: number;
   limit: number;
   audit_logging_enabled: boolean;
 }
@@ -1478,22 +1473,6 @@ sort(field: string, direction?: SortDirection): QueryBuilder
 
 Sort results. Direction: `'asc'` or `'desc'` (default).
 
-#### `page(page)`
-
-```typescript
-page(page: number): QueryBuilder
-```
-
-Set the page number (1-indexed).
-
-#### `perPage(perPage)`
-
-```typescript
-perPage(perPage: number): QueryBuilder
-```
-
-Set the number of items per page.
-
 #### `skip(count)`
 
 ```typescript
@@ -1535,9 +1514,9 @@ const results = await client
   .expand("author", "comments")
   .filter("status", "=", "published")
   .filter("views", ">", 100)
-  .sort("createdAt", "desc")
-  .page(1)
-  .perPage(20)
+  .sort("created_at", "desc")
+  .skip(0)
+  .limit(20)
   .execute<Post>();
 ```
 
@@ -1554,9 +1533,9 @@ interface User {
   name?: string;
   avatar?: string;
   verified: boolean;
-  emailVisibility?: boolean;
-  createdAt: string;
-  updatedAt: string;
+  email_visibility?: boolean;
+  created_at: string;
+  updated_at: string;
 }
 ```
 
@@ -1567,8 +1546,8 @@ interface Account {
   id: string;
   name: string;
   domain?: string;
-  createdAt: string;
-  updatedAt: string;
+  created_at: string;
+  updated_at: string;
 }
 ```
 
@@ -1580,13 +1559,13 @@ interface Collection {
   name: string;
   schema: RecordSchema;
   description?: string;
-  listRule?: string;
-  viewRule?: string;
-  createRule?: string;
-  updateRule?: string;
-  deleteRule?: string;
-  createdAt: string;
-  updatedAt: string;
+  list_rule?: string;
+  view_rule?: string;
+  create_rule?: string;
+  update_rule?: string;
+  delete_rule?: string;
+  created_at: string;
+  updated_at: string;
 }
 ```
 
@@ -1595,10 +1574,10 @@ interface Collection {
 ```typescript
 interface BaseRecord {
   id: string;
-  collectionId: string;
-  collectionName: string;
-  createdAt: string;
-  updatedAt: string;
+  collection_id: string;
+  collection_name: string;
+  created_at: string;
+  updated_at: string;
 }
 ```
 

@@ -47,8 +47,8 @@ describe('list', () => {
         { id: '2', email: 'user2@example.com' }
       ],
       total: 2,
-      page: 1,
-      pageSize: 20
+      skip: 0,
+      limit: 20
     };
     mockHttp.get.mockResolvedValue({ data: mockData });
 
@@ -59,12 +59,12 @@ describe('list', () => {
   });
 
   it('should pass query parameters', async () => {
-    mockHttp.get.mockResolvedValue({ data: { items: [], total: 0, page: 1, pageSize: 20 } });
+    mockHttp.get.mockResolvedValue({ data: { items: [], total: 0, skip: 0, limit: 10 } });
 
-    await service.list({ page: 2, pageSize: 10 });
+    await service.list({ skip: 10, limit: 10 });
 
     expect(mockHttp.get).toHaveBeenCalledWith('/api/v1/users', {
-      params: { page: 2, pageSize: 10 }
+      params: { skip: 10, limit: 10 }
     });
   });
 });
@@ -174,8 +174,8 @@ describe('RecordService', () => {
       const mockData = {
         items: [{ id: '1', title: 'Task 1' }],
         total: 1,
-        page: 1,
-        pageSize: 20
+        skip: 0,
+        limit: 20
       };
       mockHttp.get.mockResolvedValue({ data: mockData });
 
@@ -214,8 +214,8 @@ describe('FooService', () => {
       const mockData = {
         items: [{ id: '1', name: 'Foo 1' }],
         total: 1,
-        page: 1,
-        pageSize: 20
+        skip: 0,
+        limit: 20
       };
       mockHttp.get.mockResolvedValue({ data: mockData });
 
@@ -266,7 +266,7 @@ describe('FooService', () => {
 
   describe('delete', () => {
     it('should delete an item', async () => {
-      mockHttp.delete.mockResolvedValue(undefined);
+      mockHttp.delete.mockResolvedValue({ success: true });
 
       await service.delete('1');
 
@@ -280,14 +280,20 @@ describe('FooService', () => {
 
 ```bash
 # Run all tests
-npm test
+pnpm test
 
 # Run tests in watch mode
-npm run test:watch
+pnpm test:watch
 
 # Run tests for a specific file
-npm test -- foo-service.test.ts
+pnpm test -- foo-service.test.ts
 
 # Run tests matching a pattern
-npm test -- -t "should return list"
+pnpm test -- -t "should return list"
+
+# Run unit tests only
+pnpm test:unit
+
+# Run integration tests only
+pnpm test:integration
 ```

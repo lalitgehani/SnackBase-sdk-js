@@ -2,7 +2,7 @@
 
 [![npm version](https://badge.fury.io/js/%40snackbase%2Fsdk.svg)](https://www.npmjs.com/package/@snackbase/sdk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Build Status](https://github.com/lalitgehani/snackbase-js/workflows/CI/badge.svg)](https://github.com/lalitgehani/snackbase-js/actions)
+[![Build Status](https://github.com/lalitgehani/snackbase-js/actions/workflows/ci.yml/badge.svg)](https://github.com/lalitgehani/snackbase-js/actions)
 
 The official JavaScript/TypeScript SDK for [SnackBase](https://snackbase.dev) - a powerful backend-as-a-service platform.
 
@@ -56,12 +56,12 @@ const client = new SnackBaseClient({
 });
 
 // Authenticate with email/password
-const auth = await client.auth.authenticateWithPassword({
+const authState = await client.auth.login({
   email: "user@example.com",
   password: "password123",
 });
 
-console.log("Logged in as:", auth.user.email);
+console.log("Logged in as:", authState.user.email);
 
 // List records from a collection
 const records = await client.records.list("posts", {
@@ -78,7 +78,7 @@ client.realtime.subscribe("posts", (event) => {
 ### React Integration
 
 ```tsx
-import { SnackBaseProvider, useAuth, useRecord } from "@snackbase/sdk/react";
+import { SnackBaseProvider, useAuth, useRecord } from "@snackbase/react";
 
 function App() {
   return (
@@ -242,22 +242,33 @@ const user: User = await client.auth.getCurrentUser();
 
 ## Development
 
+This is a **pnpm monorepo** with multiple packages:
+
 ```bash
 # Clone the repository
 git clone https://github.com/lalitgehani/snackbase-js.git
 cd snackbase-js
 
-# Install dependencies
-npm install
+# Install dependencies (requires pnpm)
+pnpm install
 
-# Build
-npm run build
+# Build all packages
+pnpm build
 
-# Run tests
-npm test
+# Run tests across all packages
+pnpm test
 
-# Watch mode
-npm run dev
+# Watch mode for development
+pnpm dev
+
+# Run tests in watch mode
+pnpm test:watch
+
+# Type checking
+pnpm typecheck
+
+# Linting
+pnpm lint
 ```
 
 ## Bundle Size
@@ -283,5 +294,3 @@ We welcome contributions! Please see our [Contributing Guide](./CONTRIBUTING.md)
 ## Related Projects
 
 - [SnackBase](https://snackbase.dev) - The official SnackBase platform
-- [snackbase-python](https://github.com/lalitgehani/snackbase-python) - Python SDK
-- [snackbase-go](https://github.com/lalitgehani/snackbase-go) - Go SDK

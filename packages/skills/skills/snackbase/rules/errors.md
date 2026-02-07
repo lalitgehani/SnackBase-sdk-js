@@ -33,7 +33,7 @@ import {
   ValidationError,
   RateLimitError,
   NetworkError
-} from 'snackbase-js';
+} from '@snackbase/sdk';
 
 try {
   await client.users.get(userId);
