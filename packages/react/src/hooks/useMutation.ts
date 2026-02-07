@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useSnackBase } from '../SnackBaseContext';
-import { BaseRecord } from '../../types/record';
+import { BaseRecord } from '@snackbase/sdk';
 
 export interface UseMutationResult<T> {
   create: (data: Partial<T>) => Promise<T & BaseRecord>;

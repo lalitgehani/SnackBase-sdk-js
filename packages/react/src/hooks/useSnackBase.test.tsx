@@ -2,10 +2,16 @@ import { describe, it, expect, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import React from 'react';
 import { useSnackBase, SnackBaseProvider } from '../SnackBaseContext';
-import { SnackBaseClient } from '../../core/client';
+import { SnackBaseClient } from '@snackbase/sdk';
 
 // Mock SnackBaseClient
-vi.mock('../../core/client');
+vi.mock('@snackbase/sdk', async () => {
+    const actual = await vi.importActual('@snackbase/sdk');
+    return {
+        ...actual,
+        SnackBaseClient: vi.fn(),
+    };
+});
 
 describe('useSnackBase', () => {
     it('should throw error if used outside provider', () => {

@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useSnackBase } from '../SnackBaseContext';
-import { BaseRecord } from '../../types/record';
+import { BaseRecord } from '@snackbase/sdk';
 
 export interface UseRecordResult<T> {
   data: (T & BaseRecord) | null;

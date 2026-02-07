@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useMemo } from 'react';
-import type { SnackBase } from '../index';
+import React, { createContext, useContext } from 'react';
+import type { SnackBase } from '@snackbase/sdk';
 
 const SnackBaseContext = createContext<SnackBase | null>(null);
 

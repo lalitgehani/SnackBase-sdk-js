@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSnackBase } from '../SnackBaseContext';
-import { AuthState, LoginCredentials, RegisterData, PasswordResetRequest, PasswordResetConfirm } from '../../types/auth';
+import { AuthState, LoginCredentials, RegisterData, PasswordResetRequest, PasswordResetConfirm } from '@snackbase/sdk';
 
 export interface UseAuthResult extends AuthState {
   login: (credentials: LoginCredentials) => Promise<any>;
@@ -16,8 +16,8 @@ export const useAuth = (): UseAuthResult => {
   const [state, setState] = useState<AuthState>({
     user: client.user,
     account: client.account,
-    token: client.auth.token,
-    refreshToken: client.auth.refreshToken,
+    token: client.internalAuthManager.token,
+    refreshToken: client.internalAuthManager.refreshToken,
     isAuthenticated: client.isAuthenticated,
     expiresAt: null
   });
@@ -28,10 +28,10 @@ export const useAuth = (): UseAuthResult => {
     setState({
       user: client.user,
       account: client.account,
-      token: client.auth.token,
-      refreshToken: client.auth.refreshToken,
+      token: client.internalAuthManager.token,
+      refreshToken: client.internalAuthManager.refreshToken,
       isAuthenticated: client.isAuthenticated,
-      expiresAt: null // We don't expose expiresAt in client getter yet, but it's in auth manager
+      expiresAt: null
     });
 
     const updateState = (newState: AuthState) => {

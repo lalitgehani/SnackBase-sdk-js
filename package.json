@@ -3,14 +3,14 @@
   "private": true,
   "description": "Monorepo for SnackBase SDK and React integration",
   "scripts": {
-    "dev": "tsdown src/index.ts src/react/index.ts --watch",
-    "build": "tsdown src/index.ts src/react/index.ts",
+    "dev": "pnpm -r --parallel dev",
+    "build": "pnpm -r build",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:integration": "vitest run --config vitest.integration.config.ts",
-    "test:coverage": "vitest run --coverage",
-    "typecheck": "tsc --noEmit",
-    "lint": "eslint src --ext .ts,.tsx"
+    "test:integration": "vitest run --workspace vitest.workspace.ts --include 'packages/sdk/tests/integration/**/*.test.ts'",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "eslint packages --ext .ts,.tsx",
+    "clean": "pnpm -r clean && rm -rf node_modules"
   },
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0"

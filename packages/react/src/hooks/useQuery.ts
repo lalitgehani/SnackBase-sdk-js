@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useSnackBase } from '../SnackBaseContext';
-import { RecordListParams, RecordListResponse } from '../../types/record';
+import { RecordListParams, RecordListResponse } from '@snackbase/sdk';
 
 export interface UseQueryResult<T> {
   data: RecordListResponse<T> | null;

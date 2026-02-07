@@ -3,10 +3,16 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 import React from 'react';
 import { useAuth } from './useAuth';
 import { SnackBaseProvider } from '../SnackBaseContext';
-import { SnackBaseClient } from '../../core/client';
+import { SnackBaseClient } from '@snackbase/sdk';
 
 // Mock everything needed
-vi.mock('../../core/client');
+vi.mock('@snackbase/sdk', async () => {
+    const actual = await vi.importActual('@snackbase/sdk');
+    return {
+        ...actual,
+        SnackBaseClient: vi.fn(),
+    };
+});
 
 describe('useAuth', () => {
     let client: any;
@@ -18,6 +24,9 @@ describe('useAuth', () => {
             user: null,
             account: null,
             auth: {
+                // AuthService methods
+            },
+            internalAuthManager: {
                 token: null,
                 refreshToken: null,
             },

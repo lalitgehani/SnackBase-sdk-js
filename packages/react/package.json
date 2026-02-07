@@ -1,0 +1,49 @@
+{
+  "name": "@snackbase/react",
+  "version": "0.2.0",
+  "description": "React integration for SnackBase",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "tsdown src/index.ts --format esm,cjs --watch",
+    "build": "tsdown src/index.ts --format esm,cjs --dts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18"
+  },
+  "dependencies": {
+    "@snackbase/sdk": "workspace:*"
+  },
+  "keywords": [
+    "snackbase",
+    "react",
+    "hooks",
+    "database"
+  ],
+  "author": "SnackBase Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/react": "^19.2.13",
+    "@types/react-dom": "^19.2.3"
+  }
+}
