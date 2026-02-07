@@ -6,7 +6,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/snackbase/SnackBase-js.git",
+    "url": "https://github.com/lalitgehani/SnackBase-js.git",
     "directory": "packages/skills"
   },
   "files": [

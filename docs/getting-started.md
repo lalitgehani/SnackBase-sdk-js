@@ -209,26 +209,26 @@ unsubscribeFiltered();
 
 The SnackBase SDK provides 17+ services for different aspects of your application:
 
-| Service | Access | Description |
-|---------|--------|-------------|
-| `auth` | `client.auth` | User authentication, registration, password management |
-| `users` | `client.users` | User account management |
-| `accounts` | `client.accounts` | Multi-account project management |
-| `collections` | `client.collections` | Collection and schema management |
-| `records` | `client.records` | CRUD operations on dynamic collections |
-| `realtime` | `client.realtime` | Real-time subscriptions and events |
-| `files` | `client.files` | File upload and download |
-| `apiKeys` | `client.apiKeys` | API key management for service-to-service auth |
-| `auditLogs` | `client.auditLogs` | Audit log viewing and export |
-| `admin` | `client.admin` | System administration and configuration |
-| `collectionRules` | `client.collectionRules` | Collection-level access rules |
-| `dashboard` | `client.dashboard` | Dashboard statistics and metrics |
-| `emailTemplates` | `client.emailTemplates` | Email template management |
-| `groups` | `client.groups` | User group management |
-| `invitations` | `client.invitations` | User invitation management |
-| `macros` | `client.macros` | SQL macro management for rules |
-| `migrations` | `client.migrations` | Database migration status |
-| `roles` | `client.roles` | Role and permission management |
+| Service           | Access                   | Description                                            |
+| ----------------- | ------------------------ | ------------------------------------------------------ |
+| `auth`            | `client.auth`            | User authentication, registration, password management |
+| `users`           | `client.users`           | User account management                                |
+| `accounts`        | `client.accounts`        | Multi-account project management                       |
+| `collections`     | `client.collections`     | Collection and schema management                       |
+| `records`         | `client.records`         | CRUD operations on dynamic collections                 |
+| `realtime`        | `client.realtime`        | Real-time subscriptions and events                     |
+| `files`           | `client.files`           | File upload and download                               |
+| `apiKeys`         | `client.apiKeys`         | API key management for service-to-service auth         |
+| `auditLogs`       | `client.auditLogs`       | Audit log viewing and export                           |
+| `admin`           | `client.admin`           | System administration and configuration                |
+| `collectionRules` | `client.collectionRules` | Collection-level access rules                          |
+| `dashboard`       | `client.dashboard`       | Dashboard statistics and metrics                       |
+| `emailTemplates`  | `client.emailTemplates`  | Email template management                              |
+| `groups`          | `client.groups`          | User group management                                  |
+| `invitations`     | `client.invitations`     | User invitation management                             |
+| `macros`          | `client.macros`          | SQL macro management for rules                         |
+| `migrations`      | `client.migrations`      | Database migration status                              |
+| `roles`           | `client.roles`           | Role and permission management                         |
 
 **Example:**
 
@@ -237,15 +237,15 @@ The SnackBase SDK provides 17+ services for different aspects of your applicatio
 const users = await client.users.list();
 
 // View audit logs
-const logs = await client.auditLogs.list({ table_name: 'users' });
+const logs = await client.auditLogs.list({ table_name: "users" });
 
 // Get dashboard stats
 const stats = await client.dashboard.getStats();
 
 // Manage invitations
 const invitation = await client.invitations.create({
-  email: 'newuser@example.com',
-  role_id: 'role-id'
+  email: "newuser@example.com",
+  role_id: "role-id",
 });
 ```
 
@@ -504,5 +504,5 @@ while (hasMore) {
 ## Support
 
 - Documentation: [https://docs.snackbase.dev](https://docs.snackbase.dev)
-- GitHub Issues: [https://github.com/snackbase/snackbase-js/issues](https://github.com/snackbase/snackbase-js/issues)
+- GitHub Issues: [https://github.com/lalitgehani/snackbase-js/issues](https://github.com/lalitgehani/snackbase-js/issues)
 - Discord: [https://discord.gg/snackbase](https://discord.gg/snackbase)

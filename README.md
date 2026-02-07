@@ -2,7 +2,7 @@
 
 [![npm version](https://badge.fury.io/js/%40snackbase%2Fsdk.svg)](https://www.npmjs.com/package/@snackbase/sdk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Build Status](https://github.com/snackbase/snackbase-js/workflows/CI/badge.svg)](https://github.com/snackbase/snackbase-js/actions)
+[![Build Status](https://github.com/lalitgehani/snackbase-js/workflows/CI/badge.svg)](https://github.com/lalitgehani/snackbase-js/actions)
 
 The official JavaScript/TypeScript SDK for [SnackBase](https://snackbase.dev) - a powerful backend-as-a-service platform.
 
@@ -244,7 +244,7 @@ const user: User = await client.auth.getCurrentUser();
 
 ```bash
 # Clone the repository
-git clone https://github.com/snackbase/snackbase-js.git
+git clone https://github.com/lalitgehani/snackbase-js.git
 cd snackbase-js
 
 # Install dependencies
@@ -277,11 +277,11 @@ We welcome contributions! Please see our [Contributing Guide](./CONTRIBUTING.md)
 ## Support
 
 - Documentation: [https://docs.snackbase.dev](https://docs.snackbase.dev)
-- GitHub Issues: [https://github.com/snackbase/snackbase-js/issues](https://github.com/snackbase/snackbase-js/issues)
+- GitHub Issues: [https://github.com/lalitgehani/snackbase-js/issues](https://github.com/lalitgehani/snackbase-js/issues)
 - Discord: [https://discord.gg/snackbase](https://discord.gg/snackbase)
 
 ## Related Projects
 
 - [SnackBase](https://snackbase.dev) - The official SnackBase platform
-- [snackbase-python](https://github.com/snackbase/snackbase-python) - Python SDK
-- [snackbase-go](https://github.com/snackbase/snackbase-go) - Go SDK
+- [snackbase-python](https://github.com/lalitgehani/snackbase-python) - Python SDK
+- [snackbase-go](https://github.com/lalitgehani/snackbase-go) - Go SDK
