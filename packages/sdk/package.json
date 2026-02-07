@@ -34,6 +34,9 @@
   ],
   "author": "SnackBase Team",
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "devDependencies": {
     "@snackbase/tsconfig": "workspace:*"
   }

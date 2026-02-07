@@ -4,6 +4,9 @@
   "private": false,
   "description": "Claude AI skills for SnackBase",
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "type": "module",
   "repository": {
     "type": "git",
