@@ -73,8 +73,6 @@ importers:
         specifier: ^4.0.2
         version: 4.0.2
 
-  packages/examples: {}
-
   packages/react:
     dependencies:
       '@snackbase/sdk':
