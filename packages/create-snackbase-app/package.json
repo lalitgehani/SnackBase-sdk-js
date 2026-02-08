@@ -5,6 +5,21 @@
   "bin": {
     "create-snackbase-app": "./dist/index.mjs"
   },
+  "description": "The official CLI for scaffolding new SnackBase projects",
+  "author": "SnackBase",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lalitgehani/snackbase-js.git",
+    "directory": "packages/create-snackbase-app"
+  },
+  "bugs": {
+    "url": "https://github.com/lalitgehani/snackbase-js/issues"
+  },
+  "homepage": "https://github.com/lalitgehani/snackbase-js/tree/main/packages/create-snackbase-app#readme",
+  "publishConfig": {
+    "access": "public"
+  },
   "files": [
     "dist",
     "templates"

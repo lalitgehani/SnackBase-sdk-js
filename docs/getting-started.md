@@ -2,6 +2,16 @@
 
 This guide will help you get up and running with the SnackBase SDK in your project.
 
+## Quick Start with CLI
+
+The easiest way to start a new SnackBase project is by using our CLI tool:
+
+```bash
+npx create-snackbase-app@latest
+```
+
+This will prompt you for a project name and template selection to scaffold a complete application with SnackBase integration.
+
 ## Installation
 
 ### Using npm
@@ -164,7 +174,9 @@ Export and import collections for backup or migration:
 // Export all collections (requires superadmin)
 const exportData = await client.collections.export();
 console.log(`Exported ${exportData.collections.length} collections`);
-console.log(`Exported by: ${exportData.exported_by} at ${exportData.exported_at}`);
+console.log(
+  `Exported by: ${exportData.exported_by} at ${exportData.exported_at}`,
+);
 
 // Export specific collections
 const filteredExport = await client.collections.export({

@@ -107,7 +107,7 @@ export function RealtimeDemo() {
                 <div className="flex items-center gap-2 text-slate-500">
                     <span className="text-sm font-medium">Powered by</span>
                     <a
-                        href="https://github.com/snackbase/snackbase"
+                        href="https://github.com/lalitgehani/snackbase"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-1.5 text-slate-900 dark:text-white font-bold hover:text-blue-600 transition-colors"
@@ -119,7 +119,7 @@ export function RealtimeDemo() {
 
                 <div className="flex items-center gap-8">
                     <a
-                        href="https://github.com/snackbase/snackbase"
+                        href="https://github.com/lalitgehani/snackbase"
                         className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
                         title="GitHub Repository"
                     >
