@@ -18,7 +18,7 @@ export const server = new Server(
 
 // Register Tool Handlers
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
-  tools: [tools.collectionsTool],
+  tools: [tools.collectionsTool, tools.recordsTool],
 }));
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
@@ -27,6 +27,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   switch (name) {
     case 'snackbase_collections':
       return await tools.handleCollectionsTool(args);
+    case 'snackbase_records':
+      return await tools.handleRecordsTool(args);
     default:
       throw new Error(`Unknown tool: ${name}`);
   }
