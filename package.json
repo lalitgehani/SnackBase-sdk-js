@@ -3,8 +3,8 @@
   "private": true,
   "description": "Monorepo for SnackBase SDK and React integration",
   "scripts": {
-    "build": "pnpm -r --filter './packages/{sdk,react,create-snackbase-app}' build",
-    "dev": "pnpm -r --parallel --filter './packages/{sdk,react,create-snackbase-app}' dev",
+    "build": "pnpm -r --filter './packages/{sdk,react,create-snackbase-app,mcp}' build",
+    "dev": "pnpm -r --parallel --filter './packages/{sdk,react,create-snackbase-app,mcp}' dev",
     "test": "vitest",
     "test:watch": "vitest --watch",
     "test:unit": "vitest run --project sdk --project react",
