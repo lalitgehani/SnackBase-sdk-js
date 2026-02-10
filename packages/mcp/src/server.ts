@@ -1,9 +1,11 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { ListToolsRequestSchema, CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';
+import * as tools from './tools/index.js';
 
 export const server = new Server(
   {
     name: 'snackbase-mcp',
-    version: '0.1.0', // This shouldIdeally be imported from package.json
+    version: '0.1.0',
   },
   {
     capabilities: {
@@ -13,3 +15,19 @@ export const server = new Server(
     },
   }
 );
+
+// Register Tool Handlers
+server.setRequestHandler(ListToolsRequestSchema, async () => ({
+  tools: [tools.collectionsTool],
+}));
+
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  const { name, arguments: args } = request.params;
+
+  switch (name) {
+    case 'snackbase_collections':
+      return await tools.handleCollectionsTool(args);
+    default:
+      throw new Error(`Unknown tool: ${name}`);
+  }
+});
