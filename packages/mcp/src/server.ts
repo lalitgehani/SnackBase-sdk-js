@@ -18,7 +18,7 @@ export const server = new Server(
 
 // Register Tool Handlers
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
-  tools: [tools.collectionsTool, tools.recordsTool, tools.collectionRulesTool, tools.usersTool, tools.groupsTool, tools.rolesTool],
+  tools: [tools.collectionsTool, tools.recordsTool, tools.collectionRulesTool, tools.usersTool, tools.groupsTool, tools.rolesTool, tools.accountsTool],
 }));
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
@@ -37,6 +37,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       return await tools.handleGroupsTool(args);
     case 'snackbase_roles':
       return await tools.handleRolesTool(args);
+    case 'snackbase_accounts':
+      return await tools.handleAccountsTool(args);
     default:
       throw new Error(`Unknown tool: ${name}`);
   }
