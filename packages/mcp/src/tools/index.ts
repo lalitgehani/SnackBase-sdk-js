@@ -5,3 +5,4 @@ export * from './users.js';
 export * from './groups.js';
 export * from './roles.js';
 export * from './accounts.js';
+export * from './invitations.js';
