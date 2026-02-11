@@ -32,7 +32,7 @@ export const collectionsTool: Tool = {
               enum: ['text', 'number', 'boolean', 'date', 'datetime', 'email', 'url', 'phone', 'select', 'multi_select', 'relation', 'json']
             },
             required: { type: 'boolean' },
-            default: { type: 'any' },
+            default: { description: 'The default value for the field.' },
             unique: { type: 'boolean' },
             options: { type: 'object' },
             collection: { type: 'string', description: 'Target collection name for relation type' },
