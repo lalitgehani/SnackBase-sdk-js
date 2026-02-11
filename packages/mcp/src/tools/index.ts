@@ -11,3 +11,4 @@ export * from './admin.js';
 export * from './dashboard.js';
 export * from './audit-logs.js';
 export * from './email-templates.js';
+export * from './macros.js';

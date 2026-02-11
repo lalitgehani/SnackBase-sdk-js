@@ -32,6 +32,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     tools.dashboardTool,
     tools.auditLogsTool,
     tools.emailTemplatesTool,
+    tools.macrosTool,
   ],
 }));
 
@@ -65,6 +66,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       return await tools.handleAuditLogsTool(args);
     case 'snackbase_email_templates':
       return await tools.handleEmailTemplatesTool(args);
+    case 'snackbase_macros':
+      return await tools.handleMacrosTool(args);
     default:
       throw new Error(`Unknown tool: ${name}`);
   }

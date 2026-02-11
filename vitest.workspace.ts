@@ -37,4 +37,12 @@ export default defineWorkspace([
       maxConcurrency: 1,
     },
   },
+  {
+    test: {
+      name: 'mcp',
+      root: 'packages/mcp',
+      environment: 'node',
+      include: ['src/**/*.test.ts', 'tests/**/*.test.ts'],
+    },
+  },
 ]);
