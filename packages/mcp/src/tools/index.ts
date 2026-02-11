@@ -10,3 +10,4 @@ export * from './api-keys.js';
 export * from './admin.js';
 export * from './dashboard.js';
 export * from './audit-logs.js';
+export * from './email-templates.js';
