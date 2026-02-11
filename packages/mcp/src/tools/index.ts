@@ -7,3 +7,4 @@ export * from './roles.js';
 export * from './accounts.js';
 export * from './invitations.js';
 export * from './api-keys.js';
+export * from './admin.js';
