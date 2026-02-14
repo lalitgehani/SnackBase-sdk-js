@@ -7,6 +7,8 @@ export interface AuthManagerOptions {
   storageKey?: string;
 }
 
+import { TokenType } from '../types/auth';
+
 const DEFAULT_AUTH_STATE: AuthState = {
   user: null,
   account: null,
@@ -14,6 +16,7 @@ const DEFAULT_AUTH_STATE: AuthState = {
   refreshToken: null,
   isAuthenticated: false,
   expiresAt: null,
+  tokenType: TokenType.JWT, // Default to JWT
 };
 
 export class AuthManager {

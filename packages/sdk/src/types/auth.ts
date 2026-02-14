@@ -3,6 +3,16 @@ import type { User, UserListResponse } from './user';
 
 export type { Account, User, UserListResponse };
 
+/**
+ * Token type enum matching backend TokenType
+ */
+export enum TokenType {
+  JWT = 'jwt',
+  API_KEY = 'api_key',
+  PERSONAL_TOKEN = 'personal_token',
+  OAUTH = 'oauth',
+}
+
 export interface AuthState {
   user: User | null;
   account: Account | null;
@@ -10,6 +20,7 @@ export interface AuthState {
   refreshToken: string | null;
   isAuthenticated: boolean;
   expiresAt: string | null; // ISO 8601
+  tokenType: TokenType; // Track token type in state
 }
 
 export type AuthEvent = 'auth:login' | 'auth:logout' | 'auth:refresh' | 'auth:error';

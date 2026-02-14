@@ -1,11 +1,15 @@
+import { TokenType } from './auth';
+
 export interface User {
   id: string;
   email: string;
   role: string;
+  account_id: string;
   groups: string[];
   is_active: boolean;
   created_at: string;
   last_login: string | null;
+  token_type: TokenType; // Required: Backend always provides this
 }
 
 export interface UserCreate {

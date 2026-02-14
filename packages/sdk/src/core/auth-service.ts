@@ -15,7 +15,8 @@ import {
   SAMLProvider,
   SAMLUrlResponse,
   SAMLCallbackParams,
-  SAMLResponse
+  SAMLResponse,
+  TokenType
 } from '../types/auth';
 import { AuthenticationError } from './errors';
 
@@ -162,10 +163,12 @@ export class AuthService {
       id: authData.user_id,
       email: authData.email || '',
       role: authData.role || 'user',
+      account_id: authData.account_id || '',
       groups: [],
       is_active: true,
       created_at: '',
-      last_login: null
+      last_login: null,
+      token_type: TokenType.JWT // Default as this likely comes from JWT auth
     } as User : null);
 
     const account: Account | null = authData.account || (authData.account_id ? {

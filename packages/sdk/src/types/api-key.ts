@@ -3,10 +3,11 @@ export interface ApiKey {
   name: string;
   /**
    * The full API key. Only returned once during creation.
+   * Format: sb_ak.<payload>.<signature>
    */
   key?: string;
   /**
-   * The masked version of the key (e.g., "sk_...42").
+   * The masked version of the key (e.g., "sb_ak....SIGN").
    */
   masked_key: string;
   /**
