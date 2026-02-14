@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { AuthManager } from './auth';
 import { MemoryStorage } from './storage';
-import { User, AuthState } from '../types/auth';
+import { User, AuthState, TokenType } from '../types/auth';
+import { SYSTEM_ACCOUNT_ID } from './constants';
 
 describe('AuthManager', () => {
   let storage: MemoryStorage;
@@ -10,10 +11,12 @@ describe('AuthManager', () => {
     id: '1',
     email: 'test@example.com',
     role: 'user',
+    account_id: 'acc-1',
     groups: [],
     is_active: true,
     created_at: new Date().toISOString(),
-    last_login: null
+    last_login: null,
+    token_type: TokenType.JWT
   };
 
   beforeEach(() => {
@@ -105,5 +108,77 @@ describe('AuthManager', () => {
 
     expect(newAuthManager.isAuthenticated).toBe(false);
     expect(newAuthManager.token).toBeNull();
+  });
+
+  describe('updateState', () => {
+    it('should update state from AuthResponse', async () => {
+      await authManager.updateState({
+        user: mockUser,
+        token: 'new-token',
+        expires_in: 3600
+      });
+
+      expect(authManager.token).toBe('new-token');
+      expect(authManager.isAuthenticated).toBe(true);
+      expect(authManager.getState().tokenType).toBe(TokenType.JWT);
+      expect(authManager.getState().expiresAt).toBeDefined();
+    });
+
+    it('should detect API key token type', async () => {
+      await authManager.updateState({
+        user: mockUser,
+        token: 'sb_ak.payload.signature',
+      });
+
+      expect(authManager.getState().tokenType).toBe(TokenType.API_KEY);
+      expect(authManager.isApiKeySession()).toBe(true);
+    });
+
+    it('should detect OAuth token type', async () => {
+      await authManager.updateState({
+        user: mockUser,
+        token: 'sb_ot.payload.signature',
+      });
+
+      expect(authManager.getState().tokenType).toBe(TokenType.OAUTH);
+      expect(authManager.isOAuthSession()).toBe(true);
+    });
+
+    it('should detect Personal Token type', async () => {
+      await authManager.updateState({
+        user: mockUser,
+        token: 'sb_pt.payload.signature',
+      });
+
+      expect(authManager.getState().tokenType).toBe(TokenType.PERSONAL_TOKEN);
+      expect(authManager.isPersonalTokenSession()).toBe(true);
+    });
+
+    it('should use token_type from user if token is missing', async () => {
+      const apiKeyUser = { ...mockUser, token_type: TokenType.API_KEY };
+      await authManager.updateState({
+        user: apiKeyUser,
+        token: undefined
+      });
+
+      expect(authManager.getState().tokenType).toBe(TokenType.API_KEY);
+    });
+  });
+
+  describe('isSuperadmin', () => {
+    it('should return true for system account ID', async () => {
+      const adminUser = { ...mockUser, account_id: SYSTEM_ACCOUNT_ID };
+      await authManager.setState({ user: adminUser });
+      expect(authManager.isSuperadmin()).toBe(true);
+    });
+
+    it('should return false for regular account ID', async () => {
+      await authManager.setState({ user: mockUser });
+      expect(authManager.isSuperadmin()).toBe(false);
+    });
+
+    it('should return false if no user', () => {
+      expect(authManager.isSuperadmin()).toBe(false);
+    });
   });
 });

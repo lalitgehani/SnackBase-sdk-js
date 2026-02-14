@@ -65,26 +65,9 @@ export class AuthService {
     
     console.log('Login Response:', JSON.stringify(authData, null, 2));
 
-    // Map snake_case to camelCase
-    const refreshToken = authData.refresh_token || authData.refreshToken;
-    let expiresAt = authData.expiresAt;
-    if (authData.expires_in && !expiresAt) {
-      expiresAt = new Date(Date.now() + authData.expires_in * 1000).toISOString();
-    }
+    await this.auth.updateState(authData);
 
-    await this.auth.setState({
-      user: authData.user || null,
-      account: authData.account || null,
-      token: authData.token || null,
-      refreshToken: refreshToken || null,
-      expiresAt: expiresAt || null,
-    });
-
-    return {
-      ...authData,
-      refreshToken,
-      expiresAt,
-    };
+    return authData;
   }
 
   /**
@@ -114,24 +97,9 @@ export class AuthService {
     });
     const authData = response.data;
 
-    // Map snake_case to camelCase
-    const newRefreshToken = authData.refresh_token || authData.refreshToken;
-    let expiresAt = authData.expiresAt;
-    if (authData.expires_in && !expiresAt) {
-      expiresAt = new Date(Date.now() + authData.expires_in * 1000).toISOString();
-    }
+    await this.auth.updateState(authData);
 
-    await this.auth.setState({
-      token: authData.token || null,
-      refreshToken: newRefreshToken || null,
-      expiresAt: expiresAt || null,
-    });
-
-    return {
-      ...authData,
-      refreshToken: newRefreshToken,
-      expiresAt,
-    };
+    return authData;
   }
 
   /**
@@ -158,36 +126,9 @@ export class AuthService {
     
     console.log('GetMe Response:', JSON.stringify(authData, null, 2));
 
-    // Map properties from /me response if they are at root
-    const user: User | null = authData.user || (authData.user_id ? {
-      id: authData.user_id,
-      email: authData.email || '',
-      role: authData.role || 'user',
-      account_id: authData.account_id || '',
-      groups: [],
-      is_active: true,
-      created_at: '',
-      last_login: null,
-      token_type: TokenType.JWT // Default as this likely comes from JWT auth
-    } as User : null);
+    await this.auth.updateState(authData);
 
-    const account: Account | null = authData.account || (authData.account_id ? {
-      id: authData.account_id,
-      slug: '',
-      name: '',
-      created_at: ''
-    } as Account : null);
-
-    await this.auth.setState({
-      user,
-      account,
-    });
-
-    return {
-      ...authData,
-      user: user || undefined,
-      account: account || undefined
-    } as AuthResponse;
+    return authData;
   }
 
   /**
@@ -289,13 +230,7 @@ export class AuthService {
     });
     const authData = response.data;
 
-    await this.auth.setState({
-      user: authData.user,
-      account: authData.account,
-      token: authData.token,
-      refreshToken: authData.refreshToken,
-      expiresAt: authData.expiresAt,
-    });
+    await this.auth.updateState(authData);
 
     return authData;
   }
@@ -322,13 +257,7 @@ export class AuthService {
     const response = await this.http.post<SAMLResponse>('/api/v1/auth/saml/acs', params);
     const authData = response.data;
 
-    await this.auth.setState({
-      user: authData.user,
-      account: authData.account,
-      token: authData.token,
-      refreshToken: authData.refreshToken,
-      expiresAt: authData.expiresAt,
-    });
+    await this.auth.updateState(authData);
 
     return authData;
   }
