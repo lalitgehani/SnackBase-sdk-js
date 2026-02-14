@@ -6,8 +6,10 @@ import {
   contentTypeInterceptor, 
   createAuthInterceptor, 
   errorNormalizationInterceptor, 
-  errorInterceptor 
+  errorInterceptor,
+  createAuthErrorInterceptor
 } from './interceptors';
+import { SYSTEM_ACCOUNT_ID, API_KEY_BASE_PATH } from './constants';
 import { AuthManager } from './auth';
 import { AuthService } from './auth-service';
 import { AccountService } from './account-service';
@@ -37,7 +39,8 @@ import {
   PasswordResetRequest,
   PasswordResetConfirm,
   SAMLProvider,
-  SAMLCallbackParams
+  SAMLCallbackParams,
+  TokenType
 } from '../types/auth';
 
 /**
@@ -184,6 +187,9 @@ export class SnackBaseClient {
     this.http.addResponseInterceptor(errorNormalizationInterceptor);
 
     // Error interceptors
+    this.http.addErrorInterceptor(
+      createAuthErrorInterceptor(this.config.onAuthError)
+    );
     this.http.addErrorInterceptor(errorInterceptor);
   }
 
@@ -206,6 +212,41 @@ export class SnackBaseClient {
    */
   get isAuthenticated(): boolean {
     return this.authManager.isAuthenticated;
+  }
+
+  /**
+   * Check if current user is superadmin.
+   */
+  get isSuperadmin(): boolean {
+    return this.authManager.isSuperadmin();
+  }
+
+  /**
+   * Check if current session uses API key authentication.
+   */
+  get isApiKeySession(): boolean {
+    return this.authManager.isApiKeySession();
+  }
+
+  /**
+   * Check if current session uses personal token authentication.
+   */
+  get isPersonalTokenSession(): boolean {
+    return this.authManager.isPersonalTokenSession();
+  }
+
+  /**
+   * Check if current session uses OAuth authentication.
+   */
+  get isOAuthSession(): boolean {
+    return this.authManager.isOAuthSession();
+  }
+
+  /**
+   * Returns the current token type.
+   */
+  get tokenType(): TokenType {
+    return this.authManager.tokenType;
   }
 
   /**

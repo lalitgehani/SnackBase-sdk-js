@@ -75,4 +75,41 @@ describe('SnackBaseClient', () => {
     // @ts-expect-error defaultAccount must be a string
     expect(() => new SnackBaseClient({ baseUrl: validBaseUrl, defaultAccount: 123 })).toThrow('defaultAccount must be a string');
   });
+
+  describe('Authentication Getters', () => {
+    it('should forward isSuperadmin to authManager', () => {
+      const client = new SnackBaseClient({ baseUrl: validBaseUrl });
+      const spy = vi.spyOn(client.internalAuthManager, 'isSuperadmin').mockReturnValue(true);
+      expect(client.isSuperadmin).toBe(true);
+      expect(spy).toHaveBeenCalled();
+    });
+
+    it('should forward isApiKeySession to authManager', () => {
+      const client = new SnackBaseClient({ baseUrl: validBaseUrl });
+      const spy = vi.spyOn(client.internalAuthManager, 'isApiKeySession').mockReturnValue(true);
+      expect(client.isApiKeySession).toBe(true);
+      expect(spy).toHaveBeenCalled();
+    });
+
+    it('should forward isPersonalTokenSession to authManager', () => {
+      const client = new SnackBaseClient({ baseUrl: validBaseUrl });
+      const spy = vi.spyOn(client.internalAuthManager, 'isPersonalTokenSession').mockReturnValue(true);
+      expect(client.isPersonalTokenSession).toBe(true);
+      expect(spy).toHaveBeenCalled();
+    });
+
+    it('should forward isOAuthSession to authManager', () => {
+      const client = new SnackBaseClient({ baseUrl: validBaseUrl });
+      const spy = vi.spyOn(client.internalAuthManager, 'isOAuthSession').mockReturnValue(true);
+      expect(client.isOAuthSession).toBe(true);
+      expect(spy).toHaveBeenCalled();
+    });
+
+    it('should return tokenType from authManager', () => {
+      const client = new SnackBaseClient({ baseUrl: validBaseUrl });
+      // @ts-ignore - tokenType is a getter
+      vi.spyOn(client.internalAuthManager, 'tokenType', 'get').mockReturnValue('api_key' as any);
+      expect(client.tokenType).toBe('api_key');
+    });
+  });
 });

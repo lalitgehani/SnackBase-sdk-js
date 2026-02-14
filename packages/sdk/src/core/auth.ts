@@ -60,6 +60,10 @@ export class AuthManager {
     return this.state.isAuthenticated;
   }
 
+  get tokenType(): TokenType {
+    return this.state.tokenType;
+  }
+
   /**
    * Update auth state (enhanced to extract token_type)
    */
