@@ -9,7 +9,9 @@ import {
   RateLimitError,
   NetworkError,
   TimeoutError,
-  ServerError
+  ServerError,
+  ApiKeyRestrictedError,
+  EmailVerificationRequiredError
 } from './errors';
 
 describe('Errors', () => {
@@ -83,5 +85,23 @@ describe('Errors', () => {
     const error = new ServerError('Broken', 503);
     expect(error.status).toBe(503);
     expect(error.retryable).toBe(true);
+  });
+
+  it('should create ApiKeyRestrictedError with suggestions', () => {
+    const error = new ApiKeyRestrictedError();
+    expect(error.status).toBe(403);
+    expect(error.code).toBe('API_KEY_RESTRICTED');
+    expect(error.message).toContain('restricted');
+    expect(error.details.suggestion).toBeDefined();
+    expect(error.details.documentation).toBeDefined();
+  });
+
+  it('should create EmailVerificationRequiredError with suggestions', () => {
+    const error = new EmailVerificationRequiredError();
+    expect(error.status).toBe(401);
+    expect(error.code).toBe('EMAIL_VERIFICATION_REQUIRED');
+    expect(error.message).toContain('verify');
+    expect(error.details.suggestion).toBeDefined();
+    expect(error.details.canResend).toBe(true);
   });
 });

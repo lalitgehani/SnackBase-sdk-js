@@ -15,7 +15,8 @@ import {
   ServerError,
   SnackBaseError,
   NetworkError,
-  ApiKeyRestrictedError
+  ApiKeyRestrictedError,
+  EmailVerificationRequiredError
 } from './errors';
 
 /**
@@ -138,6 +139,17 @@ export const createAuthErrorInterceptor = (
       error.redirectUrl = error.details.redirect_url;
       error.authProvider = error.details.auth_provider;
       error.providerName = error.details.provider_name;
+    }
+    
+    // Handle email verification required (401)
+    if (error.status === 401 && error.details) {
+      const detail = error.details.detail || error.details.message || '';
+      
+      if (detail.includes('verify') || detail.includes('email')) {
+        const verificationError = new EmailVerificationRequiredError(detail, error.details);
+        if (onAuthError) onAuthError(verificationError);
+        throw verificationError;
+      }
     }
 
     if (error.status === 401 || error.status === 403) {

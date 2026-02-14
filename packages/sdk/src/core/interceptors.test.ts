@@ -10,7 +10,8 @@ import {
   ValidationError, 
   ServerError,
   SnackBaseError,
-  ApiKeyRestrictedError
+  ApiKeyRestrictedError,
+  EmailVerificationRequiredError
 } from './errors';
 import { HttpResponse, HttpRequest } from './http-client';
 
@@ -144,6 +145,22 @@ describe('Interceptors', () => {
       } catch (e: any) {
         expect(e).toBeInstanceOf(ApiKeyRestrictedError);
         expect(e.message).toBe('Only superadmin can perform this action');
+      }
+    });
+
+    it('should throw EmailVerificationRequiredError for 401 with email/verify detail', async () => {
+      const interceptor = createAuthErrorInterceptor();
+      const error = {
+        status: 401,
+        details: { detail: 'Please verify your email' }
+      };
+
+      try {
+        await interceptor(error);
+        fail('Should have thrown');
+      } catch (e: any) {
+        expect(e).toBeInstanceOf(EmailVerificationRequiredError);
+        expect(e.message).toBe('Please verify your email');
       }
     });
 

@@ -54,9 +54,37 @@ export class AuthorizationError extends SnackBaseError {
  * Thrown when an API key is restricted to superadmin users (403).
  */
 export class ApiKeyRestrictedError extends SnackBaseError {
-  constructor(message: string = 'API keys are restricted to superadmin users', details?: any) {
-    super(message, 'API_KEY_RESTRICTED', 403, details, false);
+  constructor(message?: string, details?: any) {
+    super(
+      message || 'API keys are restricted to superadmin users. Please use JWT authentication.',
+      'API_KEY_RESTRICTED',
+      403,
+      details || {
+        suggestion: 'Remove apiKey config and use login() instead',
+        documentation: 'https://docs.snackbase.com/authentication/api-keys',
+      },
+      false
+    );
     Object.setPrototypeOf(this, ApiKeyRestrictedError.prototype);
+  }
+}
+
+/**
+ * Thrown when email verification is required (401).
+ */
+export class EmailVerificationRequiredError extends SnackBaseError {
+  constructor(message?: string, details?: any) {
+    super(
+      message || 'Please check your email inbox to verify your account before logging in.',
+      'EMAIL_VERIFICATION_REQUIRED',
+      401,
+      details || {
+        suggestion: 'Click the verification link sent to your email address',
+        canResend: true,
+      },
+      false
+    );
+    Object.setPrototypeOf(this, EmailVerificationRequiredError.prototype);
   }
 }
 
