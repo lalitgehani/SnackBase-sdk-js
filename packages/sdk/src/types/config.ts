@@ -19,6 +19,12 @@ export interface SnackBaseConfig {
   apiKey?: string;
 
   /**
+   * Optional override for system account detection
+   * (useful for testing/custom deployments)
+   */
+  systemAccountId?: string;
+
+  /**
    * Enable automatic token refresh (default: true)
    */
   enableAutoRefresh?: boolean;
