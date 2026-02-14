@@ -2,13 +2,15 @@ import { describe, it, expect } from 'vitest';
 import { 
   contentTypeInterceptor, 
   createAuthInterceptor, 
-  errorNormalizationInterceptor 
+  errorNormalizationInterceptor,
+  createAuthErrorInterceptor
 } from './interceptors';
 import { 
   AuthenticationError, 
   ValidationError, 
   ServerError,
-  SnackBaseError
+  SnackBaseError,
+  ApiKeyRestrictedError
 } from './errors';
 import { HttpResponse, HttpRequest } from './http-client';
 
@@ -50,6 +52,18 @@ describe('Interceptors', () => {
       const req: HttpRequest = { url: '/test', method: 'GET', headers: {} };
       const result = await interceptor(req) as HttpRequest;
       expect(result.headers['X-API-Key']).toBe('test-api-key');
+    });
+
+    it('should NOT add X-API-Key header for auth actions', async () => {
+      const interceptor = createAuthInterceptor(() => undefined, 'test-api-key');
+      
+      const loginReq: HttpRequest = { url: '/api/v1/auth/login', method: 'POST', headers: {} };
+      const loginResult = await interceptor(loginReq) as HttpRequest;
+      expect(loginResult.headers['X-API-Key']).toBeUndefined();
+
+      const registerReq: HttpRequest = { url: '/api/v1/auth/register', method: 'POST', headers: {} };
+      const registerResult = await interceptor(registerReq) as HttpRequest;
+      expect(registerResult.headers['X-API-Key']).toBeUndefined();
     });
   });
 
@@ -113,6 +127,68 @@ describe('Interceptors', () => {
         expect(e.code).toBe('SERVER_ERROR');
         expect(e.status).toBe(500);
       }
+    });
+  });
+
+  describe('createAuthErrorInterceptor', () => {
+    it('should throw ApiKeyRestrictedError for 403 with superadmin/restricted detail', async () => {
+      const interceptor = createAuthErrorInterceptor();
+      const error = {
+        status: 403,
+        details: { detail: 'Only superadmin can perform this action' }
+      };
+
+      try {
+        await interceptor(error);
+        fail('Should have thrown');
+      } catch (e: any) {
+        expect(e).toBeInstanceOf(ApiKeyRestrictedError);
+        expect(e.message).toBe('Only superadmin can perform this action');
+      }
+    });
+
+    it('should preserve redirect info for 403 OAuth/SAML errors', async () => {
+      const interceptor = createAuthErrorInterceptor();
+      const error = {
+        status: 403,
+        details: {
+          redirect_url: 'https://auth.example.com',
+          auth_provider: 'google',
+          provider_name: 'Google'
+        }
+      };
+
+      try {
+        await interceptor(error);
+        fail('Should have thrown');
+      } catch (e: any) {
+        expect(e.redirectUrl).toBe('https://auth.example.com');
+        expect(e.authProvider).toBe('google');
+        expect(e.providerName).toBe('Google');
+      }
+    });
+
+    it('should call onAuthError callback for 401/403 errors', async () => {
+      let calledError: any = null;
+      const interceptor = createAuthErrorInterceptor((err) => {
+        calledError = err;
+      });
+
+      const error401 = { status: 401, message: 'Unauthorized' };
+      try {
+        await interceptor(error401);
+      } catch (e) {
+        // expected
+      }
+      expect(calledError).toBe(error401);
+
+      const error403 = { status: 403, details: { detail: 'restricted' } };
+      try {
+        await interceptor(error403);
+      } catch (e) {
+        // expected
+      }
+      expect(calledError).toBeInstanceOf(ApiKeyRestrictedError);
     });
   });
 });

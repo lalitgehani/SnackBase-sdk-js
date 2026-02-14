@@ -14,7 +14,10 @@ export class SnackBaseError extends Error {
     status?: number, 
     details?: any, 
     retryable: boolean = false,
-    field?: string
+    field?: string,
+    public redirectUrl?: string,
+    public authProvider?: string,
+    public providerName?: string
   ) {
     super(message);
     this.name = this.constructor.name;
@@ -44,6 +47,16 @@ export class AuthorizationError extends SnackBaseError {
   constructor(message: string = 'Not authorized', details?: any) {
     super(message, 'AUTHORIZATION_ERROR', 403, details, false);
     Object.setPrototypeOf(this, AuthorizationError.prototype);
+  }
+}
+
+/**
+ * Thrown when an API key is restricted to superadmin users (403).
+ */
+export class ApiKeyRestrictedError extends SnackBaseError {
+  constructor(message: string = 'API keys are restricted to superadmin users', details?: any) {
+    super(message, 'API_KEY_RESTRICTED', 403, details, false);
+    Object.setPrototypeOf(this, ApiKeyRestrictedError.prototype);
   }
 }
 

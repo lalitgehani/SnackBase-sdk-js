@@ -14,7 +14,8 @@ import {
   RateLimitError, 
   ServerError,
   SnackBaseError,
-  NetworkError
+  NetworkError,
+  ApiKeyRestrictedError
 } from './errors';
 
 /**
@@ -39,7 +40,11 @@ export const createAuthInterceptor = (
     const isUserSpecific = request.url.includes('/auth/oauth/') || request.url.includes('/auth/saml/');
 
     if (apiKey && !isUserSpecific) {
-      request.headers['X-API-Key'] = apiKey;
+      // Requirement 486: Handle new 403 for API key restriction
+      const isAuthAction = request.url.includes('/auth/login') || request.url.includes('/auth/register');
+      if (!isAuthAction) {
+        request.headers['X-API-Key'] = apiKey;
+      }
     }
     
     // Requirement 390: API key can be used alongside JWT auth (fallback)
@@ -109,6 +114,39 @@ function createErrorFromResponse(response: HttpResponse): SnackBaseError {
       return new SnackBaseError(message, 'UNKNOWN_ERROR', status, data, false);
   }
 }
+
+/**
+ * Enhanced error interceptor to handle 403 API key errors and preserve redirects.
+ */
+export const createAuthErrorInterceptor = (
+  onAuthError?: (error: any) => void
+): ErrorInterceptor => {
+  return (error: any) => {
+    // Handle new 403 for API key restriction
+    if (error.status === 403 && error.details) {
+      const detail = error.details.detail || error.details.message || '';
+
+      if (detail.includes('superadmin') || detail.includes('restricted')) {
+        const restrictedError = new ApiKeyRestrictedError(detail, error.details);
+        if (onAuthError) onAuthError(restrictedError);
+        throw restrictedError;
+      }
+    }
+
+    // Handle OAuth/SAML redirect errors
+    if (error.status === 403 && error.details?.redirect_url) {
+      error.redirectUrl = error.details.redirect_url;
+      error.authProvider = error.details.auth_provider;
+      error.providerName = error.details.provider_name;
+    }
+
+    if (error.status === 401 || error.status === 403) {
+      if (onAuthError) onAuthError(error);
+    }
+
+    throw error;
+  };
+};
 
 /**
  * Placeholder for the refresh interceptor logic.
