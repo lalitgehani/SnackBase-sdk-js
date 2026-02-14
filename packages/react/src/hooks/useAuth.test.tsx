@@ -31,6 +31,7 @@ describe('useAuth', () => {
                 refreshToken: null,
             },
             isAuthenticated: false,
+            tokenType: 'jwt',
             on: vi.fn().mockReturnValue(mockUnsubscribe),
             login: vi.fn(),
             logout: vi.fn(),
@@ -38,6 +39,24 @@ describe('useAuth', () => {
             forgotPassword: vi.fn(),
             resetPassword: vi.fn(),
         };
+
+        // Mock getters
+        Object.defineProperty(client, 'isSuperadmin', {
+            get: vi.fn().mockReturnValue(false),
+            configurable: true
+        });
+        Object.defineProperty(client, 'isApiKeySession', {
+            get: vi.fn().mockReturnValue(false),
+            configurable: true
+        });
+        Object.defineProperty(client, 'isPersonalTokenSession', {
+            get: vi.fn().mockReturnValue(false),
+            configurable: true
+        });
+        Object.defineProperty(client, 'isOAuthSession', {
+            get: vi.fn().mockReturnValue(false),
+            configurable: true
+        });
     });
 
     const wrapper = ({ children }: { children: React.ReactNode }) => (
@@ -50,6 +69,9 @@ describe('useAuth', () => {
         expect(result.current.user).toBeNull();
         expect(result.current.isAuthenticated).toBe(false);
         expect(result.current.isLoading).toBe(false);
+        expect(result.current.isSuperadmin).toBe(false);
+        expect(result.current.isApiKeySession).toBe(false);
+        expect(result.current.tokenType).toBe('jwt');
     });
 
     it('should subscribe to auth events', () => {
@@ -70,6 +92,7 @@ describe('useAuth', () => {
             user: { id: '123', email: 'test@example.com' },
             isAuthenticated: true,
             token: 'jwt-token',
+            tokenType: 'jwt'
         };
 
         act(() => {
@@ -78,6 +101,21 @@ describe('useAuth', () => {
 
         expect(result.current.user).toEqual(newState.user);
         expect(result.current.isAuthenticated).toBe(true);
+        expect(result.current.tokenType).toBe('jwt');
+    });
+
+    it('should reflect superadmin status from client', () => {
+        const spy = Object.getOwnPropertyDescriptor(client, 'isSuperadmin')?.get as any;
+        spy.mockReturnValue(true);
+        const { result } = renderHook(() => useAuth(), { wrapper });
+        expect(result.current.isSuperadmin).toBe(true);
+    });
+
+    it('should reflect api key session status from client', () => {
+        const spy = Object.getOwnPropertyDescriptor(client, 'isApiKeySession')?.get as any;
+        spy.mockReturnValue(true);
+        const { result } = renderHook(() => useAuth(), { wrapper });
+        expect(result.current.isApiKeySession).toBe(true);
     });
 
     it('should call client.login when login is called', async () => {

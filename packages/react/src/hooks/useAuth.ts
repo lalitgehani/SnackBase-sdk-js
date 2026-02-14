@@ -9,6 +9,10 @@ export interface UseAuthResult extends AuthState {
   forgotPassword: (data: PasswordResetRequest) => Promise<any>;
   resetPassword: (data: PasswordResetConfirm) => Promise<any>;
   isLoading: boolean;
+  isSuperadmin: boolean;
+  isApiKeySession: boolean;
+  isPersonalTokenSession: boolean;
+  isOAuthSession: boolean;
 }
 
 export const useAuth = (): UseAuthResult => {
@@ -19,7 +23,8 @@ export const useAuth = (): UseAuthResult => {
     token: client.internalAuthManager.token,
     refreshToken: client.internalAuthManager.refreshToken,
     isAuthenticated: client.isAuthenticated,
-    expiresAt: null
+    expiresAt: null,
+    tokenType: client.tokenType
   });
   const [isLoading, setIsLoading] = useState(false);
 
@@ -31,7 +36,8 @@ export const useAuth = (): UseAuthResult => {
       token: client.internalAuthManager.token,
       refreshToken: client.internalAuthManager.refreshToken,
       isAuthenticated: client.isAuthenticated,
-      expiresAt: null
+      expiresAt: null,
+      tokenType: client.tokenType
     });
 
     const updateState = (newState: AuthState) => {
@@ -45,7 +51,8 @@ export const useAuth = (): UseAuthResult => {
         token: null,
         refreshToken: null,
         isAuthenticated: false,
-        expiresAt: null
+        expiresAt: null,
+        tokenType: client.tokenType // Still keep the type or default to JWT? PRD says default to JWT. client.tokenType is safer.
       });
     };
 
@@ -112,6 +119,10 @@ export const useAuth = (): UseAuthResult => {
     register,
     forgotPassword,
     resetPassword,
-    isLoading
+    isLoading,
+    isSuperadmin: client.isSuperadmin,
+    isApiKeySession: client.isApiKeySession,
+    isPersonalTokenSession: client.isPersonalTokenSession,
+    isOAuthSession: client.isOAuthSession
   };
 };
