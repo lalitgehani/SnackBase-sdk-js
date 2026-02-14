@@ -1,5 +1,7 @@
 import { HttpClient } from './http-client';
-import { ApiKey, ApiKeyCreate } from '../types/api-key';
+import { ApiKey, ApiKeyCreate, ApiKeyListResponse, ApiKeyListParams } from '../types/api-key';
+import { API_KEY_BASE_PATH } from './constants';
+import { formatMaskedKey } from '../utils/token-utils';
 
 /**
  * Service for managing API keys.
@@ -9,38 +11,49 @@ export class ApiKeyService {
   constructor(private http: HttpClient) {}
 
   /**
-   * List all API keys for the current user.
-   * Keys are masked except for the last 4 characters.
+   * List all API keys
+   * GET /api/v1/admin/api-keys
    */
-  async list(): Promise<ApiKey[]> {
-    const response = await this.http.get<ApiKey[]>('/api/v1/admin/api-keys');
+  async list(params?: ApiKeyListParams): Promise<ApiKeyListResponse> {
+    const response = await this.http.get<ApiKeyListResponse>(API_KEY_BASE_PATH, { params });
     return response.data;
   }
 
   /**
-   * Get details for a specific API key.
-   * The key itself is masked.
+   * Get specific API key
+   * GET /api/v1/admin/api-keys/{id}
    */
   async get(keyId: string): Promise<ApiKey> {
-    const response = await this.http.get<ApiKey>(`/api/v1/admin/api-keys/${keyId}`);
+    const response = await this.http.get<ApiKey>(`${API_KEY_BASE_PATH}/${encodeURIComponent(keyId)}`);
     return response.data;
   }
 
   /**
-   * Create a new API key.
-   * The response includes the full key, which is shown only once.
+   * Create a new API key
+   * POST /api/v1/admin/api-keys
    */
   async create(data: ApiKeyCreate): Promise<ApiKey> {
-    const response = await this.http.post<ApiKey>('/api/v1/admin/api-keys', data);
-    return response.data;
+    const response = await this.http.post<ApiKey>(API_KEY_BASE_PATH, data);
+    
+    // Handle new token format in response
+    const apiKey = response.data;
+    if (apiKey.key && !apiKey.masked_key) {
+      // Store full key - only shown once
+      // And format masked key for display if not provided by backend
+      apiKey.masked_key = formatMaskedKey(apiKey.key);
+    }
+    
+    return apiKey;
   }
 
   /**
-   * Revoke an existing API key.
-   * Once revoked, the key can no longer be used.
+   * Revoke an API key
+   * DELETE /api/v1/admin/api-keys/{id}
    */
   async revoke(keyId: string): Promise<{ success: boolean }> {
-    await this.http.delete(`/api/v1/admin/api-keys/${keyId}`);
-    return { success: true };
+    const response = await this.http.delete<{ success: boolean }>(
+      `${API_KEY_BASE_PATH}/${encodeURIComponent(keyId)}`
+    );
+    return response.data;
   }
 }

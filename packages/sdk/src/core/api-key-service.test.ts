@@ -34,7 +34,7 @@ describe('ApiKeyService', () => {
 
       const result = await apiKeyService.list();
 
-      expect(mockHttpClient.get).toHaveBeenCalledWith('/api/v1/admin/api-keys');
+      expect(mockHttpClient.get).toHaveBeenCalledWith('/api/v1/admin/api-keys', { params: undefined });
       expect(result).toEqual(mockKeys);
     });
   });
@@ -85,7 +85,7 @@ describe('ApiKeyService', () => {
 
   describe('revoke', () => {
     it('should call DELETE /api/v1/admin/api-keys/:id and return success', async () => {
-      mockHttpClient.delete.mockResolvedValue({});
+      mockHttpClient.delete.mockResolvedValue({ data: { success: true } });
 
       const result = await apiKeyService.revoke('key-1');
 

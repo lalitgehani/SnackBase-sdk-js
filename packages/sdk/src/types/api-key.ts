@@ -24,3 +24,11 @@ export interface ApiKeyCreate {
   name: string;
   expires_at?: string;
 }
+
+export interface ApiKeyListParams {
+  limit?: number;
+  offset?: number;
+  [key: string]: string | number | boolean | undefined;
+}
+
+export type ApiKeyListResponse = ApiKey[];
