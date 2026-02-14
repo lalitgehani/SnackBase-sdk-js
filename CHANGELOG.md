@@ -7,9 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-02-15
+
+### Added
+
+- `TokenType` enum for token type detection
+- `token_type` field to User interface (required)
+- `tokenType` field to AuthState interface (required)
+- `isSuperadmin()` method to SnackBaseClient and AuthManager
+- `isApiKeySession()` method to check API key authentication
+- `isPersonalTokenSession()` method to check personal token authentication
+- `isOAuthSession()` method to check OAuth authentication
+- `tokenType` getter on SnackBaseClient
+- `SYSTEM_ACCOUNT_ID` constant for superadmin detection
+- `detectTokenType()`, `isSuperadmin()`, `formatMaskedKey()`, `isValidTokenPrefix()` utility functions
+- `extra_metadata.auth_method` support in audit logs
+- `ApiKeyRestrictedError` error type
+- `EmailVerificationRequiredError` error type
+
+### Changed
+
+- **BREAKING**: API key format changed to `sb_ak.<payload>.<signature>` (3-part)
+- **BREAKING**: System account ID changed to nil UUID format
+- **BREAKING**: `user.user_id` alias removed
+- **BREAKING**: `User.token_type` is now required (not optional)
+- **BREAKING**: `AuthState.tokenType` is now required (not optional)
+- API key endpoint path changed to `/api/v1/admin/api-keys`
+- Enhanced error messages for authentication failures
+- Improved error handling for 403 responses
+
+### Fixed
+
+- Correct superadmin detection using new account ID format
+- Proper masked key formatting for new API key format
+
+### Security
+
+- Token blacklist support for immediate revocation
+- Enhanced audit logging with authentication method tracking
+
 ## [0.2.0] - 2025-01-XX
 
 ### Breaking Changes
+
 - **Package Name Changes**: React integration moved from `@snackbase/sdk/react` to `@snackbase/react`
 - **Field Name Convention**: API responses now use snake_case field names consistently
   - `createdAt` → `created_at`
@@ -34,6 +74,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `expires_in` (from API) mapped to `expiresAt`
 
 ### Added
+
 - **Collection Export/Import**: Export and import collections with schemas and rules
   - `collections.export()` - Export collections to JSON format
   - `collections.import()` - Import collections with conflict strategies (error, skip, update)
@@ -53,17 +94,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Filter Polyfill**: Record service now parses simple filter expressions for backend compatibility
 
 ### Changed
+
 - **Package Manager**: Switched from npm to pnpm for monorepo management
 - **Build System**: Updated to use Vitest workspace for unit/integration tests
 - **TypeScript Configuration**: Centralized into `@snackbase/tsconfig` package
 - **Import Paths**: React hooks now import from `@snackbase/react` instead of `@snackbase/sdk/react`
 
 ### Fixed
+
 - Authentication service now correctly handles snake_case API responses
 - Integration test setup improved with proper user verification
 - Test password strength increased (`TestPass123!`)
 
 ### Developer Experience
+
 - **Development Commands**: Updated for pnpm monorepo
   - `pnpm dev` - Watch mode for all packages
   - `pnpm build` - Build all packages
@@ -74,6 +118,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.1] - 2025-01-XX
 
 ### Added
+
 - Initial release of SnackBase SDK for JavaScript/TypeScript
 - **Core Client**: `SnackBaseClient` with configuration validation
 - **HTTP Client**: Fetch-based HTTP client with interceptors
@@ -94,10 +139,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Logging**: Structured logging system with configurable levels
 
 ### Package Exports
+
 - `@snackbase/sdk` - Core SDK
 - `@snackbase/sdk/react` - React integration (later renamed to `@snackbase/react`)
 
 ### Build Output
+
 - ESM (`.mjs`) - 14.87 KB gzipped
 - CommonJS (`.js`)
 - TypeScript declarations (`.d.ts`)
@@ -105,6 +152,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Future Releases]
 
 ### Planned
+
 - Performance benchmarks
 - Request deduplication
 - Advanced caching strategies
