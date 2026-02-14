@@ -66,6 +66,23 @@ describe('AuditLogService', () => {
       expect(mockHttpClient.get).toHaveBeenCalledWith(`/api/v1/audit-logs/${logId}`);
       expect(result).toEqual(mockLog);
     });
+
+    it('should handle extra_metadata with auth_method', async () => {
+      const logId = 'log-456';
+      const mockLog: Partial<AuditLog> = { 
+        id: logId,
+        extra_metadata: {
+          auth_method: 'api_key',
+          ip_address: '127.0.0.1'
+        }
+      };
+      mockHttpClient.get.mockResolvedValue({ data: mockLog });
+
+      const result = await service.get(logId);
+
+      expect(result.extra_metadata?.auth_method).toBe('api_key');
+      expect(result.extra_metadata?.ip_address).toBe('127.0.0.1');
+    });
   });
 
   describe('export', () => {

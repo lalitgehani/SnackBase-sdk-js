@@ -1,3 +1,11 @@
+/**
+ * Audit log extra metadata
+ */
+export interface AuditLogExtraMetadata {
+  auth_method?: 'jwt' | 'api_key' | 'personal_token' | 'oauth' | 'unknown';
+  [key: string]: any;
+}
+
 export interface AuditLog {
   id: string;
   account_id: string;
@@ -8,6 +16,7 @@ export interface AuditLog {
   before: Record<string, any> | null;
   after: Record<string, any> | null;
   created_at: string;
+  extra_metadata?: AuditLogExtraMetadata;
 }
 
 export interface AuditLogFilters {
