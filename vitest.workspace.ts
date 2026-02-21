@@ -45,4 +45,12 @@ export default defineWorkspace([
       include: ['src/**/*.test.ts', 'tests/**/*.test.ts'],
     },
   },
+  {
+    test: {
+      name: 'supabase-compat',
+      root: 'packages/supabase-compat',
+      environment: 'node',
+      include: ['src/**/*.test.ts'],
+    },
+  },
 ]);
