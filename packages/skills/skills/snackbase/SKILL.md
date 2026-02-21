@@ -10,9 +10,9 @@ description: >
   (6) Handling SDK errors (AuthenticationError, ValidationError, RateLimitError, etc.),
   (7) Writing tests that mock HttpClient with Vitest,
   (8) Configuring storage backends (localStorage, sessionStorage, memory, AsyncStorage),
-  (9) Adding new services to the SDK, or (10) Understanding the service architecture
-  and HTTP interceptor patterns. Trigger on mentions of SnackBase, @snackbase/sdk,
-  SnackBaseClient, or any SnackBase service name.
+  (9) Adding new services to the SDK
+  (10) Understanding the service architecture and HTTP interceptor patterns, or 
+  (11) Managing system/account configurations, providers, and default settings via AdminService. Trigger on mentions of SnackBase, @snackbase/sdk, SnackBaseClient, any SnackBase service name, or admin configuration.
 ---
 
 # SnackBase SDK
@@ -28,32 +28,33 @@ description: >
 ## Quick Start
 
 ```typescript
-import { SnackBaseClient } from '@snackbase/sdk';
+import { SnackBaseClient } from "@snackbase/sdk";
 
 const client = new SnackBaseClient({
-  baseUrl: 'https://your-project.snackbase.dev',
-  apiKey: 'sk_test_xxx'
+  baseUrl: "https://your-project.snackbase.dev",
+  apiKey: "sk_test_xxx",
 });
 
 // Access services via getters
 const users = await client.users.list();
-const record = await client.records.get('posts', 'record_id');
+const record = await client.records.get("posts", "record_id");
 ```
 
 ## Reference Guides
 
-| Task | Reference |
-|------|-----------|
-| Initialize client | [references/client.md](references/client.md) |
-| Authenticate users | [references/authentication.md](references/authentication.md) |
-| Manage collections | [references/collections.md](references/collections.md) |
-| Query/create records | [references/records.md](references/records.md) |
-| Handle errors | [references/errors.md](references/errors.md) |
-| Upload/download files | [references/files.md](references/files.md) |
-| Set up webhooks | [references/webhooks.md](references/webhooks.md) |
-| Write tests (Vitest) | [references/testing.md](references/testing.md) |
-| Configure storage | [references/storage.md](references/storage.md) |
-| Full API reference | [references/api-reference.md](references/api-reference.md) |
+| Task                             | Reference                                                    |
+| -------------------------------- | ------------------------------------------------------------ |
+| Initialize client                | [references/client.md](references/client.md)                 |
+| Authenticate users               | [references/authentication.md](references/authentication.md) |
+| Manage collections               | [references/collections.md](references/collections.md)       |
+| Query/create records             | [references/records.md](references/records.md)               |
+| Handle errors                    | [references/errors.md](references/errors.md)                 |
+| Upload/download files            | [references/files.md](references/files.md)                   |
+| Set up webhooks                  | [references/webhooks.md](references/webhooks.md)             |
+| Write tests (Vitest)             | [references/testing.md](references/testing.md)               |
+| Configure storage                | [references/storage.md](references/storage.md)               |
+| Admin configurations & providers | [references/admin.md](references/admin.md)                   |
+| Full API reference               | [references/api-reference.md](references/api-reference.md)   |
 
 ## Service Architecture
 
@@ -64,13 +65,16 @@ export class ExampleService {
   constructor(private http: HttpClient) {}
 
   async list(params?: ListParams): Promise<ListResponse> {
-    const response = await this.http.get<ListResponse>('/api/v1/resource', { params });
+    const response = await this.http.get<ListResponse>("/api/v1/resource", {
+      params,
+    });
     return response.data; // Always unwrap response.data
   }
 }
 ```
 
 Exceptions:
+
 - `AuthService` receives `http`, `authManager`, `apiKey`, and `defaultAccount`
 - `FileService` receives `http`, `getBaseUrl()`, and `getToken()` functions
 

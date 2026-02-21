@@ -9,6 +9,7 @@ export interface Configuration {
   is_system: boolean;
   account_id?: string;
   enabled: boolean;
+  is_default?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -67,4 +68,31 @@ export interface RecentConfiguration extends Configuration {
     id: string;
     email: string;
   };
+}
+
+/**
+ * Result of enabling or disabling a configuration.
+ */
+export interface UpdateConfigurationStatusResult {
+  status: string;
+  enabled: boolean;
+  is_default: boolean;
+}
+
+/**
+ * Result of setting a configuration as the default provider.
+ */
+export interface SetDefaultResult {
+  status: string;
+  is_default: boolean;
+  provider_name: string;
+  display_name: string;
+}
+
+/**
+ * Result of unsetting a configuration's default flag.
+ */
+export interface UnsetDefaultResult {
+  status: string;
+  is_default: boolean;
 }

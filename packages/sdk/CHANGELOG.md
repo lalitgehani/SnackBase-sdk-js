@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-02-21
+
+### Added
+
+- `is_default?: boolean` field to `Configuration` interface (optional for backward compatibility with older backends)
+- `SetDefaultResult` interface — response shape for `POST .../set-default`
+- `UnsetDefaultResult` interface — response shape for `DELETE .../set-default`
+- `UpdateConfigurationStatusResult` interface — accurate partial response for enable/disable PATCH endpoint (`{ status, enabled, is_default }`)
+- `AdminService.setConfigurationDefault(configId)` — sets a configuration as the default provider for its category and account scope; only enabled providers can be set as default; atomically clears existing default in the same scope
+- `AdminService.unsetConfigurationDefault(configId)` — clears the default flag from a configuration without setting a new default
+
+### Changed
+
+- **BREAKING**: `AdminService.updateConfigurationStatus()` return type corrected from `Promise<Configuration>` to `Promise<UpdateConfigurationStatusResult>` — the actual API response is a partial object `{ status, enabled, is_default }`, not a full `Configuration`
+
 ## [0.3.0] - 2026-02-15
 
 ### Added

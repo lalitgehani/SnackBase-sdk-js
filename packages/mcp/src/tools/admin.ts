@@ -17,9 +17,12 @@ export const adminTool: Tool = {
           'list_account',
           'get_values',
           'update_values',
+          'update_status',
           'create',
           'list_providers',
-          'test_connection'
+          'test_connection',
+          'set_default',
+          'unset_default'
         ],
         description: 'The admin action to perform.',
       },
@@ -37,7 +40,7 @@ export const adminTool: Tool = {
       },
       config_id: {
         type: 'string',
-        description: 'Configuration ID for getting or updating values.',
+        description: 'Configuration ID for getting, updating, enabling/disabling, or setting the default.',
       },
       values: {
         type: 'object',
@@ -156,6 +159,28 @@ export async function handleAdminTool(args: any) {
         const testResult = await client.admin.testConnection(category, provider_name, config);
         return {
           content: [{ type: 'text', text: JSON.stringify(testResult, null, 2) }],
+        };
+
+      case 'update_status':
+        if (!config_id) throw new Error('config_id is required for update_status action');
+        if (enabled === undefined) throw new Error('enabled is required for update_status action');
+        const statusResult = await client.admin.updateConfigurationStatus(config_id, enabled);
+        return {
+          content: [{ type: 'text', text: JSON.stringify(statusResult, null, 2) }],
+        };
+
+      case 'set_default':
+        if (!config_id) throw new Error('config_id is required for set_default action');
+        const setDefaultResult = await client.admin.setConfigurationDefault(config_id);
+        return {
+          content: [{ type: 'text', text: JSON.stringify(setDefaultResult, null, 2) }],
+        };
+
+      case 'unset_default':
+        if (!config_id) throw new Error('config_id is required for unset_default action');
+        const unsetDefaultResult = await client.admin.unsetConfigurationDefault(config_id);
+        return {
+          content: [{ type: 'text', text: JSON.stringify(unsetDefaultResult, null, 2) }],
         };
 
       default:

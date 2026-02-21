@@ -20,9 +20,12 @@ describe('snackbase_admin tool', () => {
         listAccountConfigurations: vi.fn(),
         getConfigurationValues: vi.fn(),
         updateConfigurationValues: vi.fn(),
+        updateConfigurationStatus: vi.fn(),
         createConfiguration: vi.fn(),
         listProviders: vi.fn(),
         testConnection: vi.fn(),
+        setConfigurationDefault: vi.fn(),
+        unsetConfigurationDefault: vi.fn(),
       },
     };
     (createClient as any).mockReturnValue(mockClient);
@@ -161,5 +164,59 @@ describe('snackbase_admin tool', () => {
     const result = await handleAdminTool({ action: 'invalid' }) as any;
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain('Unknown action: invalid');
+  });
+
+  it('handles update_status action', async () => {
+    const mockResult = { status: 'success', enabled: false, is_default: false };
+    mockClient.admin.updateConfigurationStatus.mockResolvedValue(mockResult);
+
+    const result = await handleAdminTool({ action: 'update_status', config_id: 'cfg-123', enabled: false }) as any;
+
+    expect(mockClient.admin.updateConfigurationStatus).toHaveBeenCalledWith('cfg-123', false);
+    expect(result.content[0].text).toBe(JSON.stringify(mockResult, null, 2));
+  });
+
+  it('throws error when config_id is missing for update_status', async () => {
+    const result = await handleAdminTool({ action: 'update_status', enabled: true }) as any;
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain('config_id is required');
+  });
+
+  it('throws error when enabled is missing for update_status', async () => {
+    const result = await handleAdminTool({ action: 'update_status', config_id: 'cfg-123' }) as any;
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain('enabled is required');
+  });
+
+  it('handles set_default action', async () => {
+    const mockResult = { status: 'success', is_default: true, provider_name: 'sendgrid', display_name: 'SendGrid' };
+    mockClient.admin.setConfigurationDefault.mockResolvedValue(mockResult);
+
+    const result = await handleAdminTool({ action: 'set_default', config_id: 'cfg-123' }) as any;
+
+    expect(mockClient.admin.setConfigurationDefault).toHaveBeenCalledWith('cfg-123');
+    expect(result.content[0].text).toBe(JSON.stringify(mockResult, null, 2));
+  });
+
+  it('throws error when config_id is missing for set_default', async () => {
+    const result = await handleAdminTool({ action: 'set_default' }) as any;
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain('config_id is required');
+  });
+
+  it('handles unset_default action', async () => {
+    const mockResult = { status: 'success', is_default: false };
+    mockClient.admin.unsetConfigurationDefault.mockResolvedValue(mockResult);
+
+    const result = await handleAdminTool({ action: 'unset_default', config_id: 'cfg-123' }) as any;
+
+    expect(mockClient.admin.unsetConfigurationDefault).toHaveBeenCalledWith('cfg-123');
+    expect(result.content[0].text).toBe(JSON.stringify(mockResult, null, 2));
+  });
+
+  it('throws error when config_id is missing for unset_default', async () => {
+    const result = await handleAdminTool({ action: 'unset_default' }) as any;
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain('config_id is required');
   });
 });

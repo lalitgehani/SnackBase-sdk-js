@@ -1,7 +1,15 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { AdminService } from './admin-service';
 import { HttpClient } from './http-client';
-import { Configuration, ConfigurationStats, ProviderDefinition, ConnectionTestResult } from '../types/admin';
+import {
+  Configuration,
+  ConfigurationStats,
+  ProviderDefinition,
+  ConnectionTestResult,
+  SetDefaultResult,
+  UnsetDefaultResult,
+  UpdateConfigurationStatusResult
+} from '../types/admin';
 
 describe('AdminService', () => {
   let httpClient: HttpClient;
@@ -14,6 +22,7 @@ describe('AdminService', () => {
     provider_name: 'sendgrid',
     is_system: true,
     enabled: true,
+    is_default: false,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
@@ -133,8 +142,13 @@ describe('AdminService', () => {
 
   describe('updateConfigurationStatus', () => {
     it('should update configuration status', async () => {
+      const mockResult: UpdateConfigurationStatusResult = {
+        status: 'success',
+        enabled: false,
+        is_default: false,
+      };
       const patchSpy = vi.spyOn(httpClient, 'patch').mockResolvedValue({
-        data: { ...mockConfig, enabled: false },
+        data: mockResult,
         status: 200,
         headers: new Headers(),
         request: {} as any,
@@ -143,6 +157,8 @@ describe('AdminService', () => {
       const result = await adminService.updateConfigurationStatus('conf-1', false);
       expect(patchSpy).toHaveBeenCalledWith('/api/v1/admin/configuration/conf-1', { enabled: false });
       expect(result.enabled).toBe(false);
+      expect(result.is_default).toBe(false);
+      expect(result.status).toBe('success');
     });
   });
 
@@ -231,6 +247,50 @@ describe('AdminService', () => {
         config
       }, { timeout: 15000 });
       expect(result).toEqual(mockResult);
+    });
+  });
+
+  describe('setConfigurationDefault', () => {
+    it('should set a configuration as default', async () => {
+      const mockResult: SetDefaultResult = {
+        status: 'success',
+        is_default: true,
+        provider_name: 'sendgrid',
+        display_name: 'SendGrid',
+      };
+      const postSpy = vi.spyOn(httpClient, 'post').mockResolvedValue({
+        data: mockResult,
+        status: 200,
+        headers: new Headers(),
+        request: {} as any,
+      });
+
+      const result = await adminService.setConfigurationDefault('conf-1');
+      expect(postSpy).toHaveBeenCalledWith('/api/v1/admin/configuration/conf-1/set-default');
+      expect(result.status).toBe('success');
+      expect(result.is_default).toBe(true);
+      expect(result.provider_name).toBe('sendgrid');
+      expect(result.display_name).toBe('SendGrid');
+    });
+  });
+
+  describe('unsetConfigurationDefault', () => {
+    it('should clear the default flag from a configuration', async () => {
+      const mockResult: UnsetDefaultResult = {
+        status: 'success',
+        is_default: false,
+      };
+      const deleteSpy = vi.spyOn(httpClient, 'delete').mockResolvedValue({
+        data: mockResult,
+        status: 200,
+        headers: new Headers(),
+        request: {} as any,
+      });
+
+      const result = await adminService.unsetConfigurationDefault('conf-1');
+      expect(deleteSpy).toHaveBeenCalledWith('/api/v1/admin/configuration/conf-1/set-default');
+      expect(result.status).toBe('success');
+      expect(result.is_default).toBe(false);
     });
   });
 });

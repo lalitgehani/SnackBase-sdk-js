@@ -5,7 +5,10 @@ import {
   ProviderDefinition, 
   ConnectionTestResult,
   ConfigurationCreate,
-  RecentConfiguration
+  RecentConfiguration,
+  SetDefaultResult,
+  UnsetDefaultResult,
+  UpdateConfigurationStatusResult
 } from '../types/admin';
 
 /**
@@ -80,8 +83,8 @@ export class AdminService {
    * @param configId Configuration ID
    * @param enabled Enabled status
    */
-  async updateConfigurationStatus(configId: string, enabled: boolean): Promise<Configuration> {
-    const response = await this.http.patch<Configuration>(`/api/v1/admin/configuration/${configId}`, { enabled });
+  async updateConfigurationStatus(configId: string, enabled: boolean): Promise<UpdateConfigurationStatusResult> {
+    const response = await this.http.patch<UpdateConfigurationStatusResult>(`/api/v1/admin/configuration/${configId}`, { enabled });
     return response.data;
   }
 
@@ -142,6 +145,30 @@ export class AdminService {
     }, {
       timeout: 15000 
     });
+    return response.data;
+  }
+
+  /**
+   * Sets a configuration as the default provider for its category and account scope.
+   * Only enabled providers can be set as default.
+   * Atomically clears any existing default in the same scope.
+   * @param configId Configuration ID to set as default
+   */
+  async setConfigurationDefault(configId: string): Promise<SetDefaultResult> {
+    const response = await this.http.post<SetDefaultResult>(
+      `/api/v1/admin/configuration/${configId}/set-default`
+    );
+    return response.data;
+  }
+
+  /**
+   * Clears the default flag from a configuration without setting a new default.
+   * @param configId Configuration ID to remove default from
+   */
+  async unsetConfigurationDefault(configId: string): Promise<UnsetDefaultResult> {
+    const response = await this.http.delete<UnsetDefaultResult>(
+      `/api/v1/admin/configuration/${configId}/set-default`
+    );
     return response.data;
   }
 }
