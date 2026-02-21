@@ -52,15 +52,28 @@ export class BucketReference {
   }
 
   async upload(
-    _path: string,
-    _file: File | Blob | ArrayBuffer | string,
-    _options?: { contentType?: string; upsert?: boolean },
+    path: string,
+    file: File | Blob,
+    options?: { contentType?: string; upsert?: boolean },
   ): Promise<StorageUploadResult> {
-    return wrap<{ path: string }>(() => Promise.reject(new NotSupportedError('storage.from().upload')));
+    return wrap<{ path: string }>(async () => {
+      await this.snackbase.files.upload(file, {
+        filename: this.prefixed(path),
+        contentType: options?.contentType,
+      });
+      return { path };
+    });
   }
 
-  async download(_path: string): Promise<StorageDownloadResult> {
-    return wrap<Blob>(() => Promise.reject(new NotSupportedError('storage.from().download')));
+  async download(path: string): Promise<StorageDownloadResult> {
+    return wrap<Blob>(async () => {
+      const url = this.snackbase.files.getDownloadUrl(this.prefixed(path));
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Failed to download file: ${response.statusText}`);
+      }
+      return response.blob();
+    });
   }
 
   /**
@@ -69,18 +82,22 @@ export class BucketReference {
    */
   getPublicUrl(path: string): PublicUrlResult {
     const fullPath = this.prefixed(path);
-    // Phase 3 will use: this.snackbase.files.getDownloadUrl(fullPath)
     return {
       data: {
-        publicUrl: `${this.snackbase.getConfig().baseUrl}/files/${fullPath}`,
+        publicUrl: this.snackbase.files.getDownloadUrl(fullPath),
       },
     };
   }
 
-  async remove(_paths: string[]): Promise<StorageRemoveResult> {
-    return wrap<Array<{ name: string }>>(() =>
-      Promise.reject(new NotSupportedError('storage.from().remove')),
-    );
+  async remove(paths: string[]): Promise<StorageRemoveResult> {
+    return wrap<Array<{ name: string }>>(async () => {
+      const results: Array<{ name: string }> = [];
+      for (const path of paths) {
+        await this.snackbase.files.delete(this.prefixed(path));
+        results.push({ name: path });
+      }
+      return results;
+    });
   }
 
   async list(_prefix?: string): Promise<StorageListResult> {
