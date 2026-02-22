@@ -27,5 +27,8 @@ export { RecordServiceCompat } from './record-service.js';
 export { CollectionServiceCompat } from './collection-service.js';
 export type { SendOptions, FullListOptions } from './record-service.js';
 
+// Phase 3 exports — auth store
+export { AuthStoreCompat } from './auth-store.js';
+
 // Default export — mirrors `import PocketBase from 'pocketbase'`
 export { PocketBaseCompat as default } from './client.js';

@@ -37,9 +37,10 @@ describe('PocketBaseCompat constructor', () => {
     expect(pb.authStore).toBe(fakeStore);
   });
 
-  it('authStore is null by default', () => {
+  it('authStore is an AuthStoreCompat instance by default', () => {
     const pb = new PocketBaseCompat('http://localhost:8000');
-    expect(pb.authStore).toBeNull();
+    expect(pb.authStore).toBeDefined();
+    expect(pb.authStore).not.toBeNull();
   });
 });
 

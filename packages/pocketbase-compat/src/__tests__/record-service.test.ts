@@ -370,19 +370,11 @@ describe('RecordServiceCompat.delete', () => {
 // Phase 3/4 stubs
 // ---------------------------------------------------------------------------
 
-describe('Phase 3/4 stubs throw NotSupportedError', () => {
+describe('Phase 4 stubs throw NotSupportedError', () => {
   let service: RecordServiceCompat;
 
   beforeEach(() => {
     service = new RecordServiceCompat(makeMockSnackbase(), 'users');
-  });
-
-  it('authWithPassword throws NotSupportedError', () => {
-    expect(() => service.authWithPassword()).toThrow(NotSupportedError);
-  });
-
-  it('authRefresh throws NotSupportedError', () => {
-    expect(() => service.authRefresh()).toThrow(NotSupportedError);
   });
 
   it('subscribe throws NotSupportedError', () => {

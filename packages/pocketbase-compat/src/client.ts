@@ -6,7 +6,7 @@
  *
  * Phase 2: constructor, collection(), filter(), buildURL(), send(), no-op cancellation
  *   methods, and unsupported getter stubs (backups, crons, settings, logs).
- * Phase 3 will add authStore integration.
+ * Phase 3: authStore integration.
  * Phase 4 will add realtime.
  * Phase 5 will add files, health, createBatch.
  */
@@ -16,16 +16,14 @@ import { pbFilter } from './filter-rewriter.js';
 import { NotSupportedError } from './errors.js';
 import { RecordServiceCompat } from './record-service.js';
 import { CollectionServiceCompat } from './collection-service.js';
+import { AuthStoreCompat } from './auth-store.js';
 
 export class PocketBaseCompat {
   public readonly baseURL: string;
   public readonly lang: string;
 
-  /**
-   * Auth store — populated in Phase 3.
-   * Phase 2: always null unless caller passes one in.
-   */
-  public readonly authStore: any;
+  /** pb.authStore — bridges SnackBase's AuthManager to PocketBase's authStore API */
+  public readonly authStore: AuthStoreCompat;
 
   /** pb.collections — CollectionServiceCompat instance */
   public readonly collections: CollectionServiceCompat;
@@ -36,7 +34,7 @@ export class PocketBaseCompat {
   /** Cache of RecordServiceCompat instances keyed by collection name */
   private readonly _recordCache = new Map<string, RecordServiceCompat<any>>();
 
-  constructor(baseURL = '/', authStore: any = null, lang = 'en-US') {
+  constructor(baseURL = '/', _authStore?: AuthStoreCompat | null, lang = 'en-US') {
     // Resolve relative URL
     if (baseURL.startsWith('/')) {
       if (typeof window !== 'undefined' && window.location) {
@@ -51,9 +49,13 @@ export class PocketBaseCompat {
     // Strip trailing slash
     this.baseURL = baseURL.replace(/\/+$/, '');
     this.lang = lang;
-    this.authStore = authStore;
 
     this._snackbase = new SnackBaseClient({ baseUrl: this.baseURL });
+
+    // Phase 3: create AuthStoreCompat from the internal AuthManager.
+    // If a custom authStore was passed in, use it; otherwise build a fresh one.
+    this.authStore = _authStore ?? new AuthStoreCompat(this._snackbase.internalAuthManager);
+
     this.collections = new CollectionServiceCompat(this._snackbase);
   }
 
