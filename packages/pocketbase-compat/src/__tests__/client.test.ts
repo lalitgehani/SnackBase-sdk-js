@@ -147,28 +147,31 @@ describe('PocketBaseCompat unsupported getters', () => {
     expect(() => pb.logs).toThrow(NotSupportedError);
   });
 
-  it('pb.createBatch() throws NotSupportedError', () => {
-    expect(() => pb.createBatch()).toThrow(NotSupportedError);
+  it('pb.createBatch() returns a BatchServiceCompat instance', async () => {
+    const { BatchServiceCompat } = await import('../batch-service.js');
+    expect(pb.createBatch()).toBeInstanceOf(BatchServiceCompat);
   });
 });
 
-describe('PocketBaseCompat Phase 5 stubs', () => {
+describe('PocketBaseCompat Phase 5 services', () => {
   let pb: PocketBaseCompat;
 
   beforeEach(() => {
     pb = new PocketBaseCompat('http://localhost:8000');
   });
 
-  it('pb.files is null', () => {
-    expect(pb.files).toBeNull();
+  it('pb.files is a FileServiceCompat instance', async () => {
+    const { FileServiceCompat } = await import('../file-service.js');
+    expect(pb.files).toBeInstanceOf(FileServiceCompat);
+  });
+
+  it('pb.health is a HealthServiceCompat instance', async () => {
+    const { HealthServiceCompat } = await import('../health-service.js');
+    expect(pb.health).toBeInstanceOf(HealthServiceCompat);
   });
 
   it('pb.realtime is a RealtimeServiceCompat instance', async () => {
     const { RealtimeServiceCompat } = await import('../realtime-service.js');
     expect(pb.realtime).toBeInstanceOf(RealtimeServiceCompat);
-  });
-
-  it('pb.health is null', () => {
-    expect(pb.health).toBeNull();
   });
 });

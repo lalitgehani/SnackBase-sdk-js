@@ -8,7 +8,7 @@
  *   methods, and unsupported getter stubs (backups, crons, settings, logs).
  * Phase 3: authStore integration.
  * Phase 4: realtime subscriptions via RealtimeServiceCompat.
- * Phase 5 will add files, health, createBatch.
+ * Phase 5: files, health, createBatch.
  */
 
 import { SnackBaseClient } from '@snackbase/sdk';
@@ -18,6 +18,9 @@ import { RecordServiceCompat } from './record-service.js';
 import { CollectionServiceCompat } from './collection-service.js';
 import { AuthStoreCompat } from './auth-store.js';
 import { RealtimeServiceCompat } from './realtime-service.js';
+import { FileServiceCompat } from './file-service.js';
+import { HealthServiceCompat } from './health-service.js';
+import { BatchServiceCompat } from './batch-service.js';
 
 export class PocketBaseCompat {
   public readonly baseURL: string;
@@ -31,6 +34,12 @@ export class PocketBaseCompat {
 
   /** pb.realtime — RealtimeServiceCompat instance */
   public readonly realtime: RealtimeServiceCompat;
+
+  /** pb.files — file URL and token helpers */
+  public readonly files: FileServiceCompat;
+
+  /** pb.health — health check */
+  public readonly health: HealthServiceCompat;
 
   /** Internal SnackBaseClient — do not access in user code */
   private readonly _snackbase: SnackBaseClient;
@@ -64,6 +73,10 @@ export class PocketBaseCompat {
 
     // Phase 4: shared realtime bridge — one instance per client
     this.realtime = new RealtimeServiceCompat(this._snackbase);
+
+    // Phase 5: file, health, and batch services
+    this.files = new FileServiceCompat(this._snackbase);
+    this.health = new HealthServiceCompat();
   }
 
   /**
@@ -181,20 +194,8 @@ export class PocketBaseCompat {
     );
   }
 
-  // --- Phase 5 stubs ---
-
-  /** Phase 5: file URL helpers */
-  get files(): any {
-    return null;
-  }
-
-  /** Phase 5: health check */
-  get health(): any {
-    return null;
-  }
-
-  /** Phase 5: batch operations */
-  createBatch(): never {
-    throw new NotSupportedError('createBatch — will be available in Phase 5');
+  /** Returns a new BatchServiceCompat that accumulates ops and sends them concurrently. */
+  createBatch(): BatchServiceCompat {
+    return new BatchServiceCompat(this._snackbase);
   }
 }

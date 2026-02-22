@@ -33,5 +33,10 @@ export { AuthStoreCompat } from './auth-store.js';
 // Phase 4 exports — realtime subscriptions
 export { RealtimeServiceCompat } from './realtime-service.js';
 
+// Phase 5 exports — file service, health, batch
+export { FileServiceCompat } from './file-service.js';
+export { HealthServiceCompat } from './health-service.js';
+export { BatchServiceCompat, SubBatchServiceCompat } from './batch-service.js';
+
 // Default export — mirrors `import PocketBase from 'pocketbase'`
 export { PocketBaseCompat as default } from './client.js';
