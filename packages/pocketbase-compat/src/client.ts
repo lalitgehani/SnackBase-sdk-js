@@ -7,7 +7,7 @@
  * Phase 2: constructor, collection(), filter(), buildURL(), send(), no-op cancellation
  *   methods, and unsupported getter stubs (backups, crons, settings, logs).
  * Phase 3: authStore integration.
- * Phase 4 will add realtime.
+ * Phase 4: realtime subscriptions via RealtimeServiceCompat.
  * Phase 5 will add files, health, createBatch.
  */
 
@@ -17,6 +17,7 @@ import { NotSupportedError } from './errors.js';
 import { RecordServiceCompat } from './record-service.js';
 import { CollectionServiceCompat } from './collection-service.js';
 import { AuthStoreCompat } from './auth-store.js';
+import { RealtimeServiceCompat } from './realtime-service.js';
 
 export class PocketBaseCompat {
   public readonly baseURL: string;
@@ -27,6 +28,9 @@ export class PocketBaseCompat {
 
   /** pb.collections — CollectionServiceCompat instance */
   public readonly collections: CollectionServiceCompat;
+
+  /** pb.realtime — RealtimeServiceCompat instance */
+  public readonly realtime: RealtimeServiceCompat;
 
   /** Internal SnackBaseClient — do not access in user code */
   private readonly _snackbase: SnackBaseClient;
@@ -57,6 +61,9 @@ export class PocketBaseCompat {
     this.authStore = _authStore ?? new AuthStoreCompat(this._snackbase.internalAuthManager);
 
     this.collections = new CollectionServiceCompat(this._snackbase);
+
+    // Phase 4: shared realtime bridge — one instance per client
+    this.realtime = new RealtimeServiceCompat(this._snackbase);
   }
 
   /**
@@ -67,7 +74,10 @@ export class PocketBaseCompat {
     idOrName: string,
   ): RecordServiceCompat<any> {
     if (!this._recordCache.has(idOrName)) {
-      this._recordCache.set(idOrName, new RecordServiceCompat(this._snackbase, idOrName));
+      this._recordCache.set(
+        idOrName,
+        new RecordServiceCompat(this._snackbase, idOrName, this.realtime),
+      );
     }
     return this._recordCache.get(idOrName)!;
   }
@@ -175,11 +185,6 @@ export class PocketBaseCompat {
 
   /** Phase 5: file URL helpers */
   get files(): any {
-    return null;
-  }
-
-  /** Phase 4: realtime subscriptions */
-  get realtime(): any {
     return null;
   }
 

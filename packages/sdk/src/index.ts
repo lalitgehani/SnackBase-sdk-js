@@ -23,3 +23,6 @@ export * from './utils/platform';
 
 // Type alias for convenience
 export type { SnackBaseClient as SnackBase } from './core/client';
+
+// AuthManager is used by pocketbase-compat and other consumers that bridge auth state
+export type { AuthManager } from './core/auth';

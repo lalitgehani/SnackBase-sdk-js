@@ -30,5 +30,8 @@ export type { SendOptions, FullListOptions } from './record-service.js';
 // Phase 3 exports — auth store
 export { AuthStoreCompat } from './auth-store.js';
 
+// Phase 4 exports — realtime subscriptions
+export { RealtimeServiceCompat } from './realtime-service.js';
+
 // Default export — mirrors `import PocketBase from 'pocketbase'`
 export { PocketBaseCompat as default } from './client.js';

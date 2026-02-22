@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { RecordServiceCompat } from '../record-service.js';
-import { ClientResponseError, NotSupportedError } from '../errors.js';
+import { ClientResponseError } from '../errors.js';
 import type { SnackBaseClient } from '@snackbase/sdk';
 
 // ---------------------------------------------------------------------------
@@ -33,6 +33,14 @@ function makeMockSnackbase() {
   return { records } as unknown as SnackBaseClient;
 }
 
+/** Minimal RealtimeServiceCompat-shaped mock for tests that don't test realtime. */
+function makeMockBridge() {
+  return {
+    subscribeToCollection: vi.fn().mockResolvedValue(() => {}),
+    unsubscribeFromCollection: vi.fn().mockResolvedValue(undefined),
+  } as any;
+}
+
 // ---------------------------------------------------------------------------
 // getList
 // ---------------------------------------------------------------------------
@@ -43,7 +51,7 @@ describe('RecordServiceCompat.getList', () => {
 
   beforeEach(() => {
     snackbase = makeMockSnackbase();
-    service = new RecordServiceCompat(snackbase, 'posts');
+    service = new RecordServiceCompat(snackbase, 'posts', makeMockBridge());
   });
 
   it('calls SnackBase with skip:0, limit:30 for page 1, perPage 30', async () => {
@@ -112,7 +120,7 @@ describe('RecordServiceCompat.getFullList', () => {
 
   beforeEach(() => {
     snackbase = makeMockSnackbase();
-    service = new RecordServiceCompat(snackbase, 'posts');
+    service = new RecordServiceCompat(snackbase, 'posts', makeMockBridge());
   });
 
   it('makes 3 SnackBase calls when total=25 and batch=10', async () => {
@@ -162,7 +170,7 @@ describe('RecordServiceCompat.getFirstListItem', () => {
 
   beforeEach(() => {
     snackbase = makeMockSnackbase();
-    service = new RecordServiceCompat(snackbase, 'posts');
+    service = new RecordServiceCompat(snackbase, 'posts', makeMockBridge());
   });
 
   it('returns the first item when found', async () => {
@@ -200,7 +208,7 @@ describe('RecordServiceCompat.getOne', () => {
 
   beforeEach(() => {
     snackbase = makeMockSnackbase();
-    service = new RecordServiceCompat(snackbase, 'posts');
+    service = new RecordServiceCompat(snackbase, 'posts', makeMockBridge());
   });
 
   it('returns record with PB field shape', async () => {
@@ -241,7 +249,7 @@ describe('RecordServiceCompat.create', () => {
 
   beforeEach(() => {
     snackbase = makeMockSnackbase();
-    service = new RecordServiceCompat(snackbase, 'posts');
+    service = new RecordServiceCompat(snackbase, 'posts', makeMockBridge());
   });
 
   it('strips collectionId, collectionName, created, updated before sending', async () => {
@@ -296,7 +304,7 @@ describe('RecordServiceCompat.update', () => {
 
   beforeEach(() => {
     snackbase = makeMockSnackbase();
-    service = new RecordServiceCompat(snackbase, 'posts');
+    service = new RecordServiceCompat(snackbase, 'posts', makeMockBridge());
   });
 
   it('uses PATCH (snackbase.records.patch) not PUT', async () => {
@@ -345,7 +353,7 @@ describe('RecordServiceCompat.delete', () => {
 
   beforeEach(() => {
     snackbase = makeMockSnackbase();
-    service = new RecordServiceCompat(snackbase, 'posts');
+    service = new RecordServiceCompat(snackbase, 'posts', makeMockBridge());
   });
 
   it('returns true on success', async () => {
@@ -370,18 +378,23 @@ describe('RecordServiceCompat.delete', () => {
 // Phase 3/4 stubs
 // ---------------------------------------------------------------------------
 
-describe('Phase 4 stubs throw NotSupportedError', () => {
+describe('Phase 4 — subscribe / unsubscribe delegate to realtime bridge', () => {
+  let bridge: ReturnType<typeof makeMockBridge>;
   let service: RecordServiceCompat;
 
   beforeEach(() => {
-    service = new RecordServiceCompat(makeMockSnackbase(), 'users');
+    bridge = makeMockBridge();
+    service = new RecordServiceCompat(makeMockSnackbase(), 'users', bridge);
   });
 
-  it('subscribe throws NotSupportedError', () => {
-    expect(() => service.subscribe()).toThrow(NotSupportedError);
+  it('subscribe delegates to bridge.subscribeToCollection', async () => {
+    const cb = vi.fn();
+    await service.subscribe('*', cb);
+    expect(bridge.subscribeToCollection).toHaveBeenCalledWith('users', '*', cb);
   });
 
-  it('unsubscribe throws NotSupportedError', () => {
-    expect(() => service.unsubscribe()).toThrow(NotSupportedError);
+  it('unsubscribe delegates to bridge.unsubscribeFromCollection', async () => {
+    await service.unsubscribe('*');
+    expect(bridge.unsubscribeFromCollection).toHaveBeenCalledWith('users', '*');
   });
 });

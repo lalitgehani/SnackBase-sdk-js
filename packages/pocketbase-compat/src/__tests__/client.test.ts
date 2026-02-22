@@ -163,8 +163,9 @@ describe('PocketBaseCompat Phase 5 stubs', () => {
     expect(pb.files).toBeNull();
   });
 
-  it('pb.realtime is null', () => {
-    expect(pb.realtime).toBeNull();
+  it('pb.realtime is a RealtimeServiceCompat instance', async () => {
+    const { RealtimeServiceCompat } = await import('../realtime-service.js');
+    expect(pb.realtime).toBeInstanceOf(RealtimeServiceCompat);
   });
 
   it('pb.health is null', () => {

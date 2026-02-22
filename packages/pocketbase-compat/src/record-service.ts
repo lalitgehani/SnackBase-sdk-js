@@ -5,12 +5,13 @@
  * Phase 3: authWithPassword, authWithOAuth2Code, authWithOAuth2, authRefresh,
  *   listAuthMethods, requestPasswordReset, confirmPasswordReset,
  *   requestVerification, confirmVerification, and unsupported stubs.
- * Phase 4 (realtime) stubs remain.
+ * Phase 4: subscribe, unsubscribe — delegated to RealtimeServiceCompat.
  */
 
 import type { SnackBaseClient } from '@snackbase/sdk';
-import type { ListResult, RecordModel, RecordAuthResponse, AuthMethodsList } from './types.js';
+import type { ListResult, RecordModel, RecordAuthResponse, AuthMethodsList, RecordSubscription } from './types.js';
 import { ClientResponseError, NotSupportedError, wrapThrow } from './errors.js';
+import type { RealtimeServiceCompat } from './realtime-service.js';
 import {
   toRecordModel,
   fromRecordModel,
@@ -34,6 +35,7 @@ export class RecordServiceCompat<M extends RecordModel = RecordModel> {
   constructor(
     private readonly snackbase: SnackBaseClient,
     public readonly collectionIdOrName: string,
+    private readonly _realtimeBridge: RealtimeServiceCompat,
   ) {}
 
   /**
@@ -363,13 +365,33 @@ export class RecordServiceCompat<M extends RecordModel = RecordModel> {
     throw new NotSupportedError('impersonate');
   }
 
-  // --- Phase 4 stubs (realtime) ---
+  // --- Phase 4: realtime subscriptions ---
 
-  subscribe(): never {
-    throw new NotSupportedError('subscribe — will be available in Phase 4');
+  /**
+   * Subscribe to real-time changes for this collection.
+   *
+   * @param topic - `'*'` for all records, or a specific record ID
+   * @param callback - Called with `{ action, record }` on each matching event
+   * @returns Promise resolving to an unsubscribe function
+   */
+  subscribe<T extends RecordModel = M>(
+    topic: string,
+    callback: (data: RecordSubscription<T>) => void,
+    opts?: any,
+  ): Promise<() => void> {
+    return this._realtimeBridge.subscribeToCollection(
+      this.collectionIdOrName,
+      topic,
+      callback,
+    );
   }
 
-  unsubscribe(): never {
-    throw new NotSupportedError('unsubscribe — will be available in Phase 4');
+  /**
+   * Unsubscribe from real-time changes for this collection.
+   *
+   * @param topic - Optional topic to unsubscribe from. If omitted, clears all topics.
+   */
+  unsubscribe(topic?: string): Promise<void> {
+    return this._realtimeBridge.unsubscribeFromCollection(this.collectionIdOrName, topic);
   }
 }
