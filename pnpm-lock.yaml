@@ -98,6 +98,22 @@ importers:
         specifier: ^1.2.1
         version: 1.6.1(@types/node@20.19.32)(jsdom@27.4.0)
 
+  packages/pocketbase-compat:
+    dependencies:
+      '@snackbase/sdk':
+        specifier: workspace:*
+        version: link:../sdk
+    devDependencies:
+      '@snackbase/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.0.0
+        version: 2.1.9(@types/node@20.19.32)(jsdom@27.4.0)
+
   packages/react:
     dependencies:
       '@snackbase/sdk':

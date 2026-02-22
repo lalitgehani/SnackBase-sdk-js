@@ -1,0 +1,51 @@
+{
+  "name": "@snackbase/pocketbase-compat",
+  "version": "0.1.0",
+  "description": "Drop-in replacement for the PocketBase JS SDK backed by SnackBase",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "dev": "tsdown src/index.ts --format esm,cjs --watch",
+    "build": "tsdown src/index.ts --format esm,cjs --dts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "snackbase",
+    "pocketbase",
+    "compat",
+    "drop-in",
+    "sdk"
+  ],
+  "author": "SnackBase Team",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@snackbase/sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "@snackbase/tsconfig": "workspace:*",
+    "typescript": "^5.4.0",
+    "vitest": "^2.0.0"
+  }
+}
