@@ -26,6 +26,7 @@
     "build": "tsdown src/index.ts --format esm,cjs --dts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:integration": "vitest run src/__tests__/integration.test.ts",
     "clean": "rm -rf dist"
   },
   "keywords": [
