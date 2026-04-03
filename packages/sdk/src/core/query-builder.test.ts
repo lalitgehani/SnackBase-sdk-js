@@ -96,6 +96,22 @@ describe('QueryBuilder', () => {
         limit: 25
       }));
     });
+
+    it('should pass cursor for forward cursor-based pagination', async () => {
+      await queryBuilder.cursor('abc123').get();
+
+      expect(mockRecordService.list).toHaveBeenCalledWith('posts', expect.objectContaining({
+        cursor: 'abc123'
+      }));
+    });
+
+    it('should pass cursor_before for backward cursor-based pagination', async () => {
+      await queryBuilder.cursorBefore('abc123').get();
+
+      expect(mockRecordService.list).toHaveBeenCalledWith('posts', expect.objectContaining({
+        cursor_before: 'abc123'
+      }));
+    });
   });
 
   describe('execution', () => {

@@ -25,6 +25,8 @@ export interface DashboardStats {
   active_sessions: number;
   /** List of the most recent audit log entries */
   recent_audit_logs: AuditLog[];
+  /** Number of collections accessible without authentication */
+  public_collections_count: number;
 }
 
 /**

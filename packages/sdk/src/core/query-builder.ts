@@ -15,6 +15,8 @@ export class QueryBuilder<T = any> {
   private _skip = 0;
   private _limit = 30; // Default limit
   private _useLegacyPagination = false; // To track if manual skip/limit was used
+  private _cursor?: string;
+  private _cursorBefore?: string;
 
   constructor(
     private service: RecordService,
@@ -169,6 +171,24 @@ export class QueryBuilder<T = any> {
   }
 
   /**
+   * Set cursor token for forward cursor-based pagination.
+   * @param value Cursor token from a previous response's `next_cursor`
+   */
+  cursor(value: string): this {
+    this._cursor = value;
+    return this;
+  }
+
+  /**
+   * Set cursor token for backward cursor-based pagination.
+   * @param value Cursor token from a previous response's `prev_cursor`
+   */
+  cursorBefore(value: string): this {
+    this._cursorBefore = value;
+    return this;
+  }
+
+  /**
    * Set page number and page size.
    * @param page Page number (1-based)
    * @param perPage Records per page
@@ -214,6 +234,9 @@ export class QueryBuilder<T = any> {
       params.skip = (this._page - 1) * this._perPage;
       params.limit = this._perPage;
     }
+
+    if (this._cursor) params.cursor = this._cursor;
+    if (this._cursorBefore) params.cursor_before = this._cursorBefore;
 
     return this.service.list<T>(this.collection, params);
   }

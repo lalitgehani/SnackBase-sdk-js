@@ -89,6 +89,47 @@ describe('RecordService', () => {
         { params: { filter: 'status = "active"' } }
       );
     });
+
+    it('should pass cursor param for forward cursor pagination', async () => {
+      vi.spyOn(httpClient, 'get').mockResolvedValue({
+        data: { items: [], total: 0, skip: 0, limit: 10 },
+        status: 200,
+        headers: new Headers(),
+        request: {} as any,
+      });
+
+      await recordService.list('posts', { cursor: 'tok_123' });
+
+      expect(httpClient.get).toHaveBeenCalledWith(
+        '/api/v1/records/posts',
+        { params: { cursor: 'tok_123' } }
+      );
+    });
+
+    it('should return next_cursor, prev_cursor, and has_more from response', async () => {
+      const mockResponse = {
+        items: [mockRecord],
+        total: 100,
+        skip: 0,
+        limit: 10,
+        next_cursor: 'cursor_next',
+        prev_cursor: null,
+        has_more: true,
+      };
+
+      vi.spyOn(httpClient, 'get').mockResolvedValue({
+        data: mockResponse,
+        status: 200,
+        headers: new Headers(),
+        request: {} as any,
+      });
+
+      const result = await recordService.list('posts');
+
+      expect(result.next_cursor).toBe('cursor_next');
+      expect(result.prev_cursor).toBeNull();
+      expect(result.has_more).toBe(true);
+    });
   });
 
   describe('get', () => {

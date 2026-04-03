@@ -31,6 +31,7 @@ describe('DashboardService', () => {
         },
         active_sessions: 12,
         recent_audit_logs: [],
+        public_collections_count: 0,
       };
       mockHttpClient.get.mockResolvedValue({ data: mockStats });
 

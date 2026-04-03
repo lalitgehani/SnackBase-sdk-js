@@ -20,6 +20,10 @@ export interface FieldDefinition {
   unique?: boolean;
   options?: string[]; // For select and multi_select
   collection?: string; // For relation
+  /** SQL expression for computed (virtual) fields. */
+  expression?: string;
+  /** Return type of a computed field expression. */
+  return_type?: 'text' | 'number' | 'boolean' | 'datetime' | null;
 }
 
 export interface Collection {
@@ -30,6 +34,8 @@ export interface Collection {
   field_count: number;
   created_at: string;
   updated_at: string;
+  /** Whether this collection is accessible without authentication. */
+  has_public_access?: boolean;
 }
 
 export interface CollectionCreate {

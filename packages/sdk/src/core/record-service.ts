@@ -40,6 +40,9 @@ export class RecordService {
       if (params.filter) {
         formattedParams.filter = params.filter;
       }
+      if (params.cursor !== undefined) formattedParams.cursor = params.cursor;
+      if (params.cursor_before !== undefined) formattedParams.cursor_before = params.cursor_before;
+      if (params.include_count !== undefined) formattedParams.include_count = params.include_count;
     }
 
     const response = await this.http.get<RecordListResponse<T>>(

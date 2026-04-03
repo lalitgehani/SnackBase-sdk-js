@@ -19,22 +19,22 @@ export interface RecordListParams {
    * Number of records to skip.
    */
   skip?: number;
-  
+
   /**
    * Maximum number of records to return.
    */
   limit?: number;
-  
+
   /**
    * Sort expression (e.g., 'created_at' or '-created_at' for descending).
    */
   sort?: string;
-  
+
   /**
    * Fields to include in the response.
    */
   fields?: string[] | string;
-  
+
   /**
    * Filter expression string (e.g., 'status = "active"').
    */
@@ -44,6 +44,21 @@ export interface RecordListParams {
    * Related collections to expand.
    */
   expand?: string[] | string;
+
+  /**
+   * Cursor token for forward cursor-based pagination.
+   */
+  cursor?: string;
+
+  /**
+   * Cursor token for backward cursor-based pagination.
+   */
+  cursor_before?: string;
+
+  /**
+   * When using cursor pagination, also return the total count.
+   */
+  include_count?: boolean;
 }
 
 /**
@@ -54,4 +69,10 @@ export interface RecordListResponse<T> {
   total: number;
   skip: number;
   limit: number;
+  /** Cursor token to fetch the next page (cursor-based pagination). */
+  next_cursor?: string | null;
+  /** Cursor token to fetch the previous page (cursor-based pagination). */
+  prev_cursor?: string | null;
+  /** Whether more records exist after this page (cursor-based pagination). */
+  has_more?: boolean;
 }
