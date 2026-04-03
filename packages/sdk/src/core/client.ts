@@ -31,6 +31,7 @@ import { RealTimeService } from './realtime-service';
 import { MigrationService } from './migration-service';
 import { WebhookService } from './webhook-service';
 import { HookService } from './hook-service';
+import { EndpointService } from './endpoint-service';
 import { createStorageBackend } from './storage';
 import { 
   User, 
@@ -73,6 +74,7 @@ export class SnackBaseClient {
   private migrationService: MigrationService;
   private webhookService: WebhookService;
   private hookService: HookService;
+  private endpointService: EndpointService;
 
   /**
    * Initialize a new SnackBaseClient instance.
@@ -156,6 +158,7 @@ export class SnackBaseClient {
     this.migrationService = new MigrationService(this.http);
     this.webhookService = new WebhookService(this.http);
     this.hookService = new HookService(this.http);
+    this.endpointService = new EndpointService(this.http);
 
     this.setupInterceptors();
     this.authManager.initialize();
@@ -394,6 +397,13 @@ export class SnackBaseClient {
    */
   get hooks(): HookService {
     return this.hookService;
+  }
+
+  /**
+   * Access to custom endpoint management methods.
+   */
+  get endpoints(): EndpointService {
+    return this.endpointService;
   }
 
   /**
