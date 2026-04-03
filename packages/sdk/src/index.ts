@@ -22,6 +22,7 @@ export * from './types/webhook';
 export * from './types/hook';
 export * from './types/endpoint';
 export * from './types/workflow';
+export * from './types/job';
 export * from './core/query-builder';
 export * from './utils/platform';
 

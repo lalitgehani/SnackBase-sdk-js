@@ -33,6 +33,7 @@ import { WebhookService } from './webhook-service';
 import { HookService } from './hook-service';
 import { EndpointService } from './endpoint-service';
 import { WorkflowService } from './workflow-service';
+import { JobService } from './job-service';
 import { createStorageBackend } from './storage';
 import { 
   User, 
@@ -77,6 +78,7 @@ export class SnackBaseClient {
   private hookService: HookService;
   private endpointService: EndpointService;
   private workflowService: WorkflowService;
+  private jobService: JobService;
 
   /**
    * Initialize a new SnackBaseClient instance.
@@ -162,6 +164,7 @@ export class SnackBaseClient {
     this.hookService = new HookService(this.http);
     this.endpointService = new EndpointService(this.http);
     this.workflowService = new WorkflowService(this.http);
+    this.jobService = new JobService(this.http);
 
     this.setupInterceptors();
     this.authManager.initialize();
@@ -414,6 +417,13 @@ export class SnackBaseClient {
    */
   get workflows(): WorkflowService {
     return this.workflowService;
+  }
+
+  /**
+   * Access to background job queue management (superadmin only).
+   */
+  get jobs(): JobService {
+    return this.jobService;
   }
 
   /**
