@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { RecordService } from './record-service';
 import { HttpClient } from './http-client';
-import { BaseRecord } from '../types/record';
+import { BaseRecord, BatchUpdateItem } from '../types/record';
 
 describe('RecordService', () => {
   let httpClient: HttpClient;
@@ -236,6 +236,133 @@ describe('RecordService', () => {
 
       expect(deleteSpy).toHaveBeenCalledWith('/api/v1/records/posts/rec-1');
       expect(result.success).toBe(true);
+    });
+  });
+
+  describe('batchCreate', () => {
+    it('should POST records array to batch endpoint', async () => {
+      const r1 = { name: 'Record 1' };
+      const r2 = { name: 'Record 2' };
+      const mockResponse = { created: [mockRecord], count: 2 };
+
+      const postSpy = vi.spyOn(httpClient, 'post').mockResolvedValue({
+        data: mockResponse,
+        status: 201,
+        headers: new Headers(),
+        request: {} as any,
+      });
+
+      const result = await recordService.batchCreate('items', [r1, r2]);
+
+      expect(postSpy).toHaveBeenCalledWith(
+        '/api/v1/records/items/batch',
+        { records: [r1, r2] }
+      );
+      expect(result).toEqual(mockResponse);
+      expect(result.count).toBe(2);
+      expect(result.created).toHaveLength(1);
+    });
+  });
+
+  describe('batchUpdate', () => {
+    it('should PATCH items array wrapped in records key to batch endpoint', async () => {
+      const items: BatchUpdateItem[] = [
+        { id: 'rec-1', data: { name: 'Updated' } },
+      ];
+      const mockResponse = { updated: [mockRecord], count: 1 };
+
+      const patchSpy = vi.spyOn(httpClient, 'patch').mockResolvedValue({
+        data: mockResponse,
+        status: 200,
+        headers: new Headers(),
+        request: {} as any,
+      });
+
+      const result = await recordService.batchUpdate('items', items);
+
+      expect(patchSpy).toHaveBeenCalledWith(
+        '/api/v1/records/items/batch',
+        { records: items }
+      );
+      expect(result).toEqual(mockResponse);
+      expect(result.count).toBe(1);
+      expect(result.updated).toHaveLength(1);
+    });
+  });
+
+  describe('batchDelete', () => {
+    it('should DELETE with ids array in request body', async () => {
+      const ids = ['rec-1', 'rec-2'];
+      const mockResponse = { deleted: ids, count: 2 };
+
+      const deleteSpy = vi.spyOn(httpClient, 'delete').mockResolvedValue({
+        data: mockResponse,
+        status: 200,
+        headers: new Headers(),
+        request: {} as any,
+      });
+
+      const result = await recordService.batchDelete('items', ids);
+
+      expect(deleteSpy).toHaveBeenCalledWith(
+        '/api/v1/records/items/batch',
+        { body: { ids } }
+      );
+      expect(result).toEqual(mockResponse);
+      expect(result.deleted).toEqual(ids);
+      expect(result.count).toBe(2);
+    });
+  });
+
+  describe('aggregate', () => {
+    it('should GET aggregate endpoint with functions param', async () => {
+      const mockResponse = { results: [{ 'count()': 42 }], total_groups: 1 };
+
+      const getSpy = vi.spyOn(httpClient, 'get').mockResolvedValue({
+        data: mockResponse,
+        status: 200,
+        headers: new Headers(),
+        request: {} as any,
+      });
+
+      const result = await recordService.aggregate('orders', { functions: 'count()' });
+
+      expect(getSpy).toHaveBeenCalledWith(
+        '/api/v1/records/orders/aggregate',
+        { params: { functions: 'count()' } }
+      );
+      expect(result.results).toEqual([{ 'count()': 42 }]);
+      expect(result.total_groups).toBe(1);
+    });
+
+    it('should pass all four params as query parameters', async () => {
+      const mockResponse = { results: [], total_groups: 0 };
+
+      const getSpy = vi.spyOn(httpClient, 'get').mockResolvedValue({
+        data: mockResponse,
+        status: 200,
+        headers: new Headers(),
+        request: {} as any,
+      });
+
+      await recordService.aggregate('orders', {
+        functions: 'count(),sum(total)',
+        group_by: 'status',
+        filter: 'total > 0',
+        having: 'count() > 5',
+      });
+
+      expect(getSpy).toHaveBeenCalledWith(
+        '/api/v1/records/orders/aggregate',
+        {
+          params: {
+            functions: 'count(),sum(total)',
+            group_by: 'status',
+            filter: 'total > 0',
+            having: 'count() > 5',
+          },
+        }
+      );
     });
   });
 });

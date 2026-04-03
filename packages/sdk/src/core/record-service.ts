@@ -1,9 +1,15 @@
 import { HttpClient } from './http-client';
 import { QueryBuilder } from './query-builder';
-import { 
-  BaseRecord, 
-  RecordListParams, 
-  RecordListResponse 
+import {
+  BaseRecord,
+  RecordListParams,
+  RecordListResponse,
+  BatchUpdateItem,
+  BatchCreateResponse,
+  BatchUpdateResponse,
+  BatchDeleteResponse,
+  AggregationParams,
+  AggregationResponse
 } from '../types/record';
 
 /**
@@ -155,10 +161,74 @@ export class RecordService {
    * @param recordId Record ID
    */
   async delete(
-    collection: string, 
+    collection: string,
     recordId: string
   ): Promise<{ success: boolean }> {
     await this.http.delete(`/api/v1/records/${collection}/${recordId}`);
     return { success: true };
+  }
+
+  /**
+   * Atomically create multiple records in a collection.
+   * @param collection Collection name
+   * @param records Array of record data objects to create
+   */
+  async batchCreate(
+    collection: string,
+    records: Record<string, any>[]
+  ): Promise<BatchCreateResponse> {
+    const response = await this.http.post<BatchCreateResponse>(
+      `/api/v1/records/${collection}/batch`,
+      { records }
+    );
+    return response.data;
+  }
+
+  /**
+   * Atomically update multiple records in a collection.
+   * @param collection Collection name
+   * @param items Array of { id, data } update items
+   */
+  async batchUpdate(
+    collection: string,
+    items: BatchUpdateItem[]
+  ): Promise<BatchUpdateResponse> {
+    const response = await this.http.patch<BatchUpdateResponse>(
+      `/api/v1/records/${collection}/batch`,
+      { records: items }
+    );
+    return response.data;
+  }
+
+  /**
+   * Atomically delete multiple records from a collection.
+   * @param collection Collection name
+   * @param ids Array of record IDs to delete
+   */
+  async batchDelete(
+    collection: string,
+    ids: string[]
+  ): Promise<BatchDeleteResponse> {
+    const response = await this.http.delete<BatchDeleteResponse>(
+      `/api/v1/records/${collection}/batch`,
+      { body: { ids } }
+    );
+    return response.data;
+  }
+
+  /**
+   * Run an aggregation query on a collection (COUNT, SUM, AVG, MIN, MAX).
+   * @param collection Collection name
+   * @param params Aggregation parameters
+   */
+  async aggregate(
+    collection: string,
+    params: AggregationParams
+  ): Promise<AggregationResponse> {
+    const response = await this.http.get<AggregationResponse>(
+      `/api/v1/records/${collection}/aggregate`,
+      { params: params as any }
+    );
+    return response.data;
   }
 }

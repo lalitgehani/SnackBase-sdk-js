@@ -76,3 +76,55 @@ export interface RecordListResponse<T> {
   /** Whether more records exist after this page (cursor-based pagination). */
   has_more?: boolean;
 }
+
+// --- Batch operation types ---
+
+export interface BatchCreateRequest {
+  records: Record<string, any>[];
+}
+
+export interface BatchUpdateItem {
+  id: string;
+  data: Record<string, any>;
+}
+
+export interface BatchUpdateRequest {
+  records: BatchUpdateItem[];
+}
+
+export interface BatchDeleteRequest {
+  ids: string[];
+}
+
+export interface BatchCreateResponse {
+  created: BaseRecord[];
+  count: number;
+}
+
+export interface BatchUpdateResponse {
+  updated: BaseRecord[];
+  count: number;
+}
+
+export interface BatchDeleteResponse {
+  deleted: string[];
+  count: number;
+}
+
+// --- Aggregation types ---
+
+export interface AggregationParams {
+  /** Required. Aggregation functions, e.g. "count(),sum(price)" */
+  functions: string;
+  /** Fields to group by, e.g. "status,category" */
+  group_by?: string;
+  /** Pre-aggregation filter (SQL-like string) */
+  filter?: string;
+  /** Post-aggregation filter, e.g. "count() > 5" */
+  having?: string;
+}
+
+export interface AggregationResponse {
+  results: Record<string, any>[];
+  total_groups: number;
+}
