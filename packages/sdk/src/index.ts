@@ -19,6 +19,7 @@ export * from './types/utils';
 export * from './types/query';
 export * from './types/migration';
 export * from './types/webhook';
+export * from './types/hook';
 export * from './core/query-builder';
 export * from './utils/platform';
 

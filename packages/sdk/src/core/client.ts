@@ -30,6 +30,7 @@ import { FileService } from './file-service';
 import { RealTimeService } from './realtime-service';
 import { MigrationService } from './migration-service';
 import { WebhookService } from './webhook-service';
+import { HookService } from './hook-service';
 import { createStorageBackend } from './storage';
 import { 
   User, 
@@ -71,6 +72,7 @@ export class SnackBaseClient {
   private realtimeService: RealTimeService;
   private migrationService: MigrationService;
   private webhookService: WebhookService;
+  private hookService: HookService;
 
   /**
    * Initialize a new SnackBaseClient instance.
@@ -153,6 +155,7 @@ export class SnackBaseClient {
     });
     this.migrationService = new MigrationService(this.http);
     this.webhookService = new WebhookService(this.http);
+    this.hookService = new HookService(this.http);
 
     this.setupInterceptors();
     this.authManager.initialize();
@@ -384,6 +387,13 @@ export class SnackBaseClient {
    */
   get webhooks(): WebhookService {
     return this.webhookService;
+  }
+
+  /**
+   * Access to hook management methods.
+   */
+  get hooks(): HookService {
+    return this.hookService;
   }
 
   /**
