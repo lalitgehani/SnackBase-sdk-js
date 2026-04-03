@@ -30,11 +30,12 @@ export const contentTypeInterceptor: RequestInterceptor = (request: HttpRequest)
 };
 
 /**
- * Interceptor to inject Authorization and API Key headers.
+ * Interceptor to inject Authorization, API Key, and X-Account-ID headers.
  */
 export const createAuthInterceptor = (
   getToken: () => string | undefined | null,
-  apiKey?: string
+  apiKey?: string,
+  accountId?: string
 ): RequestInterceptor => {
   return (request: HttpRequest) => {
     // Requirement 379: API key cannot be used for user-specific operations (OAuth/SAML)
@@ -47,13 +48,17 @@ export const createAuthInterceptor = (
         request.headers['X-API-Key'] = apiKey;
       }
     }
-    
+
     // Requirement 390: API key can be used alongside JWT auth (fallback)
     const token = getToken();
     if (token) {
       request.headers['Authorization'] = `Bearer ${token}`;
+    } else if (accountId) {
+      // No token present — inject X-Account-ID for anonymous public collection access.
+      // The server ignores this header when a valid JWT is present.
+      request.headers['X-Account-ID'] = accountId;
     }
-    
+
     return request;
   };
 };

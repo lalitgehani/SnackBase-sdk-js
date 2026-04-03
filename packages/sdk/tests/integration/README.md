@@ -15,6 +15,16 @@ SNACKBASE_TEST_EMAIL=test@example.com
 SNACKBASE_TEST_PASSWORD=testpassword123
 ```
 
+Or pass them inline when running tests:
+
+```bash
+SNACKBASE_URL=http://localhost:8000 SNACKBASE_API_KEY=your-api-key pnpm test:integration
+```
+
+> **Important:** `SNACKBASE_API_KEY` is required for integration tests. The tests register new users during setup, and without an API key the test runner cannot auto-verify their email addresses — causing all tests to fail with `EMAIL_VERIFICATION_REQUIRED`. You can create an API key from the Admin UI under **API Keys**, or via the SnackBase CLI.
+
+> **Note:** The default backend URL is `http://localhost:8090`. If your local server runs on a different port (e.g. `8000`), set `SNACKBASE_URL` accordingly.
+
 ### 2. Test Server Setup
 
 You can set up a test SnackBase server in several ways:
@@ -22,8 +32,10 @@ You can set up a test SnackBase server in several ways:
 #### Option 1: Local Development Server
 
 ```bash
-# Run SnackBase locally with Docker
-docker run -p 8090:8090 snackbase/server:latest
+# Run SnackBase locally (from the SnackBase directory)
+cd SnackBase
+uv run python -m snackbase serve
+# Server starts at http://localhost:8000 by default
 ```
 
 #### Option 2: SnackBase Cloud Staging
@@ -38,13 +50,10 @@ Use a mock server like `msw` for integration tests (see `setup.ts`).
 
 ```bash
 # Run all integration tests
-npm run test:integration
+pnpm test:integration
 
-# Run a specific test file
-npm run test:integration tests/integration/auth.test.ts
-
-# Run with coverage
-npm run test:integration:coverage
+# Run with a custom backend URL and API key
+SNACKBASE_URL=http://localhost:8000 SNACKBASE_API_KEY=your-api-key pnpm test:integration
 ```
 
 ## Test Structure

@@ -92,20 +92,41 @@ export class QueryBuilder<T = any> {
         case '~':
           expression = `${fieldOrString} ~ ${formattedValue}`;
           break;
+        case 'IN': {
+          const values = Array.isArray(value) ? value : [value];
+          const formatted = values.map((v: any) => this.formatValue(v)).join(', ');
+          expression = `${fieldOrString} IN (${formatted})`;
+          break;
+        }
+        case 'IS NULL':
+          expression = `${fieldOrString} IS NULL`;
+          break;
+        case 'IS NOT NULL':
+          expression = `${fieldOrString} IS NOT NULL`;
+          break;
         case '!~':
           expression = `${fieldOrString} !~ ${formattedValue}`;
           break;
         case '?=':
-          expression = `${fieldOrString} ?= ${formattedValue}`; // Is empty
+          expression = `${fieldOrString} ?= ${formattedValue}`;
           break;
         case '?!=':
-          expression = `${fieldOrString} ?!= ${formattedValue}`; // Is not empty
+          expression = `${fieldOrString} ?!= ${formattedValue}`;
           break;
         default:
           expression = `${fieldOrString} = ${formattedValue}`;
       }
       this._filterParts.push(expression);
     }
+    return this;
+  }
+
+  /**
+   * Add a raw filter string (explicit alias for clarity).
+   * @param rawFilter Raw filter expression string (e.g., "age > 21 && status = 'active'")
+   */
+  filterRaw(rawFilter: string): this {
+    this._filterParts.push(`(${rawFilter})`);
     return this;
   }
 

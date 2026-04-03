@@ -80,7 +80,7 @@ export class AuthManager {
       token_type: TokenType.JWT
     } as User : null);
 
-    const user = userElement;
+    const user = userElement || this.state.user;
     const token = data.token || null;
     const refreshToken = data.refresh_token || data.refreshToken || null;
 

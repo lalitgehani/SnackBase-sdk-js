@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { SnackbaseQueryBuilder } from '../query-builder';
 
 // ── Mock SnackBaseClient ──────────────────────────────────────────────────────
 
@@ -13,12 +14,7 @@ function makeMockClient() {
   return { records };
 }
 
-let SnackbaseQueryBuilder: typeof import('../query-builder').SnackbaseQueryBuilder;
-
-beforeEach(async () => {
-  const mod = await import('../query-builder');
-  SnackbaseQueryBuilder = mod.SnackbaseQueryBuilder;
-});
+import { SnackbaseQueryBuilder } from '../query-builder';
 
 // ── Sample data ───────────────────────────────────────────────────────────────
 

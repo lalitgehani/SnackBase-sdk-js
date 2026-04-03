@@ -179,7 +179,8 @@ export class SnackBaseClient {
     this.http.addRequestInterceptor(
       createAuthInterceptor(
         () => this.authManager.token || undefined,
-        this.config.apiKey
+        this.config.apiKey,
+        this.config.accountId
       )
     );
 

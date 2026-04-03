@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { StorageBridge } from '../storage-bridge';
 
 function makeMockClient() {
   const fileService = {
@@ -12,16 +13,10 @@ function makeMockClient() {
   };
 }
 
-let StorageBridge: typeof import('../storage-bridge').StorageBridge;
-
-beforeEach(async () => {
-  const mod = await import('../storage-bridge');
-  StorageBridge = mod.StorageBridge;
-});
 
 describe('StorageBridge', () => {
   let client: ReturnType<typeof makeMockClient>;
-  let bridge: InstanceType<typeof import('../storage-bridge').StorageBridge>;
+  let bridge: StorageBridge;
 
   beforeEach(() => {
     client = makeMockClient();

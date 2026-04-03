@@ -77,7 +77,6 @@ export class RealtimeChannelBridge {
           if (!table) continue;
 
           const ops = this._mapEventToOps(event);
-          await this.snackbase.realtime.subscribe(table, ops);
 
           const cleanup = this.snackbase.realtime.on(`${table}.*`, (data: any) => {
             // Check if this specific event matches the filter
@@ -91,6 +90,10 @@ export class RealtimeChannelBridge {
             cleanup();
             this.snackbase.realtime.unsubscribe(table);
           });
+
+          // Fire subscribe without awaiting — the handler is already registered
+          // and statusCallback should be called as soon as the channel is set up
+          this.snackbase.realtime.subscribe(table, ops);
         }
 
         if (statusCallback) statusCallback('SUBSCRIBED');

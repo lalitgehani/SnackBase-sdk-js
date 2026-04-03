@@ -83,6 +83,13 @@ export interface SnackBaseConfig {
   defaultAccount?: string;
 
   /**
+   * Account ID or slug to use for anonymous (unauthenticated) public collection access.
+   * When set and no auth token is present, the SDK sends an X-Account-ID header so that
+   * collections with an empty rule ("") can be accessed without logging in first.
+   */
+  accountId?: string;
+
+  /**
    * Maximum reconnection attempts for real-time (default: 10)
    */
   maxRealTimeRetries?: number;

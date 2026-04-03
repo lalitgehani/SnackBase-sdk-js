@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { AuthAdminBridge } from '../auth-bridge';
 
 // ── Mock the SnackBaseClient ──────────────────────────────────────────────────
 
@@ -30,12 +31,7 @@ function makeMockClient() {
   };
 }
 
-let AuthAdminBridge: typeof import('../auth-bridge').AuthAdminBridge;
-
-beforeEach(async () => {
-  const mod = await import('../auth-bridge');
-  AuthAdminBridge = mod.AuthAdminBridge;
-});
+import { AuthAdminBridge } from '../auth-bridge';
 
 // ── Sample data ───────────────────────────────────────────────────────────────
 
@@ -65,7 +61,7 @@ const MOCK_AUTH_STATE = {
 
 describe('AuthAdminBridge', () => {
   let client: ReturnType<typeof makeMockClient>;
-  let adminBridge: InstanceType<typeof import('../auth-bridge').AuthAdminBridge>;
+  let adminBridge: AuthAdminBridge;
 
   beforeEach(() => {
     client = makeMockClient();

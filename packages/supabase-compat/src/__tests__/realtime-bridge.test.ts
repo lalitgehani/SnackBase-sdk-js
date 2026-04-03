@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { RealtimeChannelBridge } from '../realtime-bridge';
 
 function makeMockClient() {
   const realtimeService = {
@@ -13,16 +14,10 @@ function makeMockClient() {
   };
 }
 
-let RealtimeChannelBridge: typeof import('../realtime-bridge').RealtimeChannelBridge;
-
-beforeEach(async () => {
-  const mod = await import('../realtime-bridge');
-  RealtimeChannelBridge = mod.RealtimeChannelBridge;
-});
 
 describe('RealtimeChannelBridge', () => {
   let client: ReturnType<typeof makeMockClient>;
-  let bridge: InstanceType<typeof import('../realtime-bridge').RealtimeChannelBridge>;
+  let bridge: RealtimeChannelBridge;
 
   beforeEach(() => {
     client = makeMockClient();

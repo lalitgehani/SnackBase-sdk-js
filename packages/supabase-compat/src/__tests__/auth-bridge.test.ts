@@ -46,15 +46,7 @@ function makeMockClient() {
   };
 }
 
-// Lazy import so we can control mock first
-let AuthBridge: typeof import('../auth-bridge').AuthBridge;
-let AuthAdminBridge: typeof import('../auth-bridge').AuthAdminBridge;
-
-beforeEach(async () => {
-  const mod = await import('../auth-bridge');
-  AuthBridge = mod.AuthBridge;
-  AuthAdminBridge = mod.AuthAdminBridge;
-});
+import { AuthBridge, AuthAdminBridge } from '../auth-bridge';
 
 // ── Sample data ───────────────────────────────────────────────────────────────
 
@@ -91,7 +83,7 @@ const MOCK_AUTH_STATE = {
 
 describe('AuthBridge', () => {
   let client: ReturnType<typeof makeMockClient>;
-  let bridge: InstanceType<typeof import('../auth-bridge').AuthBridge>;
+  let bridge: AuthBridge;
 
   beforeEach(() => {
     client = makeMockClient();

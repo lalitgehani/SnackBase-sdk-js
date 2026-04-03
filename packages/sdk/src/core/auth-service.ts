@@ -63,8 +63,6 @@ export class AuthService {
     const response = await this.http.post<AuthResponse>('/api/v1/auth/login', data);
     const authData = response.data;
     
-    console.log('Login Response:', JSON.stringify(authData, null, 2));
-
     await this.auth.updateState(authData);
 
     return authData;
@@ -123,12 +121,10 @@ export class AuthService {
   async getCurrentUser(): Promise<AuthResponse> {
     const response = await this.http.get<AuthResponse>('/api/v1/auth/me');
     const authData = response.data;
-    
-    console.log('GetMe Response:', JSON.stringify(authData, null, 2));
 
     await this.auth.updateState(authData);
 
-    return authData;
+    return { ...authData, user: this.auth.user ?? authData.user };
   }
 
   /**
