@@ -36,6 +36,8 @@ export const collectionsTool: Tool = {
             unique: { type: 'boolean' },
             options: { type: 'object' },
             collection: { type: 'string', description: 'Target collection name for relation type' },
+            expression: { type: 'string', description: 'SQL expression for computed fields.' },
+            return_type: { type: 'string', description: 'Return type for computed fields (text, number, boolean, etc.).' },
           },
           required: ['name', 'type'],
         },
@@ -45,6 +47,10 @@ export const collectionsTool: Tool = {
       view_rule: { type: ['string', 'null'] },
       create_rule: { type: ['string', 'null'] },
       update_rule: { type: ['string', 'null'] },
+      has_public_access: {
+        type: 'boolean',
+        description: 'Whether the collection allows public (unauthenticated) read access.',
+      },
       delete_rule: { type: ['string', 'null'] },
       collection_ids: {
         type: 'array',
@@ -68,7 +74,7 @@ export const collectionsTool: Tool = {
 
 export async function handleCollectionsTool(args: any) {
   const client = createClient();
-  const { action, collection_id, name, fields, list_rule, view_rule, create_rule, update_rule, delete_rule, collection_ids, data, strategy } = args;
+  const { action, collection_id, name, fields, has_public_access, list_rule, view_rule, create_rule, update_rule, delete_rule, collection_ids, data, strategy } = args;
 
   try {
     switch (action) {
@@ -96,12 +102,13 @@ export async function handleCollectionsTool(args: any) {
         const newCollection = await client.collections.create({
           name,
           fields,
+          has_public_access,
           list_rule,
           view_rule,
           create_rule,
           update_rule,
           delete_rule,
-        });
+        } as any);
         return {
           content: [{ type: 'text', text: JSON.stringify(newCollection, null, 2) }],
         };
@@ -111,12 +118,13 @@ export async function handleCollectionsTool(args: any) {
         const updatedCollection = await client.collections.update(collection_id, {
           name,
           fields,
+          has_public_access,
           list_rule,
           view_rule,
           create_rule,
           update_rule,
           delete_rule,
-        });
+        } as any);
         return {
           content: [{ type: 'text', text: JSON.stringify(updatedCollection, null, 2) }],
         };

@@ -13,3 +13,8 @@ export * from './audit-logs.js';
 export * from './email-templates.js';
 export * from './macros.js';
 export * from './migrations.js';
+export * from './webhooks.js';
+export * from './hooks.js';
+export * from './endpoints.js';
+export * from './workflows.js';
+export * from './jobs.js';

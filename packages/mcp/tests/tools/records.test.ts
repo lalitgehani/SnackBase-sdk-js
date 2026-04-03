@@ -20,6 +20,10 @@ describe('snackbase_records tool', () => {
         update: vi.fn(),
         patch: vi.fn(),
         delete: vi.fn(),
+        batchCreate: vi.fn(),
+        batchUpdate: vi.fn(),
+        batchDelete: vi.fn(),
+        aggregate: vi.fn(),
       },
     };
     (createClient as any).mockReturnValue(mockClient);
@@ -29,24 +33,54 @@ describe('snackbase_records tool', () => {
     const mockRecords = { items: [{ id: '1', name: 'test' }], total: 1 };
     mockClient.records.list.mockResolvedValue(mockRecords);
 
-    const result = await handleRecordsTool({ 
-      action: 'list', 
+    const result = await handleRecordsTool({
+      action: 'list',
       collection: 'posts',
-      filter: { name: 'test' },
+      filter: 'name = "test"',
       sort: '-created_at',
       limit: 10,
       skip: 0
     });
 
-    expect(mockClient.records.list).toHaveBeenCalledWith('posts', {
-      filter: { name: 'test' },
+    expect(mockClient.records.list).toHaveBeenCalledWith('posts', expect.objectContaining({
+      filter: 'name = "test"',
       sort: '-created_at',
       limit: 10,
       skip: 0,
-      fields: undefined,
-      expand: undefined
-    });
+    }));
     expect(result.content[0].text).toBe(JSON.stringify(mockRecords, null, 2));
+  });
+
+  it('passes string filter (not object) to list action', async () => {
+    const mockRecords = { items: [], total: 0 };
+    mockClient.records.list.mockResolvedValue(mockRecords);
+
+    await handleRecordsTool({
+      action: 'list',
+      collection: 'posts',
+      filter: 'status = "published"',
+    });
+
+    expect(mockClient.records.list).toHaveBeenCalledWith('posts', expect.objectContaining({
+      filter: 'status = "published"',
+    }));
+  });
+
+  it('passes cursor and cursor_before params to list action', async () => {
+    const mockRecords = { items: [], total: 0, cursor: 'next-cursor' };
+    mockClient.records.list.mockResolvedValue(mockRecords);
+
+    await handleRecordsTool({
+      action: 'list',
+      collection: 'posts',
+      cursor: 'abc123',
+      cursor_before: 'xyz789',
+    });
+
+    expect(mockClient.records.list).toHaveBeenCalledWith('posts', expect.objectContaining({
+      cursor: 'abc123',
+      cursor_before: 'xyz789',
+    }));
   });
 
   it('handles get action', async () => {
@@ -130,6 +164,95 @@ describe('snackbase_records tool', () => {
 
     expect(mockClient.records.delete).toHaveBeenCalledWith('posts', 'rec-123');
     expect(result.content[0].text).toBe(JSON.stringify({ success: true }, null, 2));
+  });
+
+  it('handles batchCreate action', async () => {
+    const mockRecordsInput = [{ name: 'A' }, { name: 'B' }];
+    const mockResponse = { created: 2, items: [{ id: '1', name: 'A' }, { id: '2', name: 'B' }] };
+    mockClient.records.batchCreate.mockResolvedValue(mockResponse);
+
+    const result = await handleRecordsTool({
+      action: 'batchCreate',
+      collection: 'posts',
+      records: mockRecordsInput,
+    });
+
+    expect(mockClient.records.batchCreate).toHaveBeenCalledWith('posts', mockRecordsInput);
+    expect(result.content[0].text).toBe(JSON.stringify(mockResponse, null, 2));
+  });
+
+  it('throws error when records is missing for batchCreate', async () => {
+    const result = await handleRecordsTool({ action: 'batchCreate', collection: 'posts' });
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain('records is required');
+  });
+
+  it('handles batchUpdate action', async () => {
+    const mockItems = [{ id: '1', data: { name: 'Updated' } }];
+    const mockResponse = { updated: 1 };
+    mockClient.records.batchUpdate.mockResolvedValue(mockResponse);
+
+    const result = await handleRecordsTool({
+      action: 'batchUpdate',
+      collection: 'posts',
+      items: mockItems,
+    });
+
+    expect(mockClient.records.batchUpdate).toHaveBeenCalledWith('posts', mockItems);
+    expect(result.content[0].text).toBe(JSON.stringify(mockResponse, null, 2));
+  });
+
+  it('throws error when items is missing for batchUpdate', async () => {
+    const result = await handleRecordsTool({ action: 'batchUpdate', collection: 'posts' });
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain('items is required');
+  });
+
+  it('handles batchDelete action', async () => {
+    const mockIds = ['id-1', 'id-2'];
+    const mockResponse = { deleted: 2 };
+    mockClient.records.batchDelete.mockResolvedValue(mockResponse);
+
+    const result = await handleRecordsTool({
+      action: 'batchDelete',
+      collection: 'posts',
+      ids: mockIds,
+    });
+
+    expect(mockClient.records.batchDelete).toHaveBeenCalledWith('posts', mockIds);
+    expect(result.content[0].text).toBe(JSON.stringify(mockResponse, null, 2));
+  });
+
+  it('throws error when ids is missing for batchDelete', async () => {
+    const result = await handleRecordsTool({ action: 'batchDelete', collection: 'posts' });
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain('ids is required');
+  });
+
+  it('handles aggregate action', async () => {
+    const mockResponse = { results: [{ count: 42 }] };
+    mockClient.records.aggregate.mockResolvedValue(mockResponse);
+
+    const result = await handleRecordsTool({
+      action: 'aggregate',
+      collection: 'posts',
+      functions: 'COUNT(*)',
+      group_by: 'status',
+      filter: 'published = true',
+    });
+
+    expect(mockClient.records.aggregate).toHaveBeenCalledWith('posts', expect.objectContaining({
+      functions: 'COUNT(*)',
+      group_by: 'status',
+      filter: 'published = true',
+    }));
+    expect(result.content[0].text).toBe(JSON.stringify(mockResponse, null, 2));
+  });
+
+  it('throws error when functions is missing for aggregate', async () => {
+    const result = await handleRecordsTool({ action: 'aggregate', collection: 'posts' });
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain('functions is required');
   });
 
   it('maps SDK errors correctly', async () => {

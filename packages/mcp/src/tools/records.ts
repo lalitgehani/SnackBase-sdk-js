@@ -10,7 +10,7 @@ export const recordsTool: Tool = {
     properties: {
       action: {
         type: 'string',
-        enum: ['list', 'get', 'create', 'update', 'patch', 'delete'],
+        enum: ['list', 'get', 'create', 'update', 'patch', 'delete', 'batchCreate', 'batchUpdate', 'batchDelete', 'aggregate'],
         description: 'The action to perform on records.',
       },
       collection: {
@@ -26,8 +26,8 @@ export const recordsTool: Tool = {
         description: 'The record data (required for create, update, patch).',
       },
       filter: {
-        type: ['object', 'string'],
-        description: 'Filter expression or object for listing records.',
+        type: 'string',
+        description: 'Filter expression for listing or aggregating records.',
       },
       sort: {
         type: 'string',
@@ -51,6 +51,39 @@ export const recordsTool: Tool = {
         items: { type: 'string' },
         description: 'Related collections to expand.',
       },
+      cursor: {
+        type: 'string',
+        description: 'Cursor for forward pagination (from a previous list response).',
+      },
+      cursor_before: {
+        type: 'string',
+        description: 'Cursor for backward pagination.',
+      },
+      records: {
+        type: 'array',
+        description: 'Array of record data objects (required for batchCreate).',
+      },
+      items: {
+        type: 'array',
+        description: 'Array of { id, data } update objects (required for batchUpdate).',
+      },
+      ids: {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'Array of record IDs to delete (required for batchDelete).',
+      },
+      functions: {
+        type: 'string',
+        description: 'Aggregation functions to apply, e.g. "COUNT(*), SUM(price)" (required for aggregate).',
+      },
+      group_by: {
+        type: 'string',
+        description: 'Field to group by for aggregate action.',
+      },
+      having: {
+        type: 'string',
+        description: 'HAVING clause filter for aggregate action.',
+      },
     },
     required: ['action', 'collection'],
   },
@@ -58,21 +91,23 @@ export const recordsTool: Tool = {
 
 export async function handleRecordsTool(args: any) {
   const client = createClient();
-  const { action, collection, record_id, data, filter, sort, limit, skip, fields, expand } = args;
+  const { action, collection, record_id, data, filter, sort, limit, skip, fields, expand, cursor, cursor_before, records, items, ids, functions, group_by, having } = args;
 
   try {
     switch (action) {
       case 'list':
-        const records = await client.records.list(collection, {
+        const listResult = await client.records.list(collection, {
           filter,
           sort,
           limit,
           skip,
           fields,
           expand,
+          cursor,
+          cursor_before,
         });
         return {
-          content: [{ type: 'text', text: JSON.stringify(records, null, 2) }],
+          content: [{ type: 'text', text: JSON.stringify(listResult, null, 2) }],
         };
 
       case 'get':
@@ -111,6 +146,34 @@ export async function handleRecordsTool(args: any) {
         const deleteResult = await client.records.delete(collection, record_id);
         return {
           content: [{ type: 'text', text: JSON.stringify(deleteResult, null, 2) }],
+        };
+
+      case 'batchCreate':
+        if (!records) throw new Error('records is required for batchCreate action');
+        const batchCreateResult = await client.records.batchCreate(collection, records);
+        return {
+          content: [{ type: 'text', text: JSON.stringify(batchCreateResult, null, 2) }],
+        };
+
+      case 'batchUpdate':
+        if (!items) throw new Error('items is required for batchUpdate action');
+        const batchUpdateResult = await client.records.batchUpdate(collection, items);
+        return {
+          content: [{ type: 'text', text: JSON.stringify(batchUpdateResult, null, 2) }],
+        };
+
+      case 'batchDelete':
+        if (!ids) throw new Error('ids is required for batchDelete action');
+        const batchDeleteResult = await client.records.batchDelete(collection, ids);
+        return {
+          content: [{ type: 'text', text: JSON.stringify(batchDeleteResult, null, 2) }],
+        };
+
+      case 'aggregate':
+        if (!functions) throw new Error('functions is required for aggregate action');
+        const aggregateResult = await client.records.aggregate(collection, { functions, group_by, filter, having });
+        return {
+          content: [{ type: 'text', text: JSON.stringify(aggregateResult, null, 2) }],
         };
 
       default:

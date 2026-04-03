@@ -4,7 +4,7 @@ import { handleToolError } from '../utils/errors.js';
 
 export const dashboardTool: Tool = {
   name: 'snackbase_dashboard',
-  description: 'Get SnackBase dashboard statistics — total accounts, users, collections, records, recent activity, and system health.',
+  description: 'Get SnackBase dashboard statistics — total accounts, users, collections (including public_collections_count), records, recent activity, and system health.',
   inputSchema: {
     type: 'object',
     properties: {
