@@ -18,43 +18,59 @@ export class CollectionService {
 
   /**
    * List all collections.
+   * Backend returns a paginated envelope { items, total, page, ... }; we unwrap to the array.
    */
   async list(): Promise<Collection[]> {
-    const response = await this.http.get<Collection[]>('/api/v1/collections');
-    return response.data;
+    const response = await this.http.get<{ items: any[] }>('/api/v1/collections');
+    return (response.data.items ?? (response.data as any)) as Collection[];
   }
 
   /**
    * List collection names only.
+   * Backend returns { names: string[], total: number }; we unwrap to the array.
    */
   async listNames(): Promise<string[]> {
-    const response = await this.http.get<string[]>('/api/v1/collections/names');
-    return response.data;
+    const response = await this.http.get<{ names: string[] }>('/api/v1/collections/names');
+    return response.data.names ?? (response.data as any);
   }
 
   /**
    * Get schema details for a specific collection.
+   * Backend serializes field definitions under the key "schema"; we remap to "fields".
    */
   async get(collectionId: string): Promise<Collection> {
-    const response = await this.http.get<Collection>(`/api/v1/collections/${collectionId}`);
-    return response.data;
+    const response = await this.http.get<any>(`/api/v1/collections/${collectionId}`);
+    return this.#normalizeCollection(response.data);
   }
 
   /**
    * Create a new collection and its physical table.
+   * Backend serializes field definitions under the key "schema"; we remap to "fields".
    */
   async create(data: CollectionCreate): Promise<Collection> {
-    const response = await this.http.post<Collection>('/api/v1/collections', data);
-    return response.data;
+    const response = await this.http.post<any>('/api/v1/collections', data);
+    return this.#normalizeCollection(response.data);
   }
 
   /**
    * Update an existing collection schema.
    * Note: Field types cannot be changed for data safety.
+   * Backend accepts PUT (not PATCH) and serializes fields under the key "schema".
    */
   async update(collectionId: string, data: CollectionUpdate): Promise<Collection> {
-    const response = await this.http.patch<Collection>(`/api/v1/collections/${collectionId}`, data);
-    return response.data;
+    const response = await this.http.put<any>(`/api/v1/collections/${collectionId}`, data);
+    return this.#normalizeCollection(response.data);
+  }
+
+  /**
+   * Remap backend's "schema" serialization alias to the SDK's "fields" property.
+   */
+  #normalizeCollection(data: any): Collection {
+    if (data.schema !== undefined && data.fields === undefined) {
+      const { schema, ...rest } = data;
+      return { ...rest, fields: schema } as Collection;
+    }
+    return data as Collection;
   }
 
   /**

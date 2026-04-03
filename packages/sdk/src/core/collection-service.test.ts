@@ -84,7 +84,7 @@ describe('CollectionService', () => {
 
   describe('update', () => {
     it('should update an existing collection', async () => {
-      const patchSpy = vi.spyOn(httpClient, 'patch').mockResolvedValue({
+      const putSpy = vi.spyOn(httpClient, 'put').mockResolvedValue({
         data: { ...mockCollection, name: 'updated_products' },
         status: 200,
         headers: new Headers(),
@@ -94,7 +94,7 @@ describe('CollectionService', () => {
       const data = { name: 'updated_products' };
       const result = await collectionService.update('col-1', data);
 
-      expect(patchSpy).toHaveBeenCalledWith('/api/v1/collections/col-1', data);
+      expect(putSpy).toHaveBeenCalledWith('/api/v1/collections/col-1', data);
       expect(result.name).toBe('updated_products');
     });
   });

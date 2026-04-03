@@ -2,23 +2,18 @@
  * Records integration tests
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { SnackBaseClient } from '../../src/core/client';
 import {
   createTestClient,
   createTestEmail,
   createTestAccountName,
   createTestCollectionName,
-  trackUser,
-  trackCollection,
   verifyUser,
-  cleanupTestResources,
 } from './setup';
 
 describe('Records Integration Tests', () => {
   let client: SnackBaseClient;
-  let testUserId: string | null = null;
-  let testCollectionId: string | null = null;
   let testCollectionName: string | null = null;
 
   beforeEach(async () => {
@@ -29,18 +24,16 @@ describe('Records Integration Tests', () => {
     const account_name = createTestAccountName();
     const account_slug = account_name.toLowerCase().replace(/\s+/g, '-').replace(/_/g, '-');
 
-    // Create a test user
+    // Register a fresh user with a unique email + account name each run
     const authState = await client.auth.register({
       email,
       password,
       account_name,
     });
-    testUserId = authState.user!.id;
-    trackUser(testUserId);
 
-    // Create a test collection using API Key (unauthenticated client yet)
+    // Create a uniquely-named collection — no conflicts across runs
     testCollectionName = createTestCollectionName();
-    const collection = await client.collections.create({
+    await client.collections.create({
       name: testCollectionName,
       fields: [
         { name: 'title', type: 'text', required: true },
@@ -53,20 +46,14 @@ describe('Records Integration Tests', () => {
       update_rule: '@request.auth.id != ""',
       delete_rule: '@request.auth.id != ""',
     });
-    testCollectionId = collection.id;
-    trackCollection(testCollectionId);
 
     // Verify and login user
-    await verifyUser(testUserId);
+    await verifyUser(authState.user!.id);
     await client.auth.login({
       email,
       password,
       account: account_slug,
     });
-  });
-
-  afterEach(async () => {
-    await cleanupTestResources(client);
   });
 
   describe('create', () => {
@@ -231,6 +218,152 @@ describe('Records Integration Tests', () => {
       await expect(
         client.records.get(testCollectionName!, created.id)
       ).rejects.toThrow();
+    });
+  });
+
+  describe('patch', () => {
+    it('should partially update a record — only provided fields change', async () => {
+      const created = await client.records.create(testCollectionName!, {
+        title: 'Original Title',
+        content: 'Original content',
+        status: 'draft',
+      });
+
+      const patched = await client.records.patch(testCollectionName!, created.id, {
+        status: 'published',
+      });
+
+      expect(patched.id).toBe(created.id);
+      expect(patched.status).toBe('published');
+      expect(patched.title).toBe('Original Title');   // unchanged
+      expect(patched.content).toBe('Original content'); // unchanged
+    });
+
+    it('should return 404 for non-existent record', async () => {
+      await expect(
+        client.records.patch(testCollectionName!, '000000000000000000000000', { status: 'published' })
+      ).rejects.toThrow();
+    });
+  });
+
+  describe('batchCreate', () => {
+    it('should atomically create multiple records', async () => {
+      const result = await client.records.batchCreate(testCollectionName!, [
+        { title: 'Batch 1', status: 'draft' },
+        { title: 'Batch 2', status: 'draft' },
+        { title: 'Batch 3', status: 'published' },
+        { title: 'Batch 4', status: 'published' },
+        { title: 'Batch 5', status: 'draft' },
+      ]);
+
+      expect(result.count).toBe(5);
+      expect(result.created).toHaveLength(5);
+      expect(result.created[0].title).toBe('Batch 1');
+      expect(result.created[4].title).toBe('Batch 5');
+      // All should have system fields
+      result.created.forEach((r) => {
+        expect(r.id).toBeDefined();
+        expect(r.account_id).toBeDefined();
+      });
+    });
+
+    it('should roll back all records when one fails validation', async () => {
+      const listBefore = await client.records.list(testCollectionName!);
+      const countBefore = listBefore.total;
+
+      // One record is missing the required 'title' field
+      await expect(
+        client.records.batchCreate(testCollectionName!, [
+          { title: 'Valid 1', status: 'draft' },
+          { title: 'Valid 2', status: 'draft' },
+          { status: 'draft' }, // missing required title
+        ])
+      ).rejects.toThrow();
+
+      // Count must be unchanged — no partial writes
+      const listAfter = await client.records.list(testCollectionName!);
+      expect(listAfter.total).toBe(countBefore);
+    });
+  });
+
+  describe('batchUpdate', () => {
+    it('should atomically update multiple records in one call', async () => {
+      const r1 = await client.records.create(testCollectionName!, { title: 'BU Record 1', status: 'draft' });
+      const r2 = await client.records.create(testCollectionName!, { title: 'BU Record 2', status: 'draft' });
+
+      const result = await client.records.batchUpdate(testCollectionName!, [
+        { id: r1.id, data: { status: 'published' } },
+        { id: r2.id, data: { status: 'archived' } },
+      ]);
+
+      expect(result.count).toBe(2);
+      expect(result.updated).toHaveLength(2);
+
+      const fetched1 = await client.records.get(testCollectionName!, r1.id);
+      const fetched2 = await client.records.get(testCollectionName!, r2.id);
+      expect(fetched1.status).toBe('published');
+      expect(fetched2.status).toBe('archived');
+    });
+  });
+
+  describe('batchDelete', () => {
+    it('should atomically delete multiple records', async () => {
+      const r1 = await client.records.create(testCollectionName!, { title: 'BD Record 1' });
+      const r2 = await client.records.create(testCollectionName!, { title: 'BD Record 2' });
+      const r3 = await client.records.create(testCollectionName!, { title: 'BD Record 3' });
+
+      const result = await client.records.batchDelete(testCollectionName!, [r1.id, r2.id, r3.id]);
+
+      expect(result.count).toBe(3);
+      expect(result.deleted).toContain(r1.id);
+      expect(result.deleted).toContain(r2.id);
+      expect(result.deleted).toContain(r3.id);
+
+      // All three should be gone
+      await expect(client.records.get(testCollectionName!, r1.id)).rejects.toThrow();
+      await expect(client.records.get(testCollectionName!, r2.id)).rejects.toThrow();
+      await expect(client.records.get(testCollectionName!, r3.id)).rejects.toThrow();
+    });
+  });
+
+  describe('aggregate', () => {
+    beforeEach(async () => {
+      // Collection has text fields; create a separate collection with a numeric field for aggregate tests
+      // We reuse the same collection — aggregate count() works on any collection
+      await client.records.batchCreate(testCollectionName!, [
+        { title: 'Agg 1', status: 'published' },
+        { title: 'Agg 2', status: 'published' },
+        { title: 'Agg 3', status: 'draft' },
+      ]);
+    });
+
+    it('should return correct count for all records', async () => {
+      const listResult = await client.records.list(testCollectionName!);
+      const expectedCount = listResult.total;
+
+      const aggResult = await client.records.aggregate(testCollectionName!, {
+        functions: 'count()',
+      });
+
+      expect(aggResult.results).toBeDefined();
+      expect(aggResult.results.length).toBeGreaterThanOrEqual(1);
+      // count() result key is typically "count()"
+      const countValue = aggResult.results[0]['count'];
+      expect(Number(countValue)).toBe(expectedCount);
+    });
+
+    it('should return correct count with a filter', async () => {
+      const aggResult = await client.records.aggregate(testCollectionName!, {
+        functions: 'count()',
+        filter: 'status="published"',
+      });
+
+      const listResult = await client.records.list(testCollectionName!, {
+        filter: 'status="published"',
+      });
+
+      const countValue = aggResult.results[0]['count'];
+      expect(Number(countValue)).toBe(listResult.total);
     });
   });
 
