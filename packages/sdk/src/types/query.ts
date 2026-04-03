@@ -11,10 +11,7 @@ export type FilterOperator =
   | '~'        // LIKE / contains
   | 'IN'       // IN (list of values)
   | 'IS NULL'  // field IS NULL
-  | 'IS NOT NULL' // field IS NOT NULL
-  | '!~'       // Not Like (legacy, not supported by backend)
-  | '?='       // Is Empty/Null (legacy, not supported by backend)
-  | '?!=';     // Is Not Empty/Null (legacy, not supported by backend)
+  | 'IS NOT NULL'; // field IS NOT NULL
 
 /**
  * Filter expression object.

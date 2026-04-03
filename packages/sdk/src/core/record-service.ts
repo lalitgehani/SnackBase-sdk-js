@@ -38,9 +38,7 @@ export class RecordService {
           : params.expand;
       }
       if (params.filter) {
-        formattedParams.filter = typeof params.filter === 'string'
-          ? params.filter
-          : JSON.stringify(params.filter);
+        formattedParams.filter = params.filter;
       }
     }
 

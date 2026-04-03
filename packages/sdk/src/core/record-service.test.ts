@@ -56,7 +56,7 @@ describe('RecordService', () => {
         sort: '-created_at',
         fields: ['id', 'title'],
         expand: ['author', 'comments'],
-        filter: { status: 'published', rating: { $gt: 4 } },
+        filter: 'status = "published" && rating > 4',
       });
 
       expect(httpClient.get).toHaveBeenCalledWith(
@@ -68,9 +68,25 @@ describe('RecordService', () => {
             sort: '-created_at',
             fields: 'id,title',
             expand: 'author,comments',
-            filter: '{"status":"published","rating":{"$gt":4}}',
+            filter: 'status = "published" && rating > 4',
           },
         }
+      );
+    });
+
+    it('should pass filter string directly without modification', async () => {
+      vi.spyOn(httpClient, 'get').mockResolvedValue({
+        data: { items: [], total: 0, skip: 0, limit: 10 },
+        status: 200,
+        headers: new Headers(),
+        request: {} as any,
+      });
+
+      await recordService.list('posts', { filter: 'status = "active"' });
+
+      expect(httpClient.get).toHaveBeenCalledWith(
+        '/api/v1/records/posts',
+        { params: { filter: 'status = "active"' } }
       );
     });
   });

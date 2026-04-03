@@ -36,9 +36,9 @@ export interface RecordListParams {
   fields?: string[] | string;
   
   /**
-   * Filter parameters.
+   * Filter expression string (e.g., 'status = "active"').
    */
-  filter?: any;
+  filter?: string;
 
   /**
    * Related collections to expand.

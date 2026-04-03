@@ -104,15 +104,6 @@ export class QueryBuilder<T = any> {
         case 'IS NOT NULL':
           expression = `${fieldOrString} IS NOT NULL`;
           break;
-        case '!~':
-          expression = `${fieldOrString} !~ ${formattedValue}`;
-          break;
-        case '?=':
-          expression = `${fieldOrString} ?= ${formattedValue}`;
-          break;
-        case '?!=':
-          expression = `${fieldOrString} ?!= ${formattedValue}`;
-          break;
         default:
           expression = `${fieldOrString} = ${formattedValue}`;
       }
