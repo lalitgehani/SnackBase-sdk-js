@@ -20,6 +20,13 @@
  * 3. Restore quoted literals
  */
 export function rewriteFilterFields(filter: string): string {
+  if (typeof filter !== 'string') {
+    throw new TypeError(
+      `rewriteFilterFields: expected a string filter, got ${typeof filter}. ` +
+        'SnackBase v0.7.0 only accepts SQL-like string filters (e.g., \'status = "active"\').',
+    );
+  }
+
   // Pass 1: extract quoted literals and replace with placeholders
   const literals: string[] = [];
   const withPlaceholders = filter.replace(/'[^']*'|"[^"]*"/g, (match) => {
@@ -68,6 +75,13 @@ export function rewriteSortField(sort: string): string {
  * // → "title ~ 'hello' && created_at >= '2024-01-01T00:00:00.000Z'"
  */
 export function pbFilter(raw: string, params?: Record<string, any>): string {
+  if (typeof raw !== 'string') {
+    throw new TypeError(
+      `pbFilter: expected a string filter template, got ${typeof raw}. ` +
+        'SnackBase v0.7.0 only accepts SQL-like string filters.',
+    );
+  }
+
   let result = raw;
 
   if (params) {

@@ -38,6 +38,25 @@ describe('rewriteFilterFields', () => {
       "created_at > '2024' && created_at < '2025'",
     );
   });
+
+  it('rewrites created in expression with double-quoted value', () => {
+    expect(rewriteFilterFields('created > "2025-01-01"')).toBe('created_at > "2025-01-01"');
+  });
+
+  it('rewrites updated in expression with @now token', () => {
+    expect(rewriteFilterFields('updated = @now')).toBe('updated_at = @now');
+  });
+
+  it('passes through a filter with no PocketBase-specific field names unchanged', () => {
+    expect(rewriteFilterFields('title = "hello" && status != "archived"')).toBe(
+      'title = "hello" && status != "archived"',
+    );
+  });
+
+  it('throws TypeError when given a non-string input', () => {
+    expect(() => rewriteFilterFields({ status: 'active' } as any)).toThrow(TypeError);
+    expect(() => rewriteFilterFields(null as any)).toThrow(TypeError);
+  });
 });
 
 describe('rewriteSortField', () => {
@@ -101,5 +120,9 @@ describe('pbFilter', () => {
   it('leaves unknown placeholders as-is', () => {
     const result = pbFilter('title ~ {:missing}', {});
     expect(result).toBe('title ~ {:missing}');
+  });
+
+  it('throws TypeError when raw filter template is not a string', () => {
+    expect(() => pbFilter(42 as any)).toThrow(TypeError);
   });
 });
