@@ -11,7 +11,7 @@ describe('RoleService', () => {
     mockHttpClient = {
       get: vi.fn(),
       post: vi.fn(),
-      patch: vi.fn(),
+      put: vi.fn(),
       delete: vi.fn(),
     };
     roleService = new RoleService(mockHttpClient as unknown as HttpClient);
@@ -55,14 +55,14 @@ describe('RoleService', () => {
   });
 
   describe('update', () => {
-    it('should call PATCH /api/v1/roles/:id with update data', async () => {
+    it('should call PUT /api/v1/roles/:id with update data', async () => {
       const updateData: RoleUpdate = { name: 'Super Admin' };
       const mockResponse = { data: { id: 'role-1', ...updateData } };
-      mockHttpClient.patch.mockResolvedValue(mockResponse);
+      mockHttpClient.put.mockResolvedValue(mockResponse);
 
       const result = await roleService.update('role-1', updateData);
 
-      expect(mockHttpClient.patch).toHaveBeenCalledWith('/api/v1/roles/role-1', updateData);
+      expect(mockHttpClient.put).toHaveBeenCalledWith('/api/v1/roles/role-1', updateData);
       expect(result).toEqual(mockResponse.data);
     });
   });

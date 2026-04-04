@@ -17,25 +17,25 @@ describe('ApiKeyService', () => {
   });
 
   describe('list', () => {
-    it('should call GET /api/v1/admin/api-keys and return data', async () => {
+    it('should call GET /api/v1/admin/api-keys and return paginated data', async () => {
       const mockKeys: ApiKey[] = [
         {
           id: 'key-1',
           name: 'Test Key',
-          masked_key: 'sk_...1234',
-          last_4: '1234',
+          key: 'sb_ak....1234',
+          last_used_at: null,
           expires_at: null,
+          is_active: true,
           created_at: '2023-01-01T00:00:00Z',
-          updated_at: '2023-01-01T00:00:00Z',
-          revoked_at: null,
         },
       ];
-      mockHttpClient.get.mockResolvedValue({ data: mockKeys });
+      const mockResponse = { data: { items: mockKeys, total: 1 } };
+      mockHttpClient.get.mockResolvedValue(mockResponse);
 
       const result = await apiKeyService.list();
 
       expect(mockHttpClient.get).toHaveBeenCalledWith('/api/v1/admin/api-keys', { params: undefined });
-      expect(result).toEqual(mockKeys);
+      expect(result).toEqual(mockResponse.data);
     });
   });
 
@@ -44,12 +44,12 @@ describe('ApiKeyService', () => {
       const mockKey: ApiKey = {
         id: 'key-1',
         name: 'Test Key',
-        masked_key: 'sk_...1234',
-        last_4: '1234',
+        key: 'sb_ak....1234',
+        last_used_at: null,
         expires_at: null,
+        is_active: true,
         created_at: '2023-01-01T00:00:00Z',
         updated_at: '2023-01-01T00:00:00Z',
-        revoked_at: null,
       };
       mockHttpClient.get.mockResolvedValue({ data: mockKey });
 
@@ -66,13 +66,11 @@ describe('ApiKeyService', () => {
       const mockNewKey: ApiKey = {
         id: 'key-2',
         name: 'New Key',
-        key: 'sk_test_123456789',
-        masked_key: 'sk_...6789',
-        last_4: '6789',
+        key: 'sb_ak.test_123456789.abcdef',
+        last_used_at: null,
         expires_at: null,
+        is_active: true,
         created_at: '2023-01-02T00:00:00Z',
-        updated_at: '2023-01-02T00:00:00Z',
-        revoked_at: null,
       };
       mockHttpClient.post.mockResolvedValue({ data: mockNewKey });
 
@@ -84,13 +82,12 @@ describe('ApiKeyService', () => {
   });
 
   describe('revoke', () => {
-    it('should call DELETE /api/v1/admin/api-keys/:id and return success', async () => {
-      mockHttpClient.delete.mockResolvedValue({ data: { success: true } });
+    it('should call DELETE /api/v1/admin/api-keys/:id and return void', async () => {
+      mockHttpClient.delete.mockResolvedValue({ data: undefined, status: 204 });
 
-      const result = await apiKeyService.revoke('key-1');
+      await apiKeyService.revoke('key-1');
 
       expect(mockHttpClient.delete).toHaveBeenCalledWith('/api/v1/admin/api-keys/key-1');
-      expect(result).toEqual({ success: true });
     });
   });
 });

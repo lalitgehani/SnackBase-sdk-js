@@ -1,7 +1,6 @@
 import { HttpClient } from './http-client';
 import { ApiKey, ApiKeyCreate, ApiKeyListResponse, ApiKeyListParams } from '../types/api-key';
 import { API_KEY_BASE_PATH } from './constants';
-import { formatMaskedKey } from '../utils/token-utils';
 
 /**
  * Service for managing API keys.
@@ -34,26 +33,15 @@ export class ApiKeyService {
    */
   async create(data: ApiKeyCreate): Promise<ApiKey> {
     const response = await this.http.post<ApiKey>(API_KEY_BASE_PATH, data);
-    
-    // Handle new token format in response
-    const apiKey = response.data;
-    if (apiKey.key && !apiKey.masked_key) {
-      // Store full key - only shown once
-      // And format masked key for display if not provided by backend
-      apiKey.masked_key = formatMaskedKey(apiKey.key);
-    }
-    
-    return apiKey;
+    return response.data;
   }
 
   /**
    * Revoke an API key
    * DELETE /api/v1/admin/api-keys/{id}
+   * Returns 204 No Content on success.
    */
-  async revoke(keyId: string): Promise<{ success: boolean }> {
-    const response = await this.http.delete<{ success: boolean }>(
-      `${API_KEY_BASE_PATH}/${encodeURIComponent(keyId)}`
-    );
-    return response.data;
+  async revoke(keyId: string): Promise<void> {
+    await this.http.delete(`${API_KEY_BASE_PATH}/${encodeURIComponent(keyId)}`);
   }
 }

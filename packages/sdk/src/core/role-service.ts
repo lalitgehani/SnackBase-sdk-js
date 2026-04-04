@@ -41,7 +41,7 @@ export class RoleService {
    * Update an existing role.
    */
   async update(roleId: string, data: RoleUpdate): Promise<Role> {
-    const response = await this.http.patch<Role>(`/api/v1/roles/${roleId}`, data);
+    const response = await this.http.put<Role>(`/api/v1/roles/${roleId}`, data);
     return response.data;
   }
 
