@@ -228,10 +228,11 @@ export class RealTimeService {
       url.pathname = '/api/v1/realtime/ws';
       url.searchParams.set('token', token);
 
-      this.socket = new WebSocket(url.toString());
+      const ws = new WebSocket(url.toString());
+      this.socket = ws;
       let connectionResolved = false;
 
-      this.socket.onopen = () => {
+      ws.onopen = () => {
         this.setState('connected');
         this.retryCount = 0;
         this.startHeartbeat();
@@ -243,7 +244,7 @@ export class RealTimeService {
         resolve();
       };
 
-      this.socket.onmessage = (event) => {
+      ws.onmessage = (event) => {
         try {
           const message: ServerMessage = JSON.parse(event.data);
           this.handleMessage(message);
@@ -252,19 +253,25 @@ export class RealTimeService {
         }
       };
 
-      this.socket.onclose = () => {
-        this.socket = null;
+      ws.onclose = () => {
+        // Only manage state if this socket is still the active one.
+        // A stale onclose from a previously-closed socket must not clobber
+        // a newer socket that was assigned during reconnect.
+        const isCurrentSocket = this.socket === ws;
+        if (isCurrentSocket) {
+          this.socket = null;
+        }
         if (!connectionResolved) {
           reject(new Error('WebSocket closed during connection'));
-        } else if (this.state !== 'disconnected') {
-           if (this.options.logger) {
+        } else if (isCurrentSocket && this.state !== 'disconnected') {
+          if (this.options.logger) {
             this.options.logger.info(`RealTimeService: WebSocket closed, reconnecting...`);
           }
           this.handleReconnect();
         }
       };
 
-      this.socket.onerror = (e) => {
+      ws.onerror = (e) => {
         if (!connectionResolved) {
           reject(e);
         } else {
