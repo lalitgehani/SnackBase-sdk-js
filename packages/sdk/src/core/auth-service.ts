@@ -1,10 +1,10 @@
 import { HttpClient } from './http-client';
 import { AuthManager } from './auth';
-import { 
-  LoginCredentials, 
-  RegisterData, 
-  AuthResponse, 
-  User, 
+import {
+  LoginCredentials,
+  RegisterData,
+  AuthResponse,
+  User,
   Account,
   PasswordResetRequest,
   PasswordResetConfirm,
@@ -16,7 +16,8 @@ import {
   SAMLUrlResponse,
   SAMLCallbackParams,
   SAMLResponse,
-  TokenType
+  TokenType,
+  VerifyResetTokenResponse,
 } from '../types/auth';
 import { AuthenticationError } from './errors';
 
@@ -175,10 +176,10 @@ export class AuthService {
 
   /**
    * Verify a password reset token is valid.
-   * Returns the email associated with the token if valid.
+   * Returns validity status and expiration time.
    */
-  async verifyResetToken(token: string): Promise<{ email: string }> {
-    const response = await this.http.get<{ email: string }>(`/api/v1/auth/verify-reset-token/${token}`);
+  async verifyResetToken(token: string): Promise<VerifyResetTokenResponse> {
+    const response = await this.http.get<VerifyResetTokenResponse>(`/api/v1/auth/verify-reset-token/${token}`);
     return response.data;
   }
 
@@ -188,10 +189,10 @@ export class AuthService {
   async getOAuthUrl(provider: OAuthProvider, redirectUri: string, state?: string): Promise<OAuthUrlResponse> {
     this.checkApiKeyRestriction();
     const response = await this.http.post<OAuthUrlResponse>(`/api/v1/auth/oauth/${provider}/authorize`, {
-      redirectUri,
+      redirect_uri: redirectUri,
       state,
     });
-    const { url, state: stateToken } = response.data;
+    const { state: stateToken } = response.data;
 
     // Store state token with expiry
     this.oauthStates.set(stateToken, Date.now() + this.STATE_EXPIRY_MS);
@@ -221,7 +222,7 @@ export class AuthService {
 
     const response = await this.http.post<OAuthResponse>(`/api/v1/auth/oauth/${provider}/callback`, {
       code,
-      redirectUri,
+      redirect_uri: redirectUri,
       state,
     });
     const authData = response.data;

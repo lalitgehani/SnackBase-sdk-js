@@ -67,14 +67,20 @@ export interface PasswordResetRequest {
 
 export interface PasswordResetConfirm {
   token: string;
-  newPassword: string;
+  new_password: string;
+}
+
+export interface VerifyResetTokenResponse {
+  valid: boolean;
+  expires_at: string | null;
 }
 
 export type OAuthProvider = 'google' | 'github' | 'microsoft' | 'apple';
 
 export interface OAuthUrlResponse {
-  url: string;
+  authorization_url: string;
   state: string;
+  provider: string;
 }
 
 export interface OAuthCallbackParams {

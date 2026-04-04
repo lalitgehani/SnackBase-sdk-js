@@ -200,8 +200,8 @@ describe('AuthService', () => {
         request: {} as any,
       });
 
-      const result = await authService.resetPassword({ token: 'tok', newPassword: 'pass' });
-      expect(postSpy).toHaveBeenCalledWith('/api/v1/auth/reset-password', { token: 'tok', newPassword: 'pass' });
+      const result = await authService.resetPassword({ token: 'tok', new_password: 'pass' });
+      expect(postSpy).toHaveBeenCalledWith('/api/v1/auth/reset-password', { token: 'tok', new_password: 'pass' });
       expect(result.message).toBe('success');
     });
 
@@ -235,7 +235,7 @@ describe('AuthService', () => {
   describe('OAuth methods', () => {
     it('getOAuthUrl should generate URL and store state token', async () => {
       const postSpy = vi.spyOn(httpClient, 'post').mockResolvedValue({
-        data: { url: 'https://oauth.provider.com/auth', state: 'state-123' },
+        data: { authorization_url: 'https://oauth.provider.com/auth', state: 'state-123', provider: 'google' },
         status: 200,
         headers: new Headers(),
         request: {} as any,
@@ -244,17 +244,17 @@ describe('AuthService', () => {
       const result = await authService.getOAuthUrl('google', 'https://app.com/callback');
 
       expect(postSpy).toHaveBeenCalledWith('/api/v1/auth/oauth/google/authorize', {
-        redirectUri: 'https://app.com/callback',
+        redirect_uri: 'https://app.com/callback',
         state: undefined,
       });
-      expect(result.url).toBe('https://oauth.provider.com/auth');
+      expect(result.authorization_url).toBe('https://oauth.provider.com/auth');
       expect(result.state).toBe('state-123');
     });
 
     it('handleOAuthCallback should authenticate user with valid state', async () => {
       // Setup state first
       vi.spyOn(httpClient, 'post').mockResolvedValueOnce({
-        data: { url: '...', state: 'state-123' },
+        data: { authorization_url: '...', state: 'state-123', provider: 'google' },
         status: 200,
         headers: new Headers(),
         request: {} as any,
@@ -277,7 +277,7 @@ describe('AuthService', () => {
 
       expect(postSpy).toHaveBeenCalledWith('/api/v1/auth/oauth/google/callback', {
         code: 'auth-code',
-        redirectUri: 'https://app.com/callback',
+        redirect_uri: 'https://app.com/callback',
         state: 'state-123',
       });
       expect(result.user).toEqual(mockUser);
@@ -297,7 +297,7 @@ describe('AuthService', () => {
       vi.useFakeTimers();
       
       vi.spyOn(httpClient, 'post').mockResolvedValueOnce({
-        data: { url: '...', state: 'state-123' },
+        data: { authorization_url: '...', state: 'state-123', provider: 'google' },
         status: 200,
         headers: new Headers(),
         request: {} as any,

@@ -207,7 +207,10 @@ describe('JobService Integration Tests', () => {
       // Creating a record queues the delivery job synchronously.
       await client.records.create(collectionName, { title: 'job-seed' });
 
-      // --- Wait for the delivery job to appear as failed or dead ---
+      // --- Wait for the delivery job to appear as failed, dead, or retrying ---
+      // After the first attempt fails, the job transitions to "retrying" (with
+      // exponential backoff). It can take 15+ minutes to reach "dead", so we
+      // also accept "retrying" which appears within a few seconds.
 
       let failedJobId: string | null = null;
 
@@ -215,9 +218,10 @@ describe('JobService Integration Tests', () => {
         async () => {
           const failedJobs = await client.jobs.list({ status: 'failed' });
           const deadJobs = await client.jobs.list({ status: 'dead' });
+          const retryingJobs = await client.jobs.list({ status: 'retrying' });
 
           // Find a job for our webhook handler
-          const candidate = [...failedJobs.items, ...deadJobs.items].find(
+          const candidate = [...failedJobs.items, ...deadJobs.items, ...retryingJobs.items].find(
             (j) => j.handler === 'webhook_delivery' || j.queue === 'webhooks'
           );
 

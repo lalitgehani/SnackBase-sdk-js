@@ -4,6 +4,7 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { SnackBaseClient } from '../../src/core/client';
+import { AuthenticationError } from '../../src/core/errors';
 import {
   createTestClient,
   createTestEmail,
@@ -221,6 +222,160 @@ describe('Authentication Integration Tests', () => {
 
       expect(newState.token).toBeDefined();
       expect(client.isAuthenticated).toBe(true);
+    });
+  });
+
+  // ──────────────────────────────────────────────────────────────────
+  // F7.4: AuthService — Coverage Completion
+  // ──────────────────────────────────────────────────────────────────
+
+  describe('resetPassword', () => {
+    it('should fail with an invalid token', async () => {
+      await expect(
+        client.auth.resetPassword({
+          token: 'invalid-token-that-does-not-exist',
+          new_password: 'NewSecure123!',
+        })
+      ).rejects.toThrow();
+    });
+
+    it('should fail with a weak password', async () => {
+      await expect(
+        client.auth.resetPassword({
+          token: 'any-token',
+          new_password: '123',
+        })
+      ).rejects.toThrow();
+    });
+  });
+
+  describe('verifyEmail', () => {
+    it('should fail with an invalid token', async () => {
+      await expect(
+        client.auth.verifyEmail('garbage-token-that-does-not-exist')
+      ).rejects.toThrow();
+    });
+  });
+
+  describe('verifyResetToken', () => {
+    it('should return valid=false for an invalid token', async () => {
+      const result = await client.auth.verifyResetToken('nonexistent-token');
+
+      expect(result.valid).toBe(false);
+      expect(result.expires_at).toBeNull();
+    });
+  });
+
+  describe('resendVerificationEmail', () => {
+    it('should succeed for an authenticated user', async () => {
+      const email = createTestEmail();
+      const password = 'TestPass123!';
+      const account_name = createTestAccountName();
+      const account_slug = account_name.toLowerCase().replace(/\s+/g, '-').replace(/_/g, '-');
+
+      const registerState = await client.auth.register({
+        email,
+        password,
+        account_name,
+      });
+      trackUser(registerState.user!.id);
+      await verifyUser(registerState.user!.id);
+
+      await client.auth.login({
+        email,
+        password,
+        account: account_slug,
+      });
+
+      const result = await client.auth.resendVerificationEmail();
+
+      expect(result).toBeDefined();
+      expect(result.message).toBeDefined();
+      expect(typeof result.message).toBe('string');
+    }, 30000);
+  });
+
+  describe('sendVerification', () => {
+    it('should succeed or return 500 when email service is unavailable', async () => {
+      const email = createTestEmail();
+      const password = 'TestPass123!';
+      const account_name = createTestAccountName();
+      const account_slug = account_name.toLowerCase().replace(/\s+/g, '-').replace(/_/g, '-');
+
+      const registerState = await client.auth.register({
+        email,
+        password,
+        account_name,
+      });
+      trackUser(registerState.user!.id);
+      await verifyUser(registerState.user!.id);
+
+      await client.auth.login({
+        email,
+        password,
+        account: account_slug,
+      });
+
+      // The endpoint returns 200 if email sends, or 500 if the email service
+      // is not configured. Both are valid in a test environment.
+      try {
+        const result = await client.auth.sendVerification(email);
+        expect(result).toBeDefined();
+        expect(result.message).toBeDefined();
+        expect(typeof result.message).toBe('string');
+      } catch (err: any) {
+        // 500 is expected when no email provider is configured
+        expect(err.status ?? err.statusCode ?? 500).toBe(500);
+      }
+    }, 30000);
+  });
+
+  describe('getOAuthUrl', () => {
+    it('should throw when provider is not configured', async () => {
+      // No OAuth providers configured in test environment
+      await expect(
+        client.auth.getOAuthUrl('google', 'http://localhost/callback')
+      ).rejects.toThrow();
+    });
+  });
+
+  describe('handleOAuthCallback', () => {
+    it('should throw AuthenticationError for unknown state token', async () => {
+      // SDK validates state client-side before hitting backend
+      await expect(
+        client.auth.handleOAuthCallback({
+          provider: 'google',
+          code: 'fake-code',
+          redirectUri: 'http://localhost/callback',
+          state: 'unknown-state-token',
+        })
+      ).rejects.toThrow(AuthenticationError);
+    });
+  });
+
+  describe('getSAMLUrl', () => {
+    it('should throw when no SAML provider is configured', async () => {
+      await expect(
+        client.auth.getSAMLUrl('okta', 'nonexistent-account')
+      ).rejects.toThrow();
+    });
+  });
+
+  describe('getSAMLMetadata', () => {
+    it('should throw when no SAML provider is configured', async () => {
+      await expect(
+        client.auth.getSAMLMetadata('okta', 'nonexistent-account')
+      ).rejects.toThrow();
+    });
+  });
+
+  describe('handleSAMLCallback', () => {
+    it('should throw for invalid SAML assertion', async () => {
+      await expect(
+        client.auth.handleSAMLCallback({
+          SAMLResponse: 'invalid-saml-data',
+        })
+      ).rejects.toThrow();
     });
   });
 });
