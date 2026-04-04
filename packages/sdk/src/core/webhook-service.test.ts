@@ -44,12 +44,16 @@ describe('WebhookService', () => {
     it('should call GET /api/v1/webhooks/:id and return response.data', async () => {
       const mockWebhook = {
         id: 'wh-1',
-        name: 'My Webhook',
+        account_id: 'AB1234',
         url: 'https://example.com/hook',
+        collection: 'posts',
         events: ['create' as const],
+        filter: null,
         enabled: true,
+        headers: null,
         created_at: '2024-01-01T00:00:00Z',
         updated_at: '2024-01-01T00:00:00Z',
+        created_by: null,
       };
       mockHttpClient.get.mockResolvedValue({ data: mockWebhook });
 
@@ -63,17 +67,21 @@ describe('WebhookService', () => {
   describe('create', () => {
     it('should call POST /api/v1/webhooks with data and return WebhookCreateResponse including secret', async () => {
       const createData: WebhookCreate = {
-        name: 'My Webhook',
         url: 'https://example.com/hook',
+        collection: 'posts',
         events: ['create'],
       };
       const mockResponse = {
         data: {
           id: 'wh-1',
-          name: 'My Webhook',
+          account_id: 'AB1234',
           url: 'https://example.com/hook',
+          collection: 'posts',
           events: ['create'],
+          filter: null,
           enabled: true,
+          headers: null,
+          created_by: null,
           secret: 'whsec_abc123',
           created_at: '2024-01-01T00:00:00Z',
           updated_at: '2024-01-01T00:00:00Z',
@@ -95,10 +103,14 @@ describe('WebhookService', () => {
       const mockResponse = {
         data: {
           id: 'wh-1',
-          name: 'My Webhook',
+          account_id: 'AB1234',
           url: 'https://example.com/hook',
+          collection: 'posts',
           events: ['create'],
+          filter: null,
           enabled: false,
+          headers: null,
+          created_by: null,
           created_at: '2024-01-01T00:00:00Z',
           updated_at: '2024-01-02T00:00:00Z',
         },
