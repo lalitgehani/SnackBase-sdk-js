@@ -131,37 +131,37 @@ describe('WorkflowService', () => {
   });
 
   describe('getInstance', () => {
-    it('should call GET /api/v1/workflows/{workflowId}/instances/{instanceId}', async () => {
-      const mockInstance = { id: 'inst1', workflow_id: 'wf1', status: 'completed', created_at: '', updated_at: '' };
+    it('should call GET /api/v1/workflow-instances/{instanceId}', async () => {
+      const mockInstance = { id: 'inst1', workflow_id: 'wf1', status: 'completed', step_logs: [], started_at: '' };
       mockHttpClient.get.mockResolvedValue({ data: mockInstance });
 
-      const result = await workflowService.getInstance('wf1', 'inst1');
+      const result = await workflowService.getInstance('inst1');
 
-      expect(mockHttpClient.get).toHaveBeenCalledWith('/api/v1/workflows/wf1/instances/inst1');
+      expect(mockHttpClient.get).toHaveBeenCalledWith('/api/v1/workflow-instances/inst1');
       expect(result).toEqual(mockInstance);
     });
   });
 
   describe('cancelInstance', () => {
-    it('should call POST /api/v1/workflows/{workflowId}/instances/{instanceId}/cancel', async () => {
-      const mockInstance = { id: 'i1', workflow_id: 'wf1', status: 'cancelled', created_at: '', updated_at: '' };
+    it('should call POST /api/v1/workflow-instances/{instanceId}/cancel', async () => {
+      const mockInstance = { id: 'i1', workflow_id: 'wf1', status: 'cancelled', started_at: '' };
       mockHttpClient.post.mockResolvedValue({ data: mockInstance });
 
-      const result = await workflowService.cancelInstance('wf1', 'i1');
+      const result = await workflowService.cancelInstance('i1');
 
-      expect(mockHttpClient.post).toHaveBeenCalledWith('/api/v1/workflows/wf1/instances/i1/cancel');
+      expect(mockHttpClient.post).toHaveBeenCalledWith('/api/v1/workflow-instances/i1/cancel');
       expect(result).toEqual(mockInstance);
     });
   });
 
   describe('retryInstance', () => {
-    it('should call POST /api/v1/workflows/{workflowId}/instances/{instanceId}/retry', async () => {
-      const mockInstance = { id: 'i1', workflow_id: 'wf1', status: 'pending', created_at: '', updated_at: '' };
+    it('should call POST /api/v1/workflow-instances/{instanceId}/resume', async () => {
+      const mockInstance = { id: 'i1', workflow_id: 'wf1', status: 'running', started_at: '' };
       mockHttpClient.post.mockResolvedValue({ data: mockInstance });
 
-      const result = await workflowService.retryInstance('wf1', 'i1');
+      const result = await workflowService.retryInstance('i1');
 
-      expect(mockHttpClient.post).toHaveBeenCalledWith('/api/v1/workflows/wf1/instances/i1/retry');
+      expect(mockHttpClient.post).toHaveBeenCalledWith('/api/v1/workflow-instances/i1/resume');
       expect(result).toEqual(mockInstance);
     });
   });

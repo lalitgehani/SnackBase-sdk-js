@@ -6,6 +6,8 @@ import {
   WorkflowListParams,
   WorkflowListResponse,
   WorkflowInstance,
+  WorkflowInstanceDetail,
+  WorkflowTriggerResponse,
   WorkflowInstanceListParams,
   WorkflowInstanceListResponse,
 } from '../types/workflow';
@@ -38,8 +40,8 @@ export class WorkflowService {
     return { success: true };
   }
 
-  async trigger(id: string, input?: Record<string, unknown>): Promise<WorkflowInstance> {
-    const response = await this.http.post<WorkflowInstance>(
+  async trigger(id: string, input?: Record<string, unknown>): Promise<WorkflowTriggerResponse> {
+    const response = await this.http.post<WorkflowTriggerResponse>(
       `/api/v1/workflows/${id}/trigger`,
       input ?? {}
     );
@@ -54,23 +56,23 @@ export class WorkflowService {
     return response.data;
   }
 
-  async getInstance(workflowId: string, instanceId: string): Promise<WorkflowInstance> {
-    const response = await this.http.get<WorkflowInstance>(
-      `/api/v1/workflows/${workflowId}/instances/${instanceId}`
+  async getInstance(instanceId: string): Promise<WorkflowInstanceDetail> {
+    const response = await this.http.get<WorkflowInstanceDetail>(
+      `/api/v1/workflow-instances/${instanceId}`
     );
     return response.data;
   }
 
-  async cancelInstance(workflowId: string, instanceId: string): Promise<WorkflowInstance> {
+  async cancelInstance(instanceId: string): Promise<WorkflowInstance> {
     const response = await this.http.post<WorkflowInstance>(
-      `/api/v1/workflows/${workflowId}/instances/${instanceId}/cancel`
+      `/api/v1/workflow-instances/${instanceId}/cancel`
     );
     return response.data;
   }
 
-  async retryInstance(workflowId: string, instanceId: string): Promise<WorkflowInstance> {
+  async retryInstance(instanceId: string): Promise<WorkflowInstance> {
     const response = await this.http.post<WorkflowInstance>(
-      `/api/v1/workflows/${workflowId}/instances/${instanceId}/retry`
+      `/api/v1/workflow-instances/${instanceId}/resume`
     );
     return response.data;
   }
