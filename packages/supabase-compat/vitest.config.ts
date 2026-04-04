@@ -5,5 +5,6 @@ export default defineConfig({
     name: 'supabase-compat',
     environment: 'node',
     include: ['src/**/*.test.ts'],
+    globals: true,
   },
 });

@@ -1,5 +1,6 @@
 export interface Account {
   id: string;
+  account_code: string;
   slug: string;
   name: string;
   created_at: string;

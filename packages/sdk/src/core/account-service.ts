@@ -46,7 +46,7 @@ export class AccountService {
    * Update an existing account.
    */
   async update(accountId: string, data: AccountUpdate): Promise<Account> {
-    const response = await this.http.patch<Account>(`/api/v1/accounts/${accountId}`, data);
+    const response = await this.http.put<Account>(`/api/v1/accounts/${accountId}`, data);
     return response.data;
   }
 

@@ -115,11 +115,16 @@ export class HttpClient {
           clearTimeout(timeoutId);
 
           let data: any;
-          const contentType = response.headers.get('content-type');
-          if (contentType && contentType.includes('application/json')) {
-            data = await response.json();
+          // Handle 204 No Content (and similar empty responses)
+          if (response.status === 204 || response.status === 205 || response.status === 304) {
+            data = undefined;
           } else {
-            data = await response.text();
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+              data = await response.json();
+            } else {
+              data = await response.text();
+            }
           }
 
           let httpResponse: HttpResponse<T> = {

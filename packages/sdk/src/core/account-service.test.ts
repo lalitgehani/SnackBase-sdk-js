@@ -92,7 +92,7 @@ describe('AccountService', () => {
 
   describe('update', () => {
     it('should update an existing account', async () => {
-      const patchSpy = vi.spyOn(httpClient, 'patch').mockResolvedValue({
+      const putSpy = vi.spyOn(httpClient, 'put').mockResolvedValue({
         data: { ...mockAccount, name: 'Updated Name' },
         status: 200,
         headers: new Headers(),
@@ -102,7 +102,7 @@ describe('AccountService', () => {
       const data = { name: 'Updated Name' };
       const result = await accountService.update('acc-1', data);
 
-      expect(patchSpy).toHaveBeenCalledWith('/api/v1/accounts/acc-1', data);
+      expect(putSpy).toHaveBeenCalledWith('/api/v1/accounts/acc-1', data);
       expect(result.name).toBe('Updated Name');
     });
   });

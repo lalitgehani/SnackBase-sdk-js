@@ -16,7 +16,7 @@ export interface UserCreate {
   email: string;
   password?: string;
   account_id: string;
-  role?: string;
+  role_id: number;
 }
 
 export interface UserUpdate {

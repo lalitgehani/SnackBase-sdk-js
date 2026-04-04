@@ -60,7 +60,7 @@ export class UserService {
    * Manually set a new password for a user.
    */
   async setPassword(userId: string, password: string): Promise<{ success: boolean }> {
-    await this.http.post(`/api/v1/users/${userId}/password`, { password });
+    await this.http.put(`/api/v1/users/${userId}/password`, { new_password: password });
     return { success: true };
   }
 

@@ -7,6 +7,7 @@ export default defineWorkspace([
       root: 'packages/sdk',
       environment: 'node',
       include: ['src/**/*.test.ts'],
+      globals: true,
     },
   },
   {
@@ -15,6 +16,7 @@ export default defineWorkspace([
       root: 'packages/react',
       environment: 'jsdom',
       include: ['src/**/*.test.{ts,tsx}'],
+      globals: true,
     },
   },
   {
@@ -23,7 +25,7 @@ export default defineWorkspace([
       root: 'packages/sdk',
       environment: 'node',
       include: ['tests/integration/**/*.test.ts'],
-      setupFiles: ['tests/integration/setup.ts'],
+      globals: true,
       // Run integration tests sequentially to avoid SQLite database locking issues
       fileParallelism: false,
       // Disable test concurrency within files
@@ -43,6 +45,7 @@ export default defineWorkspace([
       root: 'packages/mcp',
       environment: 'node',
       include: ['src/**/*.test.ts', 'tests/**/*.test.ts'],
+      globals: true,
     },
   },
   {
@@ -51,6 +54,7 @@ export default defineWorkspace([
       root: 'packages/supabase-compat',
       environment: 'node',
       include: ['src/**/*.test.ts'],
+      globals: true,
     },
   },
 ]);

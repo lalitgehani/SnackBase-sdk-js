@@ -11,6 +11,7 @@ describe('UserService', () => {
     mockHttpClient = {
       get: vi.fn(),
       post: vi.fn(),
+      put: vi.fn(),
       patch: vi.fn(),
       delete: vi.fn(),
     };
@@ -83,13 +84,13 @@ describe('UserService', () => {
   });
 
   describe('setPassword', () => {
-    it('should call POST /api/v1/users/:id/password', async () => {
-      mockHttpClient.post.mockResolvedValue({});
+    it('should call PUT /api/v1/users/:id/password', async () => {
+      mockHttpClient.put.mockResolvedValue({});
 
       const result = await userService.setPassword('user-1', 'new-password');
 
-      expect(mockHttpClient.post).toHaveBeenCalledWith('/api/v1/users/user-1/password', { 
-        password: 'new-password' 
+      expect(mockHttpClient.put).toHaveBeenCalledWith('/api/v1/users/user-1/password', { 
+        new_password: 'new-password' 
       });
       expect(result).toEqual({ success: true });
     });

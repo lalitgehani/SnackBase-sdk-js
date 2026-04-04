@@ -2,7 +2,6 @@
  * Integration test setup and utilities
  */
 
-import { beforeAll, afterAll } from 'vitest';
 import { SnackBaseClient } from '../../src/core/client';
 
 // Test configuration
@@ -19,6 +18,7 @@ const testResources = {
   users: new Set<string>(),
   collections: new Set<string>(),
   records: new Map<string, Set<string>>(), // collection -> record ids
+  accounts: new Set<string>(),
 };
 
 /**
@@ -61,6 +61,13 @@ export function trackUser(userId: string) {
 }
 
 /**
+ * Register a test account for cleanup
+ */
+export function trackAccount(accountId: string) {
+  testResources.accounts.add(accountId);
+}
+
+/**
  * Register a test collection for cleanup
  */
 export function trackCollection(collectionId: string) {
@@ -91,42 +98,46 @@ export function trackRecord(collectionId: string, recordId: string) {
 }
 
 /**
- * Clean up all tracked resources
+ * Clean up all tracked resources (parallelized within each resource type)
  */
 export async function cleanupTestResources(client: SnackBaseClient) {
   const errors: Error[] = [];
 
-  // Clean up records
+  const safeDelete = async (fn: () => Promise<any>) => {
+    try {
+      await fn();
+    } catch (error) {
+      errors.push(error as Error);
+    }
+  };
+
+  // Clean up records (parallel within type)
+  const recordDeletes: Promise<void>[] = [];
   for (const [collectionId, recordIds] of testResources.records.entries()) {
     for (const recordId of recordIds) {
-      try {
-        await client.records.delete(collectionId, recordId);
-      } catch (error) {
-        errors.push(error as Error);
-      }
+      recordDeletes.push(safeDelete(() => client.records.delete(collectionId, recordId)));
     }
   }
+  await Promise.all(recordDeletes);
   testResources.records.clear();
 
-  // Clean up collections
-  for (const collectionId of testResources.collections) {
-    try {
-      await client.collections.delete(collectionId);
-    } catch (error) {
-      errors.push(error as Error);
-    }
-  }
+  // Clean up collections (parallel)
+  await Promise.all(
+    [...testResources.collections].map((id) => safeDelete(() => client.collections.delete(id)))
+  );
   testResources.collections.clear();
 
-  // Clean up users
-  for (const userId of testResources.users) {
-    try {
-      await client.users.delete(userId);
-    } catch (error) {
-      errors.push(error as Error);
-    }
-  }
+  // Clean up users (parallel)
+  await Promise.all(
+    [...testResources.users].map((id) => safeDelete(() => client.users.delete(id)))
+  );
   testResources.users.clear();
+
+  // Clean up accounts (after users, since users belong to accounts)
+  await Promise.all(
+    [...testResources.accounts].map((id) => safeDelete(() => client.accounts.delete(id)))
+  );
+  testResources.accounts.clear();
 
   if (errors.length > 0) {
     console.warn(`${errors.length} errors occurred during cleanup:`);
@@ -180,23 +191,6 @@ export async function retry<T>(
   }
 
   throw lastError!;
-}
-
-/**
- * Setup integration tests
- */
-export function setupIntegrationTests() {
-  let client: SnackBaseClient;
-
-  beforeAll(() => {
-    client = createTestClient();
-  });
-
-  afterAll(async () => {
-    await cleanupTestResources(client);
-  });
-
-  return { client, TEST_CONFIG };
 }
 
 /**
