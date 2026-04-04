@@ -1,33 +1,43 @@
 export interface Job {
   id: string;
-  type: string;
-  status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
+  queue: string;
+  handler: string;
   payload: Record<string, any>;
-  result?: Record<string, any>;
-  error?: string;
+  status: 'pending' | 'running' | 'completed' | 'failed' | 'retrying' | 'dead';
+  priority: number;
+  run_at: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  failed_at: string | null;
+  error_message: string | null;
+  attempt_number: number;
+  max_retries: number;
+  retry_delay_seconds: number;
   created_at: string;
-  updated_at: string;
+  created_by: string | null;
+  account_id: string | null;
 }
 
 export interface JobStats {
-  total: number;
   pending: number;
   running: number;
   completed: number;
   failed: number;
-  cancelled: number;
+  retrying: number;
+  dead: number;
+  avg_duration_seconds: number | null;
+  failure_rate: number | null;
 }
 
 export interface JobListParams {
-  status?: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
-  type?: string;
-  page?: number;
-  per_page?: number;
+  status?: 'pending' | 'running' | 'completed' | 'failed' | 'retrying' | 'dead';
+  queue?: string;
+  handler?: string;
+  limit?: number;
+  offset?: number;
 }
 
 export interface JobListResponse {
   items: Job[];
   total: number;
-  page: number;
-  per_page: number;
 }

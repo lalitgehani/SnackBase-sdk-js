@@ -33,11 +33,11 @@ export class JobService {
   }
 
   /**
-   * Cancels a pending or running job.
+   * Cancels a pending job. The job is deleted from the queue.
+   * Only pending jobs can be cancelled; throws 400 for any other status.
    * @param id Job ID
    */
-  async cancel(id: string): Promise<Job> {
-    const response = await this.http.post<Job>(`/api/v1/admin/jobs/${id}/cancel`);
-    return response.data;
+  async cancel(id: string): Promise<void> {
+    await this.http.delete(`/api/v1/admin/jobs/${id}`);
   }
 }

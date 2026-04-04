@@ -9,28 +9,38 @@ describe('JobService', () => {
 
   const mockJob: Job = {
     id: 'job-1',
-    type: 'send_email',
+    queue: 'default',
+    handler: 'send_email',
     status: 'failed',
     payload: { to: 'user@example.com' },
-    error: 'SMTP connection refused',
+    priority: 0,
+    run_at: null,
+    started_at: null,
+    completed_at: null,
+    failed_at: new Date().toISOString(),
+    error_message: 'SMTP connection refused',
+    attempt_number: 1,
+    max_retries: 3,
+    retry_delay_seconds: 60,
     created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
+    created_by: null,
+    account_id: null,
   };
 
   const mockStats: JobStats = {
-    total: 100,
     pending: 10,
     running: 5,
     completed: 70,
     failed: 12,
-    cancelled: 3,
+    retrying: 3,
+    dead: 2,
+    avg_duration_seconds: null,
+    failure_rate: 0.14,
   };
 
   const mockListResponse: JobListResponse = {
     items: [mockJob],
     total: 1,
-    page: 1,
-    per_page: 20,
   };
 
   beforeEach(() => {
@@ -101,18 +111,18 @@ describe('JobService', () => {
   });
 
   describe('cancel', () => {
-    it('should cancel a job by id', async () => {
-      const postSpy = vi.spyOn(httpClient, 'post').mockResolvedValue({
-        data: { ...mockJob, status: 'cancelled' },
-        status: 200,
+    it('should cancel a pending job by id (DELETE, returns void)', async () => {
+      const deleteSpy = vi.spyOn(httpClient, 'delete').mockResolvedValue({
+        data: undefined,
+        status: 204,
         headers: new Headers(),
         request: {} as any,
       });
 
       const result = await jobService.cancel('job-1');
 
-      expect(postSpy).toHaveBeenCalledWith('/api/v1/admin/jobs/job-1/cancel');
-      expect(result.status).toBe('cancelled');
+      expect(deleteSpy).toHaveBeenCalledWith('/api/v1/admin/jobs/job-1');
+      expect(result).toBeUndefined();
     });
   });
 });
