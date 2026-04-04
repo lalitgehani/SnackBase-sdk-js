@@ -44,7 +44,7 @@ export class MacroService {
    * Built-in macros cannot be updated.
    */
   async update(macroId: string, data: MacroUpdate): Promise<Macro> {
-    const response = await this.http.patch<Macro>(`/api/v1/macros/${macroId}`, data);
+    const response = await this.http.put<Macro>(`/api/v1/macros/${macroId}`, data);
     return response.data;
   }
 
@@ -58,12 +58,13 @@ export class MacroService {
   }
 
   /**
-   * Test a macro with parameters.
+   * Test a macro with positional parameter values.
+   * The array length must match the macro's `parameters` definition.
    */
-  async test(macroId: string, params: Record<string, any>): Promise<MacroTestResult> {
+  async test(macroId: string, params: string[]): Promise<MacroTestResult> {
     const response = await this.http.post<MacroTestResult>(
       `/api/v1/macros/${macroId}/test`,
-      { params }
+      { parameters: params }
     );
     return response.data;
   }

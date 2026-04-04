@@ -11,7 +11,7 @@ describe('MacroService', () => {
     mockHttpClient = {
       get: vi.fn(),
       post: vi.fn(),
-      patch: vi.fn(),
+      put: vi.fn(),
       delete: vi.fn(),
     };
     macroService = new MacroService(mockHttpClient as unknown as HttpClient);
@@ -60,14 +60,14 @@ describe('MacroService', () => {
   });
 
   describe('update', () => {
-    it('should call PATCH /api/v1/macros/:id with update data', async () => {
+    it('should call PUT /api/v1/macros/:id with update data', async () => {
       const updateData: MacroUpdate = { name: 'Is Team Lead' };
       const mockResponse = { data: { id: 'macro-1', ...updateData } };
-      mockHttpClient.patch.mockResolvedValue(mockResponse);
+      mockHttpClient.put.mockResolvedValue(mockResponse);
 
       const result = await macroService.update('macro-1', updateData);
 
-      expect(mockHttpClient.patch).toHaveBeenCalledWith('/api/v1/macros/macro-1', updateData);
+      expect(mockHttpClient.put).toHaveBeenCalledWith('/api/v1/macros/macro-1', updateData);
       expect(result).toEqual(mockResponse.data);
     });
   });
@@ -84,14 +84,16 @@ describe('MacroService', () => {
   });
 
   describe('test', () => {
-    it('should call POST /api/v1/macros/:id/test with params', async () => {
-      const params = { user_id: 'user-1' };
-      const mockResponse = { data: { success: true, result: true } };
+    it('should call POST /api/v1/macros/:id/test with parameters array', async () => {
+      const params = ['user-1'];
+      const mockResponse = { data: { result: '1', execution_time: 1.5, rows_affected: 0 } };
       mockHttpClient.post.mockResolvedValue(mockResponse);
 
       const result = await macroService.test('macro-1', params);
 
-      expect(mockHttpClient.post).toHaveBeenCalledWith('/api/v1/macros/macro-1/test', { params });
+      expect(mockHttpClient.post).toHaveBeenCalledWith('/api/v1/macros/macro-1/test', {
+        parameters: params,
+      });
       expect(result).toEqual(mockResponse.data);
     });
   });

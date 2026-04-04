@@ -1,19 +1,19 @@
 export interface Macro {
-  id: string;
+  id: number;
   name: string;
-  description: string;
+  description: string | null;
   sql_query: string;
   parameters: string[];
-  is_builtin: boolean;
   created_at: string;
   updated_at: string;
+  created_by: string | null;
 }
 
 export interface MacroCreate {
   name: string;
-  description: string;
+  description?: string;
   sql_query: string;
-  parameters: string[];
+  parameters?: string[];
 }
 
 export interface MacroUpdate {
@@ -24,8 +24,9 @@ export interface MacroUpdate {
 }
 
 export interface MacroTestResult {
-  success: boolean;
-  result: any;
+  result: string | null;
+  execution_time: number;
+  rows_affected: number;
 }
 
 export interface MacroListResponse {
