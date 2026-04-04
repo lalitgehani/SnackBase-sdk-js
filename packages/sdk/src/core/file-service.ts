@@ -1,5 +1,5 @@
 import { HttpClient } from './http-client';
-import { FileMetadata, FileUploadOptions } from '../types/file';
+import { FileMetadata, FileUploadOptions, FileUploadResponse } from '../types/file';
 
 /**
  * Service for working with files (upload, download, delete).
@@ -28,14 +28,9 @@ export class FileService {
       // Note: Setting Content-Type header manually often breaks FormData boundaries
     }
 
-    const response = await this.http.post<FileMetadata>('/api/v1/files/upload', formData, {
-      // Override default Content-Type header to let the browser set the boundary
-      headers: {
-        'Content-Type': undefined as any
-      }
-    });
+    const response = await this.http.post<FileUploadResponse>('/api/v1/files/upload', formData);
 
-    return response.data;
+    return response.data.file;
   }
 
   /**
@@ -45,7 +40,7 @@ export class FileService {
   getDownloadUrl(path: string): string {
     const baseUrl = this.getBaseUrl().replace(/\/$/, '');
     const cleanPath = path.startsWith('/') ? path : `/${path}`;
-    const url = new URL(`${baseUrl}/api/v1/files/download${cleanPath}`);
+    const url = new URL(`${baseUrl}/api/v1/files${cleanPath}`);
     
     const token = this.getToken();
     if (token) {

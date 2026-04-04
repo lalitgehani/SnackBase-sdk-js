@@ -107,7 +107,11 @@ export class HttpClient {
           const fetchOptions: RequestInit = {
             method: currentReq.method,
             headers: currentReq.headers,
-            body: currentReq.body ? JSON.stringify(currentReq.body) : undefined,
+            body: currentReq.body instanceof FormData || currentReq.body instanceof Blob
+              ? currentReq.body
+              : currentReq.body
+              ? JSON.stringify(currentReq.body)
+              : undefined,
             signal,
           };
 

@@ -23,7 +23,7 @@ import {
  * Interceptor to set Content-Type: application/json for requests with a body.
  */
 export const contentTypeInterceptor: RequestInterceptor = (request: HttpRequest) => {
-  if (request.body && !request.headers['Content-Type']) {
+  if (request.body && !(request.body instanceof FormData) && !request.headers['Content-Type']) {
     request.headers['Content-Type'] = 'application/json';
   }
   return request;

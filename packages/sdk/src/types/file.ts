@@ -1,31 +1,35 @@
 /**
- * Metadata for a file.
+ * Metadata for an uploaded file, as returned by the server.
  */
 export interface FileMetadata {
   /**
    * Safe filename.
    */
   filename: string;
-  
-  /**
-   * MIME type of the file.
-   */
-  contentType: string;
-  
+
   /**
    * File size in bytes.
    */
   size: number;
-  
+
   /**
-   * Server path to the file.
+   * MIME type of the file.
+   */
+  mime_type: string;
+
+  /**
+   * Server path to the file (format: {account_id}/{uuid_filename}).
    */
   path: string;
-  
-  /**
-   * Upload timestamp.
-   */
-  created_at: string;
+}
+
+/**
+ * Full response body from POST /api/v1/files/upload.
+ */
+export interface FileUploadResponse {
+  success: boolean;
+  file: FileMetadata;
+  message: string;
 }
 
 /**
@@ -36,7 +40,7 @@ export interface FileUploadOptions {
    * Custom filename for the upload.
    */
   filename?: string;
-  
+
   /**
    * Custom content type for the upload.
    */

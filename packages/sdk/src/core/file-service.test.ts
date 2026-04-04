@@ -23,16 +23,15 @@ describe('FileService', () => {
       const mockFile = new Blob(['test content'], { type: 'text/plain' });
       (mockFile as any).name = 'test.txt';
 
-      const mockResponse = {
+      const fileMeta = {
         filename: 'test.txt',
-        contentType: 'text/plain',
+        mime_type: 'text/plain',
         size: 12,
-        path: '/uploads/test.txt',
-        created_at: '2026-01-22T12:00:00Z',
+        path: 'AB1234/some-uuid.txt',
       };
 
       const postSpy = vi.spyOn(httpClient, 'post').mockResolvedValue({
-        data: mockResponse,
+        data: { success: true, file: fileMeta, message: 'File uploaded successfully' },
         status: 201,
         headers: new Headers(),
         request: {} as any,
@@ -40,17 +39,14 @@ describe('FileService', () => {
 
       const result = await fileService.upload(mockFile);
 
-      expect(postSpy).toHaveBeenCalledWith('/api/v1/files/upload', expect.any(FormData), {
-        headers: {
-          'Content-Type': undefined,
-        },
-      });
+      expect(postSpy).toHaveBeenCalledWith('/api/v1/files/upload', expect.any(FormData));
 
       const callArgs = postSpy.mock.calls[0];
       const formData = callArgs[1] as FormData;
       expect(formData.get('file')).toBeDefined();
-      
-      expect(result).toEqual(mockResponse);
+
+      // upload() unwraps the backend envelope and returns file metadata directly
+      expect(result).toEqual(fileMeta);
     });
 
     it('should use custom filename if provided', async () => {
@@ -77,14 +73,14 @@ describe('FileService', () => {
       const path = '/uploads/test.txt';
       const url = fileService.getDownloadUrl(path);
 
-      expect(url).toBe(`${baseUrl}/api/v1/files/download/uploads/test.txt?token=${token}`);
+      expect(url).toBe(`${baseUrl}/api/v1/files/uploads/test.txt?token=${token}`);
     });
 
     it('should handle paths without leading slash', () => {
       const path = 'uploads/test.txt';
       const url = fileService.getDownloadUrl(path);
 
-      expect(url).toBe(`${baseUrl}/api/v1/files/download/uploads/test.txt?token=${token}`);
+      expect(url).toBe(`${baseUrl}/api/v1/files/uploads/test.txt?token=${token}`);
     });
 
     it('should omit token if not available', () => {
@@ -96,7 +92,7 @@ describe('FileService', () => {
       const path = '/uploads/test.txt';
       const url = fileService.getDownloadUrl(path);
 
-      expect(url).toBe(`${baseUrl}/api/v1/files/download/uploads/test.txt`);
+      expect(url).toBe(`${baseUrl}/api/v1/files/uploads/test.txt`);
     });
   });
 
