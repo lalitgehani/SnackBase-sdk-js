@@ -1,8 +1,10 @@
 import { HttpClient } from './http-client';
-import { 
-  Invitation, 
-  InvitationCreate, 
-  InvitationListParams 
+import {
+  Invitation,
+  InvitationCreate,
+  InvitationListParams,
+  InvitationListResponse,
+  InvitationPublicDetails,
 } from '../types/invitation';
 import { AuthResponse } from '../types/auth';
 
@@ -16,8 +18,8 @@ export class InvitationService {
   /**
    * List all invitations in the current account.
    */
-  async list(params?: InvitationListParams): Promise<Invitation[]> {
-    const response = await this.http.get<Invitation[]>('/api/v1/invitations', {
+  async list(params?: InvitationListParams): Promise<InvitationListResponse> {
+    const response = await this.http.get<InvitationListResponse>('/api/v1/invitations', {
       params,
     });
     return response.data;
@@ -41,10 +43,10 @@ export class InvitationService {
 
   /**
    * Get public details of an invitation using a token.
-   * No authentication required.
+   * No authentication required. Returns limited public metadata.
    */
-  async getPublic(token: string): Promise<Invitation> {
-    const response = await this.http.get<Invitation>(`/api/v1/invitations/${token}`);
+  async getPublic(token: string): Promise<InvitationPublicDetails> {
+    const response = await this.http.get<InvitationPublicDetails>(`/api/v1/invitations/${token}`);
     return response.data;
   }
 

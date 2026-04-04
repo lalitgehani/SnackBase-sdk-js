@@ -1,10 +1,9 @@
 import { HttpClient } from './http-client';
-import { 
-  Group, 
-  GroupCreate, 
-  GroupUpdate, 
-  GroupListParams, 
-  GroupListResponse 
+import {
+  Group,
+  GroupCreate,
+  GroupUpdate,
+  GroupListParams,
 } from '../types/group';
 
 /**
@@ -16,8 +15,8 @@ export class GroupsService {
   /**
    * List all groups in the current account.
    */
-  async list(params?: GroupListParams): Promise<GroupListResponse> {
-    const response = await this.http.get<GroupListResponse>('/api/v1/groups', {
+  async list(params?: GroupListParams): Promise<Group[]> {
+    const response = await this.http.get<Group[]>('/api/v1/groups', {
       params,
     });
     return response.data;
@@ -59,7 +58,7 @@ export class GroupsService {
    * Add a user to a group.
    */
   async addMember(groupId: string, userId: string): Promise<{ success: boolean }> {
-    await this.http.post(`/api/v1/groups/${groupId}/members`, { user_id: userId });
+    await this.http.post(`/api/v1/groups/${groupId}/users`, { user_id: userId });
     return { success: true };
   }
 
@@ -67,7 +66,7 @@ export class GroupsService {
    * Remove a user from a group.
    */
   async removeMember(groupId: string, userId: string): Promise<{ success: boolean }> {
-    await this.http.delete(`/api/v1/groups/${groupId}/members/${userId}`);
+    await this.http.delete(`/api/v1/groups/${groupId}/users/${userId}`);
     return { success: true };
   }
 }

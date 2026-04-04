@@ -84,7 +84,7 @@ describe('GroupsService', () => {
 
       const result = await groups.addMember('group1', 'user1');
 
-      expect(http.post).toHaveBeenCalledWith('/api/v1/groups/group1/members', { user_id: 'user1' });
+      expect(http.post).toHaveBeenCalledWith('/api/v1/groups/group1/users', { user_id: 'user1' });
       expect(result).toEqual({ success: true });
     });
   });
@@ -95,7 +95,7 @@ describe('GroupsService', () => {
 
       const result = await groups.removeMember('group1', 'user1');
 
-      expect(http.delete).toHaveBeenCalledWith('/api/v1/groups/group1/members/user1');
+      expect(http.delete).toHaveBeenCalledWith('/api/v1/groups/group1/users/user1');
       expect(result).toEqual({ success: true });
     });
   });

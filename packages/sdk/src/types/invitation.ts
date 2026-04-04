@@ -16,8 +16,22 @@ export interface InvitationCreate {
 }
 
 export interface InvitationListParams {
-  status?: 'pending' | 'accepted' | 'expired' | 'cancelled';
+  status_filter?: 'pending' | 'accepted' | 'expired' | 'cancelled';
+  account_id?: string;
   page?: number;
   page_size?: number;
   [key: string]: string | number | boolean | undefined;
+}
+
+export interface InvitationListResponse {
+  invitations: Invitation[];
+  total: number;
+}
+
+export interface InvitationPublicDetails {
+  email: string;
+  account_name: string;
+  invited_by_name: string;
+  expires_at: string;
+  is_valid: boolean;
 }
