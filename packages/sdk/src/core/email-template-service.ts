@@ -67,9 +67,9 @@ export class EmailTemplateService {
     recipientEmail: string,
     variables: Record<string, any> = {},
     provider?: string
-  ): Promise<{ success: boolean }> {
-    const response = await this.http.post<{ success: boolean }>(`/api/v1/admin/email/templates/${templateId}/test`, {
-      recipient: recipientEmail,
+  ): Promise<{ status: string; message: string; template_type: string; locale: string }> {
+    const response = await this.http.post<{ status: string; message: string; template_type: string; locale: string }>(`/api/v1/admin/email/templates/${templateId}/test`, {
+      recipient_email: recipientEmail,
       variables,
       provider
     });

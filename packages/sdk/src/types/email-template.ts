@@ -14,6 +14,7 @@ export interface EmailTemplate {
   html_body: string;
   text_body: string;
   enabled: boolean;
+  is_builtin: boolean;
   account_id?: string;
   created_at: string;
   updated_at: string;
@@ -47,9 +48,10 @@ export interface EmailTemplateRenderRequest {
   template_type: EmailTemplateType;
   locale: string;
   variables: Record<string, any>;
-  subject_override?: string;
-  html_body_override?: string;
-  text_body_override?: string;
+  account_id?: string;
+  subject?: string;
+  html_body?: string;
+  text_body?: string;
 }
 
 /**
@@ -68,13 +70,12 @@ export interface EmailLog {
   id: string;
   account_id: string;
   template_type: EmailTemplateType;
-  recipient: string;
-  subject: string;
+  recipient_email: string;
   status: 'sent' | 'failed' | 'pending';
   provider: string;
-  error?: string;
+  error_message?: string | null;
+  variables?: Record<string, string> | null;
   sent_at: string;
-  metadata?: Record<string, any>;
 }
 
 /**
@@ -82,21 +83,20 @@ export interface EmailLog {
  */
 export interface EmailLogFilters {
   [key: string]: string | number | boolean | undefined;
-  status?: string;
+  status_filter?: string;
   template_type?: EmailTemplateType;
   start_date?: string;
   end_date?: string;
   page?: number;
-  limit?: number;
+  page_size?: number;
 }
 
 /**
  * Paginated response for email logs.
  */
 export interface EmailLogListResponse {
-  data: EmailLog[];
+  logs: EmailLog[];
   total: number;
   page: number;
-  limit: number;
-  last_page: number;
+  page_size: number;
 }

@@ -20,6 +20,7 @@ describe('EmailTemplateService', () => {
     html_body: '<h1>Verify</h1>',
     text_body: 'Verify',
     enabled: true,
+    is_builtin: false,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
@@ -28,8 +29,7 @@ describe('EmailTemplateService', () => {
     id: 'log-1',
     account_id: 'acc-1',
     template_type: 'verification',
-    recipient: 'user@example.com',
-    subject: 'Verify your email',
+    recipient_email: 'user@example.com',
     status: 'sent',
     provider: 'sendgrid',
     sent_at: new Date().toISOString(),
@@ -114,8 +114,14 @@ describe('EmailTemplateService', () => {
 
   describe('sendTest', () => {
     it('should send a test email', async () => {
+      const mockSendResponse = {
+        status: 'success',
+        message: 'Test email sent to test@example.com',
+        template_type: 'verification',
+        locale: 'en',
+      };
       const postSpy = vi.spyOn(httpClient, 'post').mockResolvedValue({
-        data: { success: true },
+        data: mockSendResponse,
         status: 200,
         headers: new Headers(),
         request: {} as any,
@@ -124,22 +130,22 @@ describe('EmailTemplateService', () => {
       const variables = { name: 'John' };
       const result = await emailService.sendTest('tmpl-1', 'test@example.com', variables);
       expect(postSpy).toHaveBeenCalledWith('/api/v1/admin/email/templates/tmpl-1/test', {
-        recipient: 'test@example.com',
+        recipient_email: 'test@example.com',
         variables,
         provider: undefined,
       });
-      expect(result.success).toBe(true);
+      expect(result.status).toBe('success');
+      expect(result.message).toContain('test@example.com');
     });
   });
 
   describe('listLogs', () => {
     it('should fetch email logs', async () => {
       const mockLogResponse: EmailLogListResponse = {
-        data: [mockLog],
+        logs: [mockLog],
         total: 1,
         page: 1,
-        limit: 10,
-        last_page: 1,
+        page_size: 25,
       };
       const getSpy = vi.spyOn(httpClient, 'get').mockResolvedValue({
         data: mockLogResponse,
@@ -148,7 +154,7 @@ describe('EmailTemplateService', () => {
         request: {} as any,
       });
 
-      const filters = { status: 'sent' };
+      const filters = { status_filter: 'sent' };
       const result = await emailService.listLogs(filters);
       expect(getSpy).toHaveBeenCalledWith('/api/v1/admin/email/logs', { params: filters });
       expect(result).toEqual(mockLogResponse);
