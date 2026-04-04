@@ -18,15 +18,16 @@ describe('AuditLogService', () => {
     it('should call GET /api/v1/audit-logs with correct parameters', async () => {
       const filters: AuditLogFilters = {
         table_name: 'users',
-        operation: 'create',
-        page: 1,
-        limit: 10,
+        operation: 'CREATE',
         skip: 0,
+        limit: 10,
+        sort_by: 'occurred_at',
+        sort_order: 'desc',
       };
       const mockResponse: AuditLogListResponse = {
         items: [],
         total: 0,
-        page: 1,
+        skip: 0,
         limit: 10,
         audit_logging_enabled: true,
       };
@@ -39,14 +40,14 @@ describe('AuditLogService', () => {
     });
 
     it('should call GET /api/v1/audit-logs without parameters', async () => {
-      mockHttpClient.get.mockResolvedValue({ 
-        data: { 
-          items: [], 
-          total: 0, 
-          page: 1, 
-          limit: 10, 
-          audit_logging_enabled: true 
-        } 
+      mockHttpClient.get.mockResolvedValue({
+        data: {
+          items: [],
+          total: 0,
+          skip: 0,
+          limit: 50,
+          audit_logging_enabled: true,
+        },
       });
 
       await service.list();
@@ -56,8 +57,8 @@ describe('AuditLogService', () => {
   });
 
   describe('get', () => {
-    it('should call GET /api/v1/audit-logs/:id', async () => {
-      const logId = 'log-123';
+    it('should call GET /api/v1/audit-logs/:id with a numeric id', async () => {
+      const logId = 123;
       const mockLog: Partial<AuditLog> = { id: logId };
       mockHttpClient.get.mockResolvedValue({ data: mockLog });
 
@@ -67,28 +68,47 @@ describe('AuditLogService', () => {
       expect(result).toEqual(mockLog);
     });
 
-    it('should handle extra_metadata with auth_method', async () => {
-      const logId = 'log-456';
-      const mockLog: Partial<AuditLog> = { 
+    it('should return the full audit entry shape', async () => {
+      const logId = 456;
+      const mockLog: AuditLog = {
         id: logId,
-        extra_metadata: {
-          auth_method: 'api_key',
-          ip_address: '127.0.0.1'
-        }
+        account_id: 'AB1234',
+        operation: 'CREATE',
+        table_name: 'users',
+        record_id: 'user-uuid',
+        column_name: 'email',
+        old_value: null,
+        new_value: 'test@example.com',
+        user_id: 'admin-uuid',
+        user_email: 'admin@example.com',
+        user_name: 'Admin',
+        es_username: null,
+        es_reason: null,
+        es_timestamp: null,
+        ip_address: '127.0.0.1',
+        user_agent: null,
+        request_id: null,
+        occurred_at: '2026-01-01T00:00:00Z',
+        checksum: 'abc123',
+        previous_hash: null,
+        extra_metadata: null,
       };
       mockHttpClient.get.mockResolvedValue({ data: mockLog });
 
       const result = await service.get(logId);
 
-      expect(result.extra_metadata?.auth_method).toBe('api_key');
-      expect(result.extra_metadata?.ip_address).toBe('127.0.0.1');
+      expect(result.id).toBe(logId);
+      expect(result.operation).toBe('CREATE');
+      expect(result.table_name).toBe('users');
+      expect(result.column_name).toBe('email');
+      expect(result.occurred_at).toBeDefined();
     });
   });
 
   describe('export', () => {
-    it('should call GET /api/v1/audit-logs/export with correct parameters and default format', async () => {
+    it('should call GET /api/v1/audit-logs/export with default json format', async () => {
       const filters: AuditLogFilters = { table_name: 'users' };
-      mockHttpClient.get.mockResolvedValue({ data: 'csv-data' });
+      mockHttpClient.get.mockResolvedValue({ data: '[]' });
 
       const result = await service.export(filters);
 
@@ -98,12 +118,12 @@ describe('AuditLogService', () => {
           format: 'json',
         },
       });
-      expect(result).toEqual('csv-data');
+      expect(result).toEqual('[]');
     });
 
-    it('should call GET /api/v1/audit-logs/export with specified format', async () => {
+    it('should call GET /api/v1/audit-logs/export with csv format', async () => {
       const filters: AuditLogFilters = { table_name: 'users' };
-      mockHttpClient.get.mockResolvedValue({ data: 'csv-data' });
+      mockHttpClient.get.mockResolvedValue({ data: 'id,operation\n1,CREATE\n' });
 
       await service.export(filters, 'csv');
 
@@ -115,31 +135,22 @@ describe('AuditLogService', () => {
       });
     });
 
-    it('should export audit logs in PDF format', async () => {
+    it('should call GET /api/v1/audit-logs/export with date range filters', async () => {
       const filters: AuditLogFilters = {
-        table_name: 'users',
-        from_date: '2024-01-01T00:00:00Z',
-        to_date: '2024-12-31T23:59:59Z'
+        from_date: '2026-01-01T00:00:00Z',
+        to_date: '2026-12-31T23:59:59Z',
       };
+      mockHttpClient.get.mockResolvedValue({ data: '[]' });
 
-      const mockPdfData = 'JVBERi0xLjQKJeLjz9MKM...'; // Base64 PDF data
-      mockHttpClient.get.mockResolvedValue({ data: mockPdfData });
+      await service.export(filters, 'json');
 
-      const result = await service.export(filters, 'pdf');
-
-      expect(mockHttpClient.get).toHaveBeenCalledWith(
-        '/api/v1/audit-logs/export',
-        {
-          params: {
-            table_name: 'users',
-            from_date: '2024-01-01T00:00:00Z',
-            to_date: '2024-12-31T23:59:59Z',
-            format: 'pdf'
-          }
-        }
-      );
-      expect(typeof result).toBe('string');
-      expect(result).toBe(mockPdfData);
+      expect(mockHttpClient.get).toHaveBeenCalledWith('/api/v1/audit-logs/export', {
+        params: {
+          from_date: '2026-01-01T00:00:00Z',
+          to_date: '2026-12-31T23:59:59Z',
+          format: 'json',
+        },
+      });
     });
   });
 });

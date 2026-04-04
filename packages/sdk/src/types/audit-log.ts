@@ -1,22 +1,25 @@
-/**
- * Audit log extra metadata
- */
-export interface AuditLogExtraMetadata {
-  auth_method?: 'jwt' | 'api_key' | 'personal_token' | 'oauth' | 'unknown';
-  [key: string]: any;
-}
-
 export interface AuditLog {
-  id: string;
+  id: number;
   account_id: string;
+  operation: 'CREATE' | 'UPDATE' | 'DELETE' | string;
   table_name: string;
   record_id: string;
+  column_name: string;
+  old_value: string | null;
+  new_value: string | null;
   user_id: string;
-  operation: 'create' | 'update' | 'delete' | 'login' | 'logout' | string;
-  before: Record<string, any> | null;
-  after: Record<string, any> | null;
-  created_at: string;
-  extra_metadata?: AuditLogExtraMetadata;
+  user_email: string;
+  user_name: string;
+  es_username: string | null;
+  es_reason: string | null;
+  es_timestamp: string | null;
+  ip_address: string | null;
+  user_agent: string | null;
+  request_id: string | null;
+  occurred_at: string;
+  checksum: string | null;
+  previous_hash: string | null;
+  extra_metadata: Record<string, unknown> | null;
 }
 
 export interface AuditLogFilters {
@@ -27,10 +30,10 @@ export interface AuditLogFilters {
   operation?: string;
   from_date?: string;
   to_date?: string;
-  page?: number;
   skip?: number;
   limit?: number;
-  sort?: string;
+  sort_by?: string;
+  sort_order?: 'asc' | 'desc';
 }
 
 export type AuditLogExportFormat = 'csv' | 'json' | 'pdf';
@@ -38,7 +41,7 @@ export type AuditLogExportFormat = 'csv' | 'json' | 'pdf';
 export interface AuditLogListResponse {
   items: AuditLog[];
   total: number;
-  page: number;
+  skip: number;
   limit: number;
   audit_logging_enabled: boolean;
 }

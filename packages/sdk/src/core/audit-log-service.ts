@@ -20,7 +20,7 @@ export class AuditLogService {
   /**
    * Retrieves a single audit log entry by ID.
    */
-  async get(logId: string): Promise<AuditLog> {
+  async get(logId: number): Promise<AuditLog> {
     const response = await this.httpClient.get<AuditLog>(`/api/v1/audit-logs/${logId}`);
     return response.data;
   }
