@@ -1,10 +1,11 @@
 import { HttpClient } from './http-client';
-import { 
-  Configuration, 
-  ConfigurationStats, 
-  ProviderDefinition, 
+import {
+  Configuration,
+  ConfigurationStats,
+  ProviderDefinition,
   ConnectionTestResult,
   ConfigurationCreate,
+  ConfigurationCreateResult,
   RecentConfiguration,
   SetDefaultResult,
   UnsetDefaultResult,
@@ -73,8 +74,8 @@ export class AdminService {
    * @param configId Configuration ID
    * @param values New configuration values
    */
-  async updateConfigurationValues(configId: string, values: Record<string, any>): Promise<Record<string, any>> {
-    const response = await this.http.patch<Record<string, any>>(`/api/v1/admin/configuration/${configId}/values`, values);
+  async updateConfigurationValues(configId: string, values: Record<string, any>): Promise<{ status: string }> {
+    const response = await this.http.patch<{ status: string }>(`/api/v1/admin/configuration/${configId}/values`, values);
     return response.data;
   }
 
@@ -92,8 +93,8 @@ export class AdminService {
    * Creates new configuration record.
    * @param data Configuration data
    */
-  async createConfiguration(data: ConfigurationCreate): Promise<Configuration> {
-    const response = await this.http.post<Configuration>('/api/v1/admin/configuration', data);
+  async createConfiguration(data: ConfigurationCreate): Promise<ConfigurationCreateResult> {
+    const response = await this.http.post<ConfigurationCreateResult>('/api/v1/admin/configuration', data);
     return response.data;
   }
 

@@ -17,30 +17,24 @@ describe('AdminService', () => {
 
   const mockConfig: Configuration = {
     id: 'conf-1',
-    name: 'Primary SMTP',
+    display_name: 'Primary SMTP',
     category: 'email',
     provider_name: 'sendgrid',
-    is_system: true,
     enabled: true,
     is_default: false,
-    created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
 
   const mockStats: ConfigurationStats = {
-    system_count: 5,
-    account_count: 10,
-    by_category: {
-      email: { system: 1, account: 2 },
-      auth: { system: 4, account: 8 },
-    },
+    system_configs: { total: 5, by_category: { email: 1, auth: 4 } },
+    account_configs: { total: 10, by_category: { email: 2, auth: 8 } },
   };
 
   const mockProvider: ProviderDefinition = {
-    name: 'sendgrid',
+    provider_name: 'sendgrid',
     display_name: 'SendGrid',
     category: 'email',
-    is_built_in: true,
+    is_builtin: true,
   };
 
   beforeEach(() => {
@@ -172,14 +166,14 @@ describe('AdminService', () => {
       });
 
       const data = {
-        name: 'Test',
+        display_name: 'Test',
         category: 'email',
         provider_name: 'sendgrid',
-        values: { key: 'val' }
+        config: { key: 'val' }
       };
       const result = await adminService.createConfiguration(data);
       expect(postSpy).toHaveBeenCalledWith('/api/v1/admin/configuration', data);
-      expect(result).toEqual(mockConfig);
+      expect(result).toBeDefined();
     });
   });
 

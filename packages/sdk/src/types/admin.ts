@@ -3,14 +3,17 @@
  */
 export interface Configuration {
   id: string;
-  name: string;
+  display_name: string;
   category: string;
   provider_name: string;
-  is_system: boolean;
+  is_system?: boolean;
+  is_builtin?: boolean;
   account_id?: string;
   enabled: boolean;
   is_default?: boolean;
-  created_at: string;
+  priority?: number;
+  logo_url?: string;
+  created_at?: string;
   updated_at: string;
 }
 
@@ -18,24 +21,25 @@ export interface Configuration {
  * Statistics for configurations by category.
  */
 export interface ConfigurationStats {
-  system_count: number;
-  account_count: number;
-  by_category: Record<string, {
-    system: number;
-    account: number;
-  }>;
+  system_configs: {
+    total: number;
+    by_category: Record<string, number>;
+  };
+  account_configs: {
+    total: number;
+    by_category: Record<string, number>;
+  };
 }
 
 /**
  * Available provider definition.
  */
 export interface ProviderDefinition {
-  name: string;
+  provider_name: string;
   display_name: string;
   category: string;
-  description?: string;
-  is_built_in: boolean;
-  icon?: string;
+  is_builtin: boolean;
+  logo_url?: string;
 }
 
 /**
@@ -51,13 +55,20 @@ export interface ConnectionTestResult {
  * Request data for creating a configuration.
  */
 export interface ConfigurationCreate {
-  name: string;
+  display_name: string;
   category: string;
   provider_name: string;
-  values: Record<string, any>;
-  is_system?: boolean;
+  config: Record<string, any>;
   account_id?: string;
   enabled?: boolean;
+}
+
+/**
+ * Result of creating a configuration.
+ */
+export interface ConfigurationCreateResult {
+  id: string;
+  status: string;
 }
 
 /**
