@@ -40,6 +40,15 @@ export class WorkflowService {
     return { success: true };
   }
 
+  /**
+   * Toggle a workflow's enabled/disabled state.
+   * PATCH /api/v1/workflows/{id}/toggle
+   */
+  async toggle(id: string): Promise<Workflow> {
+    const response = await this.http.patch<Workflow>(`/api/v1/workflows/${id}/toggle`);
+    return response.data;
+  }
+
   async trigger(id: string, input?: Record<string, unknown>): Promise<WorkflowTriggerResponse> {
     const response = await this.http.post<WorkflowTriggerResponse>(
       `/api/v1/workflows/${id}/trigger`,
@@ -70,7 +79,19 @@ export class WorkflowService {
     return response.data;
   }
 
+  /**
+   * Resume a failed workflow instance (backend: POST .../resume).
+   * Alias: {@link resumeInstance}.
+   */
   async retryInstance(instanceId: string): Promise<WorkflowInstance> {
+    return this.resumeInstance(instanceId);
+  }
+
+  /**
+   * Resume a failed workflow instance.
+   * POST /api/v1/workflow-instances/{instanceId}/resume
+   */
+  async resumeInstance(instanceId: string): Promise<WorkflowInstance> {
     const response = await this.http.post<WorkflowInstance>(
       `/api/v1/workflow-instances/${instanceId}/resume`
     );

@@ -38,13 +38,13 @@ export class QueryBuilder<T = any> {
 
   /**
    * Expand related records.
-   * @param relations Array of relation names or comma-separated string
+   * @param fields Array of reference field names or comma-separated string
    */
-  expand(relations: string | string[]): this {
-    if (Array.isArray(relations)) {
-      this._expand = [...this._expand, ...relations];
+  expand(fields: string | string[]): this {
+    if (Array.isArray(fields)) {
+      this._expand = [...this._expand, ...fields];
     } else {
-      this._expand.push(relations);
+      this._expand.push(fields);
     }
     return this;
   }

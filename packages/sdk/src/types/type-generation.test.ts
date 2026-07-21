@@ -9,12 +9,24 @@ import { FieldDefinition } from './collection';
 
 describe('Type Generation Utilities', () => {
   it('should infer record type from schema', () => {
-    // Define a schema as const
+    // Define a schema as const using backend FieldType names
     const postSchema = [
       { name: 'title', type: 'text', required: true },
       { name: 'views', type: 'number', required: false },
       { name: 'isActive', type: 'boolean' },
-      { name: 'tags', type: 'multi_select' }
+      { name: 'meta', type: 'json' },
+      {
+        name: 'author_id',
+        type: 'reference',
+        collection: 'users',
+        on_delete: 'cascade',
+      },
+      {
+        name: 'full_name',
+        type: 'computed',
+        expression: "concat(first_name, ' ', last_name)",
+        return_type: 'text',
+      },
     ] as const satisfies readonly FieldDefinition[];
 
     // Generate type
@@ -25,7 +37,6 @@ describe('Type Generation Utilities', () => {
       title: string;
       views?: number | null | undefined;
       isActive?: boolean | null | undefined;
-      tags?: string[] | null | undefined;
     }>();
 
     // Verify required vs optional

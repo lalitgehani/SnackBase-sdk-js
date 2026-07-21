@@ -4,7 +4,6 @@ import {
   WebhookCreate,
   WebhookUpdate,
   WebhookCreateResponse,
-  WebhookListParams,
   WebhookListResponse,
   WebhookDeliveryListParams,
   WebhookDeliveryListResponse,
@@ -14,8 +13,12 @@ import {
 export class WebhookService {
   constructor(private http: HttpClient) {}
 
-  async list(params?: WebhookListParams): Promise<WebhookListResponse> {
-    const response = await this.http.get<WebhookListResponse>('/api/v1/webhooks', { params });
+  /**
+   * List all webhooks for the current account.
+   * Backend returns the full list (no pagination).
+   */
+  async list(): Promise<WebhookListResponse> {
+    const response = await this.http.get<WebhookListResponse>('/api/v1/webhooks');
     return response.data;
   }
 
@@ -44,6 +47,10 @@ export class WebhookService {
     return response.data;
   }
 
+  /**
+   * List delivery history for a webhook.
+   * Query params: limit, offset (backend contract).
+   */
   async listDeliveries(id: string, params?: WebhookDeliveryListParams): Promise<WebhookDeliveryListResponse> {
     const response = await this.http.get<WebhookDeliveryListResponse>(
       `/api/v1/webhooks/${id}/deliveries`,

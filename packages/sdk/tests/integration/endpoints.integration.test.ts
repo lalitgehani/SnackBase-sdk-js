@@ -108,10 +108,10 @@ describe('EndpointService Integration Tests', () => {
       expect(found!.name).toBe(payload.name);
     });
 
-    it('should support pagination params', async () => {
+    it('should support limit and offset params', async () => {
       if (!TEST_CONFIG.apiKey) return;
 
-      const result = await client.endpoints.list({ page: 1, page_size: 5 });
+      const result = await client.endpoints.list({ limit: 5, offset: 0 });
 
       expect(result.items).toBeInstanceOf(Array);
       expect(result.items.length).toBeLessThanOrEqual(5);
@@ -357,8 +357,8 @@ describe('EndpointService Integration Tests', () => {
       createdEndpointIds.push(created.id);
 
       const executions = await client.endpoints.listExecutions(created.id, {
-        page: 1,
-        page_size: 10,
+        limit: 10,
+        offset: 0,
       });
 
       expect(executions.items).toBeInstanceOf(Array);

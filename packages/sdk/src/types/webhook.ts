@@ -44,19 +44,18 @@ export interface WebhookDelivery {
   created_at: string;
 }
 
-export interface WebhookListParams {
-  page?: number;
-  page_size?: number;
-}
-
 export interface WebhookListResponse {
   items: Webhook[];
   total: number;
 }
 
+/**
+ * Delivery list query params (backend: limit/offset).
+ */
 export interface WebhookDeliveryListParams {
-  page?: number;
-  page_size?: number;
+  limit?: number;
+  offset?: number;
+  [key: string]: string | number | boolean | undefined;
 }
 
 export interface WebhookDeliveryListResponse {

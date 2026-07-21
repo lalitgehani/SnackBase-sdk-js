@@ -95,7 +95,7 @@ describe('JobService', () => {
   });
 
   describe('retry', () => {
-    it('should retry a job by id', async () => {
+    it('should retry a job by id (dead/failed/retrying statuses)', async () => {
       const postSpy = vi.spyOn(httpClient, 'post').mockResolvedValue({
         data: { ...mockJob, status: 'pending' },
         status: 200,
@@ -106,6 +106,21 @@ describe('JobService', () => {
       const result = await jobService.retry('job-1');
 
       expect(postSpy).toHaveBeenCalledWith('/api/v1/admin/jobs/job-1/retry');
+      expect(result.status).toBe('pending');
+    });
+
+    it('should retry a job that is currently retrying', async () => {
+      const retryingJob = { ...mockJob, status: 'retrying' as const };
+      const postSpy = vi.spyOn(httpClient, 'post').mockResolvedValue({
+        data: { ...retryingJob, status: 'pending' },
+        status: 200,
+        headers: new Headers(),
+        request: {} as any,
+      });
+
+      const result = await jobService.retry(retryingJob.id);
+
+      expect(postSpy).toHaveBeenCalledWith(`/api/v1/admin/jobs/${retryingJob.id}/retry`);
       expect(result.status).toBe('pending');
     });
   });

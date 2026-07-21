@@ -80,6 +80,70 @@ describe('CollectionService', () => {
       expect(postSpy).toHaveBeenCalledWith('/api/v1/collections', data);
       expect(result).toEqual(mockCollection);
     });
+
+    it('should send backend field type names for reference, file, and computed fields', async () => {
+      const postSpy = vi.spyOn(httpClient, 'post').mockResolvedValue({
+        data: mockCollection,
+        status: 201,
+        headers: new Headers(),
+        request: {} as any,
+      });
+
+      const data = {
+        name: 'orders',
+        fields: [
+          {
+            name: 'customer_id',
+            type: 'reference' as const,
+            collection: 'customers',
+            on_delete: 'cascade' as const,
+          },
+          {
+            name: 'receipt',
+            type: 'file' as const,
+          },
+          {
+            name: 'label',
+            type: 'computed' as const,
+            expression: "concat(sku, '-', status)",
+            return_type: 'text' as const,
+          },
+          {
+            name: 'ssn',
+            type: 'text' as const,
+            pii: true,
+            mask_type: 'ssn' as const,
+          },
+        ],
+      };
+      await collectionService.create(data);
+
+      expect(postSpy).toHaveBeenCalledWith('/api/v1/collections', data);
+      const body = postSpy.mock.calls[0][1] as typeof data;
+      expect(body.fields.map((f) => f.type)).toEqual([
+        'reference',
+        'file',
+        'computed',
+        'text',
+      ]);
+      expect(body.fields[0]).toMatchObject({
+        type: 'reference',
+        collection: 'customers',
+        on_delete: 'cascade',
+      });
+      expect(body.fields[2]).toMatchObject({
+        type: 'computed',
+        expression: "concat(sku, '-', status)",
+        return_type: 'text',
+      });
+      // Must not send invalid SDK-only type names
+      for (const f of body.fields) {
+        expect(f.type).not.toBe('relation');
+        expect(['text', 'number', 'boolean', 'datetime', 'email', 'url', 'json', 'reference', 'file', 'date', 'computed']).toContain(
+          f.type
+        );
+      }
+    });
   });
 
   describe('update', () => {

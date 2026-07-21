@@ -7,6 +7,149 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-07-21
+
+Contract alignment with SnackBase backend **v0.7.x** (including post-v0.7.1 HEAD dashboard and workflow APIs). Prefer this release when targeting current server schemas.
+
+### Breaking Changes
+
+- **Collection `FieldType`**: aligned with the backend field enum.
+  - **Removed** invalid SDK-only types: `relation`, `phone`, `select`, `multi_select`
+  - **Added** backend types: `reference`, `file`, `computed`
+  - Reference fields must use `type: 'reference'` (not `'relation'`) with `collection` and `on_delete` (`cascade` | `set_null` | `restrict`)
+- **List query params** for automation services now match the backend (`limit` / `offset`), not `page` / `page_size`:
+  - `EndpointListParams`, `EndpointExecutionListParams`
+  - `WorkflowListParams`, `WorkflowInstanceListParams`
+  - `WebhookDeliveryListParams`
+- **`WebhookService.list()`** no longer accepts pagination arguments (backend returns all webhooks for the account)
+- **`DashboardStats`** shape updated to the HEAD dashboard API (see Added / Changed). Clients typing against the old `SystemHealth` (`status` / `uptime` / `version`) or `recent_registrations: User[]` need updates
+
+### Added
+
+- `FieldDefinition` metadata required or returned by the backend: `on_delete`, `pii`, `mask_type` (plus existing `expression` / `return_type` for computed fields)
+- Full custom **endpoint** request/response types: `description`, `auth_required`, `condition`, `actions`, `response_template`, `account_id`, `created_by`
+- Endpoint / workflow list filters: `method`, `enabled`, `trigger_type`, instance `status`
+- `DashboardService.getStats({ range?: '7d' | '30d' | '90d' })`
+- Dashboard HEAD types: `range`, `previous_period`, `time_series`, `records_by_collection`, `feature_counts`, `jobs_by_status`, `hook_executions_summary`, `webhook_deliveries_summary`, `RecentRegistration`, corrected `SystemHealth` (`database_status`, `storage_usage_mb`)
+- `WorkflowService.toggle(id)` → `PATCH /api/v1/workflows/{id}/toggle`
+- `WorkflowService.resumeInstance(id)` (alias of `retryInstance`; hits `POST .../workflow-instances/{id}/resume`)
+- Workflow step layout fields: `position_x`, `position_y` (visual editor; ignored by executor)
+- Hook response extras: `account_id`, `cron`, `cron_description`
+
+### Changed
+
+- `FieldTypeToTs` / schema inference utilities map `reference`, `file`, and `computed` instead of removed type names
+- Job retry documentation: retries jobs in **dead**, **failed**, or **retrying** status (not “cancelled”)
+- Package typecheck config: valid `ignoreDeprecations` for TypeScript 5.9; unit test files excluded from `tsc --noEmit` for the package sources
+
+### Migration notes
+
+```ts
+// Collections — reference fields
+// before
+{ name: 'author_id', type: 'relation', collection: 'users' }
+// after
+{ name: 'author_id', type: 'reference', collection: 'users', on_delete: 'cascade' }
+
+// List automation resources
+// before
+client.workflows.list({ page: 1, page_size: 20 })
+client.endpoints.list({ page: 1, page_size: 20 })
+client.webhooks.listDeliveries(id, { page: 1, page_size: 10 })
+// after
+client.workflows.list({ limit: 20, offset: 0, trigger_type: 'manual', enabled: true })
+client.endpoints.list({ limit: 20, offset: 0, method: 'GET', enabled: true })
+client.webhooks.listDeliveries(id, { limit: 10, offset: 0 })
+client.webhooks.list() // no pagination args
+
+// Dashboard
+const stats = await client.dashboard.getStats({ range: '30d' })
+// stats.system_health.database_status, stats.time_series, stats.feature_counts, …
+
+// Workflows
+await client.workflows.toggle(workflowId)
+```
+
+## [0.5.0] - 2026-04-05
+
+Major feature release aligning the SDK with SnackBase backend **v0.7.0** automation and records APIs (webhooks, hooks, endpoints, workflows, jobs, batch/aggregate, cursor pagination, filter rewrite).
+
+### Breaking Changes
+
+- **Record filters are string-only**: `RecordListParams.filter` is `string` (SQL-like expressions). Object filters are no longer JSON-stringified by `RecordService.list()`.
+- **Legacy filter operators removed** from `FilterOperator` / query builder: `!~`, `?=`, `?!=` (never supported by the backend). Supported operators: `=`, `!=`, `>`, `>=`, `<`, `<=`, `~`, `IN`, `IS NULL`, `IS NOT NULL`.
+- Direct query-param field filters (`?status=active`) are not used by the SDK; use `?filter=status = "active"` via the `filter` param.
+
+### Added
+
+#### Records
+
+- **Cursor-based pagination** (alongside offset/`skip` pagination)
+  - Params: `cursor`, `cursor_before`, `include_count`
+  - Response: `next_cursor`, `prev_cursor`, `has_more`
+  - `QueryBuilder.cursor(value)` / `QueryBuilder.cursorBefore(value)`
+- **Batch operations** (atomic create/update/delete)
+  - `RecordService.batchCreate(collection, records[])` → `POST /api/v1/records/{collection}/batch`
+  - `RecordService.batchUpdate(collection, [{ id, data }])` → `PATCH .../batch`
+  - `RecordService.batchDelete(collection, ids[])` → `DELETE .../batch`
+  - Types: `BatchCreateRequest`, `BatchUpdateRequest`, `BatchDeleteRequest`, and matching response types
+- **Aggregation**
+  - `RecordService.aggregate(collection, params)` → `GET /api/v1/records/{collection}/aggregate`
+  - Supports `functions`, `group_by`, `filter`, `having` (`AggregationParams` / `AggregationResponse`)
+- **Expand** support on list/get for reference fields (`expand` query param)
+
+#### Collections & access
+
+- Computed field properties on `FieldDefinition`: `expression`, `return_type`
+- `Collection.has_public_access?: boolean`
+- `DashboardStats.public_collections_count`
+- **Anonymous public collection access**: optional `accountId` on client config injects `X-Account-ID` when unauthenticated
+
+#### Automation services (registered on `SnackBaseClient`)
+
+- **`client.webhooks`** (`WebhookService`) — CRUD, `test`, `listDeliveries` under `/api/v1/webhooks`
+- **`client.hooks`** (`HookService`) — CRUD, `toggle`, `trigger`, `listExecutions` under `/api/v1/hooks` (schedule / event / manual triggers)
+- **`client.endpoints`** (`EndpointService`) — CRUD, `toggle`, `listExecutions` under `/api/v1/endpoints` (dispatch remains raw HTTP at `/api/v1/x/...`)
+- **`client.workflows`** (`WorkflowService`) — CRUD, `trigger`, instance list/get/cancel/retry-resume under `/api/v1/workflows` and `/api/v1/workflow-instances`
+- **`client.jobs`** (`JobService`) — superadmin job queue: `list`, `stats`, `retry`, `cancel` under `/api/v1/admin/jobs`
+
+#### Other
+
+- Expanded integration test coverage for jobs, dashboard, hooks, endpoints, admin, files, groups, invitations, migrations, and related services
+- Realtime reconnection fix: prevent stale socket handlers from interfering with reconnect
+- Service contract refactors for auth, webhooks, workflows, macros, audit logs, email templates, API keys, roles, and collections against the updated backend
+
+### Changed
+
+- Filter handling simplified to pass string expressions through to the API without legacy operator rewrites
+- Collection API compatibility fixes for schema serialization (`schema` ↔ `fields` normalization where needed)
+
+### Migration notes
+
+```ts
+// Filters — string expressions only
+// before (no longer supported)
+await client.records.list('posts', { filter: { status: 'active' } })
+// after
+await client.records.list('posts', { filter: 'status = "active"' })
+// or
+await client.records.query('posts').filter('status', '=', 'active').get()
+
+// Cursor pagination
+const page = await client.records.list('posts', { limit: 50, cursor: prev.next_cursor ?? undefined })
+// page.next_cursor, page.prev_cursor, page.has_more
+
+// Batch / aggregate
+await client.records.batchCreate('items', [{ name: 'a' }, { name: 'b' }])
+await client.records.aggregate('orders', { functions: 'count(),sum(total)', group_by: 'status' })
+
+// Automation
+await client.webhooks.create({ url, collection: 'posts', events: ['create'] })
+await client.hooks.create({ name: 'on-create', trigger: { type: 'event', event: 'records.create' }, actions: [...] })
+await client.workflows.trigger(workflowId, { key: 'value' })
+await client.jobs.stats() // superadmin
+```
+
 ## [0.4.0] - 2026-02-21
 
 ### Added

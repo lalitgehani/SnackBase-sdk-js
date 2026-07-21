@@ -1,16 +1,25 @@
+/**
+ * Backend field types (SnackBase collection_validator.FieldType).
+ * Must match the server enum exactly for create/update validation.
+ */
 export type FieldType =
   | 'text'
   | 'number'
   | 'boolean'
-  | 'date'
   | 'datetime'
   | 'email'
   | 'url'
-  | 'phone'
-  | 'select'
-  | 'multi_select'
-  | 'relation'
-  | 'json';
+  | 'json'
+  | 'reference'
+  | 'file'
+  | 'date'
+  | 'computed';
+
+/** On-delete actions for reference fields (backend OnDeleteAction). */
+export type OnDeleteAction = 'cascade' | 'set_null' | 'restrict';
+
+/** PII mask strategies accepted when pii=true. */
+export type MaskType = 'email' | 'ssn' | 'phone' | 'name' | 'full' | 'custom';
 
 export interface FieldDefinition {
   name: string;
@@ -18,10 +27,18 @@ export interface FieldDefinition {
   required?: boolean;
   default?: any;
   unique?: boolean;
-  options?: string[]; // For select and multi_select
-  collection?: string; // For relation
+  /** Additional field options (e.g. file max size, select options if extended). */
+  options?: string[] | Record<string, any> | null;
+  /** Target collection name (required for reference type). */
+  collection?: string | null;
+  /** On delete action for reference fields: cascade, set_null, restrict. */
+  on_delete?: OnDeleteAction | string | null;
+  /** Whether this field contains PII data. */
+  pii?: boolean;
+  /** Mask type for PII fields (only when pii=true). */
+  mask_type?: MaskType | string | null;
   /** SQL expression for computed (virtual) fields. */
-  expression?: string;
+  expression?: string | null;
   /** Return type of a computed field expression. */
   return_type?: 'text' | 'number' | 'boolean' | 'datetime' | null;
 }
@@ -67,11 +84,13 @@ export interface CollectionExportFieldDefinition {
   required?: boolean;
   default?: any;
   unique?: boolean;
-  options?: Record<string, any> | null;  // For select/multi_select
-  collection?: string | null;            // For reference fields
-  on_delete?: string | null;             // CASCADE, SET_NULL, RESTRICT
-  pii?: boolean;                         // PII marking for compliance
-  mask_type?: string | null;             // Masking strategy (email, ssn, phone, name, full, custom)
+  options?: Record<string, any> | null;
+  collection?: string | null;
+  on_delete?: string | null;
+  pii?: boolean;
+  mask_type?: string | null;
+  expression?: string | null;
+  return_type?: string | null;
 }
 
 /**

@@ -18,24 +18,14 @@ describe('WebhookService', () => {
   });
 
   describe('list', () => {
-    it('should call GET /api/v1/webhooks and return response.data', async () => {
+    it('should call GET /api/v1/webhooks without pagination params', async () => {
       const mockResponse = { data: { items: [], total: 0 } };
       mockHttpClient.get.mockResolvedValue(mockResponse);
 
       const result = await webhookService.list();
 
-      expect(mockHttpClient.get).toHaveBeenCalledWith('/api/v1/webhooks', { params: undefined });
-      expect(result).toEqual(mockResponse.data);
-    });
-
-    it('should pass params to GET /api/v1/webhooks', async () => {
-      const mockResponse = { data: { items: [], total: 0, page: 2, page_size: 10 } };
-      mockHttpClient.get.mockResolvedValue(mockResponse);
-
-      const params = { page: 2, page_size: 10 };
-      const result = await webhookService.list(params);
-
-      expect(mockHttpClient.get).toHaveBeenCalledWith('/api/v1/webhooks', { params });
+      expect(mockHttpClient.get).toHaveBeenCalledWith('/api/v1/webhooks');
+      expect(mockHttpClient.get.mock.calls[0].length).toBe(1);
       expect(result).toEqual(mockResponse.data);
     });
   });
@@ -137,7 +127,9 @@ describe('WebhookService', () => {
 
   describe('test', () => {
     it('should call POST /api/v1/webhooks/:id/test and return response.data', async () => {
-      const mockResponse = { data: { success: true, status_code: 200, duration_ms: 42 } };
+      const mockResponse = {
+        data: { success: true, status_code: 200, response_body: 'ok', error: null },
+      };
       mockHttpClient.post.mockResolvedValue(mockResponse);
 
       const result = await webhookService.test('wh-1');
@@ -154,18 +146,26 @@ describe('WebhookService', () => {
 
       const result = await webhookService.listDeliveries('wh-1');
 
-      expect(mockHttpClient.get).toHaveBeenCalledWith('/api/v1/webhooks/wh-1/deliveries', { params: undefined });
+      expect(mockHttpClient.get).toHaveBeenCalledWith('/api/v1/webhooks/wh-1/deliveries', {
+        params: undefined,
+      });
       expect(result).toEqual(mockResponse.data);
     });
 
-    it('should pass pagination params to GET /api/v1/webhooks/:id/deliveries', async () => {
-      const mockResponse = { data: { items: [], total: 5, page: 2, page_size: 10 } };
+    it('should pass limit/offset (not page/page_size) to deliveries', async () => {
+      const mockResponse = { data: { items: [], total: 5 } };
       mockHttpClient.get.mockResolvedValue(mockResponse);
 
-      const params = { page: 2, page_size: 10 };
+      const params = { limit: 10, offset: 20 };
       const result = await webhookService.listDeliveries('wh-1', params);
 
-      expect(mockHttpClient.get).toHaveBeenCalledWith('/api/v1/webhooks/wh-1/deliveries', { params });
+      expect(mockHttpClient.get).toHaveBeenCalledWith('/api/v1/webhooks/wh-1/deliveries', {
+        params,
+      });
+      const calledParams = mockHttpClient.get.mock.calls[0][1].params;
+      expect(calledParams).toEqual({ limit: 10, offset: 20 });
+      expect(calledParams).not.toHaveProperty('page');
+      expect(calledParams).not.toHaveProperty('page_size');
       expect(result).toEqual(mockResponse.data);
     });
   });

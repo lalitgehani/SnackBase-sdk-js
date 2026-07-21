@@ -35,6 +35,7 @@ export type Filter<T> = {
 
 /**
  * Helper to map FieldType strings to TypeScript types.
+ * Aligned with backend FieldType enum.
  */
 export type FieldTypeToTs<T extends string> = 
   T extends 'text' ? string :
@@ -44,11 +45,10 @@ export type FieldTypeToTs<T extends string> =
   T extends 'datetime' ? string :
   T extends 'email' ? string :
   T extends 'url' ? string :
-  T extends 'phone' ? string :
-  T extends 'select' ? string :
-  T extends 'multi_select' ? string[] :
-  T extends 'relation' ? string | string[] : // Relation can be single or multiple, defaulting to string | string[]
   T extends 'json' ? any :
+  T extends 'reference' ? string | string[] :
+  T extends 'file' ? string | Record<string, any> :
+  T extends 'computed' ? string | number | boolean | null :
   any;
 
 /**

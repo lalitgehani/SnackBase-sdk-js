@@ -91,13 +91,13 @@ describe('WebhookService Integration Tests', () => {
       expect(found!.collection).toBe(TEST_COLLECTION);
     });
 
-    it('should support pagination params', async () => {
+    it('should list webhooks without pagination (backend returns all)', async () => {
       if (!TEST_CONFIG.apiKey) return;
 
-      const result = await client.webhooks.list({ page: 1, page_size: 5 });
+      const result = await client.webhooks.list();
 
       expect(result.items).toBeInstanceOf(Array);
-      expect(result.items.length).toBeLessThanOrEqual(5);
+      expect(typeof result.total).toBe('number');
     });
   });
 
@@ -372,8 +372,8 @@ describe('WebhookService Integration Tests', () => {
       createdWebhookIds.push(created.id);
 
       const deliveries = await client.webhooks.listDeliveries(created.id, {
-        page: 1,
-        page_size: 10,
+        limit: 10,
+        offset: 0,
       });
 
       expect(deliveries.items).toBeInstanceOf(Array);

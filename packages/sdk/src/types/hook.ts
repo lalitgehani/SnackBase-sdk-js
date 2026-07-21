@@ -5,6 +5,7 @@ export type HookTriggerConfig =
 
 export interface Hook {
   id: string;
+  account_id: string;
   name: string;
   description?: string | null;
   trigger: HookTriggerConfig;
@@ -16,6 +17,10 @@ export interface Hook {
   created_at: string;
   updated_at: string;
   created_by?: string | null;
+  /** Cron expression (schedule triggers only; convenience field from backend). */
+  cron?: string | null;
+  /** Human-readable cron schedule (schedule triggers only). */
+  cron_description?: string | null;
 }
 
 export interface HookCreate {
@@ -34,6 +39,7 @@ export interface HookListParams {
   enabled?: boolean;
   limit?: number;
   offset?: number;
+  [key: string]: string | number | boolean | undefined;
 }
 
 export interface HookListResponse {
@@ -45,7 +51,7 @@ export interface HookExecution {
   id: string;
   hook_id: string;
   trigger_type: string;
-  status: 'success' | 'failed' | 'partial';
+  status: 'success' | 'failed' | 'partial' | string;
   actions_executed: number;
   error_message?: string | null;
   duration_ms?: number | null;
@@ -56,6 +62,7 @@ export interface HookExecution {
 export interface HookExecutionListParams {
   limit?: number;
   offset?: number;
+  [key: string]: string | number | boolean | undefined;
 }
 
 export interface HookExecutionListResponse {

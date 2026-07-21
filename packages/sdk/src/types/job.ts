@@ -35,6 +35,7 @@ export interface JobListParams {
   handler?: string;
   limit?: number;
   offset?: number;
+  [key: string]: string | number | boolean | undefined;
 }
 
 export interface JobListResponse {

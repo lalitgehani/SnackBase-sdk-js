@@ -9,12 +9,15 @@ describe('HookService', () => {
 
   const mockHook = {
     id: 'h1',
+    account_id: 'AB1234',
     name: 'My Hook',
     trigger: { type: 'manual' as const },
     actions: [],
     enabled: true,
     created_at: '2024-01-01T00:00:00Z',
     updated_at: '2024-01-01T00:00:00Z',
+    cron: null,
+    cron_description: null,
   };
 
   beforeEach(() => {

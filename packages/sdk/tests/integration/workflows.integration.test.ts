@@ -94,10 +94,10 @@ describe('WorkflowService Integration Tests', () => {
       expect(result.total).toBeGreaterThanOrEqual(0);
     });
 
-    it('should support page and page_size params', async () => {
+    it('should support limit and offset params', async () => {
       if (!TEST_CONFIG.apiKey) return;
 
-      const result = await client.workflows.list({ page: 1, page_size: 2 });
+      const result = await client.workflows.list({ limit: 2, offset: 0 });
 
       expect(Array.isArray(result.items)).toBe(true);
       expect(result.items.length).toBeLessThanOrEqual(2);

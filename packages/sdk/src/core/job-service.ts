@@ -24,7 +24,8 @@ export class JobService {
   }
 
   /**
-   * Retries a failed or cancelled job.
+   * Manually retry a job in dead, failed, or retrying status.
+   * POST /api/v1/admin/jobs/{id}/retry
    * @param id Job ID
    */
   async retry(id: string): Promise<Job> {
@@ -35,6 +36,7 @@ export class JobService {
   /**
    * Cancels a pending job. The job is deleted from the queue.
    * Only pending jobs can be cancelled; throws 400 for any other status.
+   * DELETE /api/v1/admin/jobs/{id}
    * @param id Job ID
    */
   async cancel(id: string): Promise<void> {
