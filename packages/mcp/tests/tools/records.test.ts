@@ -66,6 +66,19 @@ describe('snackbase_records tool', () => {
     }));
   });
 
+  it('passes include_count on list', async () => {
+    mockClient.records.list.mockResolvedValue({ items: [], total: 0 });
+    await handleRecordsTool({
+      action: 'list',
+      collection: 'posts',
+      include_count: true,
+    });
+    expect(mockClient.records.list).toHaveBeenCalledWith(
+      'posts',
+      expect.objectContaining({ include_count: true }),
+    );
+  });
+
   it('passes cursor and cursor_before params to list action', async () => {
     const mockRecords = { items: [], total: 0, cursor: 'next-cursor' };
     mockClient.records.list.mockResolvedValue(mockRecords);

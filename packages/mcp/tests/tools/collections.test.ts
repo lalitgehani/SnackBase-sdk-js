@@ -67,35 +67,65 @@ describe('snackbase_collections tool', () => {
     expect(result.content[0].text).toContain('collection_id is required');
   });
 
-  it('handles create action', async () => {
+  it('handles create action with CollectionCreate shape (no has_public_access)', async () => {
     const mockInput = {
       name: 'users',
-      fields: [{ name: 'email', type: 'email' }]
+      fields: [
+        { name: 'email', type: 'email' },
+        { name: 'avatar', type: 'file' },
+        { name: 'owner', type: 'reference', collection: 'accounts', on_delete: 'set_null' },
+        { name: 'full_name', type: 'computed', expression: "first || ' ' || last", return_type: 'text' },
+      ],
+      list_rule: '',
+      view_rule: null,
     };
-    const mockResponse = { id: 'col-456', ...mockInput };
+    const mockResponse = { id: 'col-456', name: 'users', has_public_access: true };
     mockClient.collections.create.mockResolvedValue(mockResponse);
 
-    const result = await handleCollectionsTool({ 
-      action: 'create', 
-      ...mockInput 
+    const result = await handleCollectionsTool({
+      action: 'create',
+      ...mockInput,
+      // Agent may still send this — must not be forwarded to SDK
+      has_public_access: true,
     });
 
-    expect(mockClient.collections.create).toHaveBeenCalledWith(expect.objectContaining(mockInput));
+    expect(mockClient.collections.create).toHaveBeenCalledWith({
+      name: 'users',
+      fields: mockInput.fields,
+      list_rule: '',
+      view_rule: null,
+      create_rule: undefined,
+      update_rule: undefined,
+      delete_rule: undefined,
+    });
+    const callArg = mockClient.collections.create.mock.calls[0][0];
+    expect(callArg).not.toHaveProperty('has_public_access');
     expect(result.content[0].text).toBe(JSON.stringify(mockResponse, null, 2));
   });
 
-  it('handles update action', async () => {
-    const mockUpdate = { name: 'updated_name' };
+  it('handles update without inventing has_public_access', async () => {
+    const mockUpdate = { name: 'updated_name', fields: [{ name: 'title', type: 'text' }] };
     const mockResponse = { id: 'col-123', ...mockUpdate };
     mockClient.collections.update.mockResolvedValue(mockResponse);
 
-    const result = await handleCollectionsTool({ 
-      action: 'update', 
+    const result = await handleCollectionsTool({
+      action: 'update',
       collection_id: 'col-123',
-      ...mockUpdate
+      ...mockUpdate,
+      has_public_access: false,
     });
 
-    expect(mockClient.collections.update).toHaveBeenCalledWith('col-123', expect.objectContaining(mockUpdate));
+    expect(mockClient.collections.update).toHaveBeenCalledWith('col-123', {
+      name: 'updated_name',
+      fields: mockUpdate.fields,
+      list_rule: undefined,
+      view_rule: undefined,
+      create_rule: undefined,
+      update_rule: undefined,
+      delete_rule: undefined,
+    });
+    const callArg = mockClient.collections.update.mock.calls[0][1];
+    expect(callArg).not.toHaveProperty('has_public_access');
     expect(result.content[0].text).toBe(JSON.stringify(mockResponse, null, 2));
   });
 

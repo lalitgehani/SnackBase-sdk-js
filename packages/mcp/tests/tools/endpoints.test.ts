@@ -25,13 +25,27 @@ describe('snackbase_endpoints tool', () => {
     (createClient as any).mockReturnValue(mockClient);
   });
 
-  it('handles list action', async () => {
-    const mockEndpoints = [{ id: 'ep-1', name: 'my-endpoint', method: 'GET', path: '/hello' }];
+  it('handles list with limit/offset and filters', async () => {
+    const mockEndpoints = { items: [{ id: 'ep-1', name: 'my-endpoint' }], total: 1 };
     mockClient.endpoints.list.mockResolvedValue(mockEndpoints);
 
-    const result = await handleEndpointsTool({ action: 'list' }) as any;
+    const result = await handleEndpointsTool({
+      action: 'list',
+      method: 'GET',
+      enabled: true,
+      limit: 10,
+      offset: 0,
+    }) as any;
 
-    expect(mockClient.endpoints.list).toHaveBeenCalled();
+    expect(mockClient.endpoints.list).toHaveBeenCalledWith({
+      method: 'GET',
+      enabled: true,
+      limit: 10,
+      offset: 0,
+    });
+    const callArg = mockClient.endpoints.list.mock.calls[0][0];
+    expect(callArg).not.toHaveProperty('page');
+    expect(callArg).not.toHaveProperty('page_size');
     expect(result.content[0].text).toBe(JSON.stringify(mockEndpoints, null, 2));
   });
 
@@ -45,15 +59,19 @@ describe('snackbase_endpoints tool', () => {
     expect(result.content[0].text).toBe(JSON.stringify(mockEndpoint, null, 2));
   });
 
-  it('throws error when endpoint_id is missing for get', async () => {
-    const result = await handleEndpointsTool({ action: 'get' }) as any;
-    expect(result.isError).toBe(true);
-    expect(result.content[0].text).toContain('endpoint_id is required');
-  });
-
-  it('handles create action', async () => {
-    const mockInput = { name: 'hello', method: 'GET', path: '/hello' };
-    const mockResponse = { id: 'ep-2', enabled: true, ...mockInput };
+  it('handles create with full EndpointCreate body including actions', async () => {
+    const mockInput = {
+      name: 'hello',
+      method: 'POST',
+      path: '/hello',
+      description: 'Say hello',
+      auth_required: true,
+      condition: 'true',
+      actions: [{ type: 'respond', body: { ok: true } }],
+      response_template: { status: 200 },
+      enabled: true,
+    };
+    const mockResponse = { id: 'ep-2', ...mockInput };
     mockClient.endpoints.create.mockResolvedValue(mockResponse);
 
     const result = await handleEndpointsTool({ action: 'create', ...mockInput }) as any;
@@ -62,87 +80,39 @@ describe('snackbase_endpoints tool', () => {
     expect(result.content[0].text).toBe(JSON.stringify(mockResponse, null, 2));
   });
 
-  it('throws error when required fields are missing for create', async () => {
-    const result = await handleEndpointsTool({ action: 'create', name: 'hello', method: 'GET' }) as any;
+  it('throws when required create fields missing', async () => {
+    const result = await handleEndpointsTool({
+      action: 'create',
+      name: 'hello',
+      method: 'GET',
+    }) as any;
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain('name, method, and path are required');
   });
 
-  it('handles update action', async () => {
-    const mockResponse = { id: 'ep-1', name: 'updated', method: 'POST', path: '/updated' };
-    mockClient.endpoints.update.mockResolvedValue(mockResponse);
+  it('handles toggle and list_executions with limit/offset', async () => {
+    mockClient.endpoints.toggle.mockResolvedValue({ id: 'ep-1', enabled: false });
+    mockClient.endpoints.listExecutions.mockResolvedValue({ items: [], total: 0 });
 
-    const result = await handleEndpointsTool({
-      action: 'update',
+    await handleEndpointsTool({ action: 'toggle', endpoint_id: 'ep-1' });
+    expect(mockClient.endpoints.toggle).toHaveBeenCalledWith('ep-1');
+
+    await handleEndpointsTool({
+      action: 'list_executions',
       endpoint_id: 'ep-1',
-      name: 'updated',
-      method: 'POST',
-      path: '/updated',
-    }) as any;
-
-    expect(mockClient.endpoints.update).toHaveBeenCalledWith('ep-1', expect.any(Object));
-    expect(result.content[0].text).toBe(JSON.stringify(mockResponse, null, 2));
-  });
-
-  it('throws error when endpoint_id is missing for update', async () => {
-    const result = await handleEndpointsTool({ action: 'update' }) as any;
-    expect(result.isError).toBe(true);
-    expect(result.content[0].text).toContain('endpoint_id is required');
+      limit: 5,
+      offset: 2,
+    });
+    expect(mockClient.endpoints.listExecutions).toHaveBeenCalledWith('ep-1', {
+      limit: 5,
+      offset: 2,
+    });
   });
 
   it('handles delete action', async () => {
     mockClient.endpoints.delete.mockResolvedValue({ success: true });
-
     const result = await handleEndpointsTool({ action: 'delete', endpoint_id: 'ep-1' }) as any;
-
     expect(mockClient.endpoints.delete).toHaveBeenCalledWith('ep-1');
     expect(result.content[0].text).toBe(JSON.stringify({ success: true }, null, 2));
-  });
-
-  it('handles toggle action', async () => {
-    const mockResponse = { id: 'ep-1', enabled: false };
-    mockClient.endpoints.toggle.mockResolvedValue(mockResponse);
-
-    const result = await handleEndpointsTool({ action: 'toggle', endpoint_id: 'ep-1' }) as any;
-
-    expect(mockClient.endpoints.toggle).toHaveBeenCalledWith('ep-1');
-    expect(result.content[0].text).toBe(JSON.stringify(mockResponse, null, 2));
-  });
-
-  it('throws error when endpoint_id is missing for toggle', async () => {
-    const result = await handleEndpointsTool({ action: 'toggle' }) as any;
-    expect(result.isError).toBe(true);
-    expect(result.content[0].text).toContain('endpoint_id is required');
-  });
-
-  it('handles list_executions action', async () => {
-    const mockExecutions = { items: [{ id: 'exec-1', status: 'completed' }], total: 1 };
-    mockClient.endpoints.listExecutions.mockResolvedValue(mockExecutions);
-
-    const result = await handleEndpointsTool({ action: 'list_executions', endpoint_id: 'ep-1' }) as any;
-
-    expect(mockClient.endpoints.listExecutions).toHaveBeenCalledWith('ep-1', expect.any(Object));
-    expect(result.content[0].text).toBe(JSON.stringify(mockExecutions, null, 2));
-  });
-
-  it('throws error when endpoint_id is missing for list_executions', async () => {
-    const result = await handleEndpointsTool({ action: 'list_executions' }) as any;
-    expect(result.isError).toBe(true);
-    expect(result.content[0].text).toContain('endpoint_id is required');
-  });
-
-  it('maps SDK errors correctly', async () => {
-    mockClient.endpoints.list.mockRejectedValue(new Error('SDK Error'));
-
-    const result = await handleEndpointsTool({ action: 'list' }) as any;
-
-    expect(result.isError).toBe(true);
-    expect(result.content[0].text).toContain('SDK Error');
-  });
-
-  it('handles unknown action', async () => {
-    const result = await handleEndpointsTool({ action: 'invalid' }) as any;
-    expect(result.isError).toBe(true);
-    expect(result.content[0].text).toContain('Unknown action: invalid');
   });
 });

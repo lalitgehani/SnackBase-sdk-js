@@ -32,8 +32,14 @@ describe('snackbase_dashboard tool', () => {
 
     const result = await handleDashboardTool({ action: 'get_stats' }) as any;
 
-    expect(mockClient.dashboard.getStats).toHaveBeenCalled();
+    expect(mockClient.dashboard.getStats).toHaveBeenCalledWith(undefined);
     expect(result.content[0].text).toBe(JSON.stringify(mockStats, null, 2));
+  });
+
+  it('forwards range to getStats', async () => {
+    mockClient.dashboard.getStats.mockResolvedValue({ total_users: 1 });
+    await handleDashboardTool({ action: 'get_stats', range: '30d' });
+    expect(mockClient.dashboard.getStats).toHaveBeenCalledWith({ range: '30d' });
   });
 
   it('maps SDK errors correctly', async () => {

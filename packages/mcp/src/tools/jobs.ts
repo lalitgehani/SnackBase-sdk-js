@@ -4,7 +4,8 @@ import { handleToolError } from '../utils/errors.js';
 
 export const jobsTool: Tool = {
   name: 'snackbase_jobs',
-  description: 'Manage SnackBase background job queue (superadmin). List jobs, get queue statistics, retry failed jobs, and cancel pending jobs.',
+  description:
+    'Manage SnackBase background job queue (superadmin-only). List jobs, get queue statistics, retry failed jobs, and cancel pending jobs. Pagination uses limit/offset.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -19,16 +20,24 @@ export const jobsTool: Tool = {
       },
       status: {
         type: 'string',
-        enum: ['pending', 'running', 'completed', 'failed', 'cancelled'],
-        description: 'Filter jobs by status.',
+        enum: ['pending', 'running', 'completed', 'failed', 'retrying', 'dead'],
+        description: 'Filter jobs by status (list).',
       },
-      page: {
-        type: 'number',
-        description: 'Page number for pagination.',
+      queue: {
+        type: 'string',
+        description: 'Filter by queue name (list).',
       },
-      per_page: {
+      handler: {
+        type: 'string',
+        description: 'Filter by handler name (list).',
+      },
+      limit: {
         type: 'number',
-        description: 'Number of jobs per page.',
+        description: 'Maximum number of jobs to return (default/max per backend; limit/offset pagination).',
+      },
+      offset: {
+        type: 'number',
+        description: 'Number of jobs to skip (limit/offset pagination).',
       },
     },
     required: ['action'],
@@ -37,35 +46,39 @@ export const jobsTool: Tool = {
 
 export async function handleJobsTool(args: any) {
   const client = createClient();
-  const { action, job_id, status, page, per_page } = args;
+  const { action, job_id, status, queue, handler, limit, offset } = args;
 
   try {
     switch (action) {
-      case 'list':
-        const jobs = await client.jobs.list({ status, page, per_page });
+      case 'list': {
+        const jobs = await client.jobs.list({ status, queue, handler, limit, offset });
         return {
           content: [{ type: 'text', text: JSON.stringify(jobs, null, 2) }],
         };
+      }
 
-      case 'stats':
+      case 'stats': {
         const stats = await client.jobs.stats();
         return {
           content: [{ type: 'text', text: JSON.stringify(stats, null, 2) }],
         };
+      }
 
-      case 'retry':
+      case 'retry': {
         if (!job_id) throw new Error('job_id is required for retry action');
         const retriedJob = await client.jobs.retry(job_id);
         return {
           content: [{ type: 'text', text: JSON.stringify(retriedJob, null, 2) }],
         };
+      }
 
-      case 'cancel':
+      case 'cancel': {
         if (!job_id) throw new Error('job_id is required for cancel action');
-        const cancelledJob = await client.jobs.cancel(job_id);
+        await client.jobs.cancel(job_id);
         return {
-          content: [{ type: 'text', text: JSON.stringify(cancelledJob, null, 2) }],
+          content: [{ type: 'text', text: JSON.stringify({ success: true }, null, 2) }],
         };
+      }
 
       default:
         throw new Error(`Unknown action: ${action}`);

@@ -26,13 +26,24 @@ describe('snackbase_hooks tool', () => {
     (createClient as any).mockReturnValue(mockClient);
   });
 
-  it('handles list action', async () => {
-    const mockHooks = [{ id: 'h-1', name: 'on-create' }];
+  it('handles list action with limit/offset and filters', async () => {
+    const mockHooks = { items: [{ id: 'h-1', name: 'on-create' }], total: 1 };
     mockClient.hooks.list.mockResolvedValue(mockHooks);
 
-    const result = await handleHooksTool({ action: 'list' }) as any;
+    const result = await handleHooksTool({
+      action: 'list',
+      limit: 10,
+      offset: 5,
+      trigger_type: 'event',
+      enabled: true,
+    }) as any;
 
-    expect(mockClient.hooks.list).toHaveBeenCalled();
+    expect(mockClient.hooks.list).toHaveBeenCalledWith({
+      limit: 10,
+      offset: 5,
+      trigger_type: 'event',
+      enabled: true,
+    });
     expect(result.content[0].text).toBe(JSON.stringify(mockHooks, null, 2));
   });
 
@@ -123,13 +134,21 @@ describe('snackbase_hooks tool', () => {
     expect(result.content[0].text).toBe(JSON.stringify(mockResponse, null, 2));
   });
 
-  it('handles list_executions action', async () => {
+  it('handles list_executions action with limit/offset', async () => {
     const mockExecutions = { items: [{ id: 'e-1', status: 'completed' }], total: 1 };
     mockClient.hooks.listExecutions.mockResolvedValue(mockExecutions);
 
-    const result = await handleHooksTool({ action: 'list_executions', hook_id: 'h-1' }) as any;
+    const result = await handleHooksTool({
+      action: 'list_executions',
+      hook_id: 'h-1',
+      limit: 20,
+      offset: 0,
+    }) as any;
 
-    expect(mockClient.hooks.listExecutions).toHaveBeenCalledWith('h-1', expect.any(Object));
+    expect(mockClient.hooks.listExecutions).toHaveBeenCalledWith('h-1', {
+      limit: 20,
+      offset: 0,
+    });
     expect(result.content[0].text).toBe(JSON.stringify(mockExecutions, null, 2));
   });
 

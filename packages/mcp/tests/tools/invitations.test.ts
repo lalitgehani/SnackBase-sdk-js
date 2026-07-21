@@ -27,9 +27,18 @@ describe('snackbase_invitations tool', () => {
     const mockInvitations = [{ id: '1', email: 'test@example.com', status: 'pending' }];
     mockClient.invitations.list.mockResolvedValue(mockInvitations);
 
-    const result = await handleInvitationsTool({ action: 'list', status: 'pending', page: 1, page_size: 10 }) as any;
+    const result = await handleInvitationsTool({
+      action: 'list',
+      status_filter: 'pending',
+      page: 1,
+      page_size: 10,
+    }) as any;
 
-    expect(mockClient.invitations.list).toHaveBeenCalledWith(expect.objectContaining({ status: 'pending', page: 1, page_size: 10 }));
+    expect(mockClient.invitations.list).toHaveBeenCalledWith(
+      expect.objectContaining({ status_filter: 'pending', page: 1, page_size: 10 }),
+    );
+    const callArg = mockClient.invitations.list.mock.calls[0][0];
+    expect(callArg).not.toHaveProperty('status');
     expect(result.content[0].text).toBe(JSON.stringify(mockInvitations, null, 2));
   });
 

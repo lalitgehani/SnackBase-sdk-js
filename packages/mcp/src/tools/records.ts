@@ -59,6 +59,10 @@ export const recordsTool: Tool = {
         type: 'string',
         description: 'Cursor for backward pagination.',
       },
+      include_count: {
+        type: 'boolean',
+        description: 'When using cursor pagination, also return the total count (list).',
+      },
       records: {
         type: 'array',
         description: 'Array of record data objects (required for batchCreate).',
@@ -91,7 +95,7 @@ export const recordsTool: Tool = {
 
 export async function handleRecordsTool(args: any) {
   const client = createClient();
-  const { action, collection, record_id, data, filter, sort, limit, skip, fields, expand, cursor, cursor_before, records, items, ids, functions, group_by, having } = args;
+  const { action, collection, record_id, data, filter, sort, limit, skip, fields, expand, cursor, cursor_before, include_count, records, items, ids, functions, group_by, having } = args;
 
   try {
     switch (action) {
@@ -105,6 +109,7 @@ export async function handleRecordsTool(args: any) {
           expand,
           cursor,
           cursor_before,
+          include_count,
         });
         return {
           content: [{ type: 'text', text: JSON.stringify(listResult, null, 2) }],

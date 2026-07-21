@@ -15,6 +15,7 @@ describe('snackbase_api_keys tool', () => {
     mockClient = {
       apiKeys: {
         list: vi.fn(),
+        get: vi.fn(),
         create: vi.fn(),
         revoke: vi.fn(),
       },
@@ -22,14 +23,22 @@ describe('snackbase_api_keys tool', () => {
     (createClient as any).mockReturnValue(mockClient);
   });
 
-  it('handles list action', async () => {
-    const mockKeys = [{ id: '1', name: 'Test Key', last_4: '1234' }];
+  it('handles list action with limit/offset', async () => {
+    const mockKeys = { items: [{ id: '1', name: 'Test Key', last_4: '1234' }], total: 1 };
     mockClient.apiKeys.list.mockResolvedValue(mockKeys);
 
-    const result = await handleApiKeysTool({ action: 'list' }) as any;
+    const result = await handleApiKeysTool({ action: 'list', limit: 10, offset: 0 }) as any;
 
-    expect(mockClient.apiKeys.list).toHaveBeenCalled();
+    expect(mockClient.apiKeys.list).toHaveBeenCalledWith({ limit: 10, offset: 0 });
     expect(result.content[0].text).toBe(JSON.stringify(mockKeys, null, 2));
+  });
+
+  it('handles get action', async () => {
+    const mockKey = { id: 'key-123', name: 'Test Key' };
+    mockClient.apiKeys.get.mockResolvedValue(mockKey);
+    const result = await handleApiKeysTool({ action: 'get', key_id: 'key-123' }) as any;
+    expect(mockClient.apiKeys.get).toHaveBeenCalledWith('key-123');
+    expect(result.content[0].text).toBe(JSON.stringify(mockKey, null, 2));
   });
 
   it('handles create action', async () => {

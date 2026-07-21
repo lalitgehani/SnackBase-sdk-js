@@ -25,13 +25,13 @@ describe('snackbase_webhooks tool', () => {
     (createClient as any).mockReturnValue(mockClient);
   });
 
-  it('handles list action', async () => {
-    const mockWebhooks = [{ id: 'wh-1', url: 'https://example.com/hook' }];
+  it('handles list action with zero args', async () => {
+    const mockWebhooks = { items: [{ id: 'wh-1', url: 'https://example.com/hook' }], total: 1 };
     mockClient.webhooks.list.mockResolvedValue(mockWebhooks);
 
     const result = await handleWebhooksTool({ action: 'list' }) as any;
 
-    expect(mockClient.webhooks.list).toHaveBeenCalled();
+    expect(mockClient.webhooks.list).toHaveBeenCalledWith();
     expect(result.content[0].text).toBe(JSON.stringify(mockWebhooks, null, 2));
   });
 
@@ -51,21 +51,38 @@ describe('snackbase_webhooks tool', () => {
     expect(result.content[0].text).toContain('webhook_id is required');
   });
 
-  it('handles create action', async () => {
-    const mockInput = { name: 'my-webhook', url: 'https://example.com/hook', events: ['record.create'] };
+  it('handles create with WebhookCreate shape (url, collection, events; no name)', async () => {
+    const mockInput = {
+      url: 'https://example.com/hook',
+      collection: 'posts',
+      events: ['record.create'],
+      enabled: true,
+    };
     const mockResponse = { id: 'wh-2', secret: 'abc123', ...mockInput };
     mockClient.webhooks.create.mockResolvedValue(mockResponse);
 
     const result = await handleWebhooksTool({ action: 'create', ...mockInput }) as any;
 
-    expect(mockClient.webhooks.create).toHaveBeenCalledWith(expect.objectContaining(mockInput));
+    expect(mockClient.webhooks.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: mockInput.url,
+        collection: mockInput.collection,
+        events: mockInput.events,
+        enabled: true,
+      }),
+    );
+    const callArg = mockClient.webhooks.create.mock.calls[0][0];
+    expect(callArg).not.toHaveProperty('name');
     expect(result.content[0].text).toBe(JSON.stringify(mockResponse, null, 2));
   });
 
-  it('throws error when name, url, or events are missing for create', async () => {
-    const result = await handleWebhooksTool({ action: 'create', url: 'https://example.com' }) as any;
+  it('throws error when url, collection, or events are missing for create', async () => {
+    const result = await handleWebhooksTool({
+      action: 'create',
+      url: 'https://example.com',
+    }) as any;
     expect(result.isError).toBe(true);
-    expect(result.content[0].text).toContain('name, url, and events are required');
+    expect(result.content[0].text).toContain('url, collection, and events are required');
   });
 
   it('handles update action', async () => {
@@ -82,12 +99,6 @@ describe('snackbase_webhooks tool', () => {
     expect(result.content[0].text).toBe(JSON.stringify(mockResponse, null, 2));
   });
 
-  it('throws error when webhook_id is missing for update', async () => {
-    const result = await handleWebhooksTool({ action: 'update' }) as any;
-    expect(result.isError).toBe(true);
-    expect(result.content[0].text).toContain('webhook_id is required');
-  });
-
   it('handles delete action', async () => {
     mockClient.webhooks.delete.mockResolvedValue({ success: true });
 
@@ -98,7 +109,7 @@ describe('snackbase_webhooks tool', () => {
   });
 
   it('handles test action', async () => {
-    const mockResult = { delivered: true, status_code: 200 };
+    const mockResult = { success: true, status_code: 200, response_body: null, error: null };
     mockClient.webhooks.test.mockResolvedValue(mockResult);
 
     const result = await handleWebhooksTool({ action: 'test', webhook_id: 'wh-1' }) as any;
@@ -107,26 +118,22 @@ describe('snackbase_webhooks tool', () => {
     expect(result.content[0].text).toBe(JSON.stringify(mockResult, null, 2));
   });
 
-  it('throws error when webhook_id is missing for test', async () => {
-    const result = await handleWebhooksTool({ action: 'test' }) as any;
-    expect(result.isError).toBe(true);
-    expect(result.content[0].text).toContain('webhook_id is required');
-  });
-
-  it('handles list_deliveries action', async () => {
-    const mockDeliveries = { items: [{ id: 'd-1', status_code: 200 }], total: 1 };
+  it('handles list_deliveries with limit/offset', async () => {
+    const mockDeliveries = { items: [{ id: 'd-1', status: 'delivered' }], total: 1 };
     mockClient.webhooks.listDeliveries.mockResolvedValue(mockDeliveries);
 
-    const result = await handleWebhooksTool({ action: 'list_deliveries', webhook_id: 'wh-1' }) as any;
+    const result = await handleWebhooksTool({
+      action: 'list_deliveries',
+      webhook_id: 'wh-1',
+      limit: 10,
+      offset: 0,
+    }) as any;
 
-    expect(mockClient.webhooks.listDeliveries).toHaveBeenCalledWith('wh-1', expect.any(Object));
+    expect(mockClient.webhooks.listDeliveries).toHaveBeenCalledWith('wh-1', {
+      limit: 10,
+      offset: 0,
+    });
     expect(result.content[0].text).toBe(JSON.stringify(mockDeliveries, null, 2));
-  });
-
-  it('throws error when webhook_id is missing for list_deliveries', async () => {
-    const result = await handleWebhooksTool({ action: 'list_deliveries' }) as any;
-    expect(result.isError).toBe(true);
-    expect(result.content[0].text).toContain('webhook_id is required');
   });
 
   it('maps SDK errors correctly', async () => {

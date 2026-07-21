@@ -4,7 +4,8 @@ import { handleToolError } from '../utils/errors.js';
 
 export const macrosTool: Tool = {
   name: 'snackbase_macros',
-  description: 'Manage SnackBase SQL macros for custom permission logic. Create, test, and manage macros used in collection access rules.',
+  description:
+    'Manage SnackBase SQL macros for custom permission logic. Create, test, and manage macros used in collection access rules. test params is an ordered string array matching macro parameters.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -35,8 +36,9 @@ export const macrosTool: Tool = {
         description: 'List of parameter names used in the SQL query (required for create).',
       },
       params: {
-        type: 'object',
-        description: 'Parameter values for testing the macro (required for test).',
+        type: 'array',
+        items: { type: 'string' },
+        description: 'Ordered parameter values for testing the macro (required for test; string[]).',
       },
     },
     required: ['action'],
@@ -49,20 +51,22 @@ export async function handleMacrosTool(args: any) {
 
   try {
     switch (action) {
-      case 'list':
+      case 'list': {
         const macros = await client.macros.list();
         return {
           content: [{ type: 'text', text: JSON.stringify(macros, null, 2) }],
         };
+      }
 
-      case 'get':
+      case 'get': {
         if (!macro_id) throw new Error('macro_id is required for get action');
         const macro = await client.macros.get(macro_id);
         return {
           content: [{ type: 'text', text: JSON.stringify(macro, null, 2) }],
         };
+      }
 
-      case 'create':
+      case 'create': {
         if (!name || !description || !sql_query || !parameters) {
           throw new Error('name, description, sql_query, and parameters are required for create action');
         }
@@ -75,8 +79,9 @@ export async function handleMacrosTool(args: any) {
         return {
           content: [{ type: 'text', text: JSON.stringify(newMacro, null, 2) }],
         };
+      }
 
-      case 'update':
+      case 'update': {
         if (!macro_id) throw new Error('macro_id is required for update action');
         const updatedMacro = await client.macros.update(macro_id, {
           name,
@@ -87,20 +92,26 @@ export async function handleMacrosTool(args: any) {
         return {
           content: [{ type: 'text', text: JSON.stringify(updatedMacro, null, 2) }],
         };
+      }
 
-      case 'delete':
+      case 'delete': {
         if (!macro_id) throw new Error('macro_id is required for delete action');
         const deleteResult = await client.macros.delete(macro_id);
         return {
           content: [{ type: 'text', text: JSON.stringify(deleteResult, null, 2) }],
         };
+      }
 
-      case 'test':
+      case 'test': {
         if (!macro_id || !params) throw new Error('macro_id and params are required for test action');
-        const testResult = await client.macros.test(macro_id, params);
+        if (!Array.isArray(params)) {
+          throw new Error('params must be an array of strings for test action');
+        }
+        const testResult = await client.macros.test(macro_id, params as string[]);
         return {
           content: [{ type: 'text', text: JSON.stringify(testResult, null, 2) }],
         };
+      }
 
       default:
         throw new Error(`Unknown action: ${action}`);

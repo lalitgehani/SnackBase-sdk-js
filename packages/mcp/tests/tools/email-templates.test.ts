@@ -15,6 +15,7 @@ describe('snackbase_email_templates', () => {
     render: vi.fn(),
     sendTest: vi.fn(),
     listLogs: vi.fn(),
+    getLog: vi.fn(),
   };
 
   beforeEach(() => {
@@ -84,9 +85,9 @@ describe('snackbase_email_templates', () => {
       template_type: 'verification',
       locale: 'en',
       variables: { name: 'John' },
-      subject_override: undefined,
-      html_body_override: undefined,
-      text_body_override: undefined,
+      subject: undefined,
+      html_body: undefined,
+      text_body: undefined,
     });
     expect(JSON.parse(result.content[0].text)).toEqual(mockRender);
   });
@@ -120,6 +121,19 @@ describe('snackbase_email_templates', () => {
 
     expect(mockEmailTemplates.listLogs).toHaveBeenCalledWith({ limit: 10 });
     expect(JSON.parse(result.content[0].text)).toEqual(mockLogs);
+  });
+
+  it('should get a single email log', async () => {
+    const mockLog = { id: 'log_123', status: 'sent' };
+    mockEmailTemplates.getLog.mockResolvedValue(mockLog);
+
+    const result = await handleEmailTemplatesTool({
+      action: 'get_log',
+      log_id: 'log_123',
+    });
+
+    expect(mockEmailTemplates.getLog).toHaveBeenCalledWith('log_123');
+    expect(JSON.parse(result.content[0].text)).toEqual(mockLog);
   });
 
   it('should handle errors', async () => {

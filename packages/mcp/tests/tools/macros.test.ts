@@ -100,18 +100,28 @@ describe('snackbase_macros tool', () => {
     expect(result.content[0].text).toBe(JSON.stringify({ success: true }, null, 2));
   });
 
-  it('handles test action', async () => {
+  it('handles test action with string[] params', async () => {
     const mockResult = { success: true, result: true };
     mockClient.macros.test.mockResolvedValue(mockResult);
 
-    const result = await handleMacrosTool({ 
-      action: 'test', 
+    const result = await handleMacrosTool({
+      action: 'test',
       macro_id: 'm-123',
-      params: { user_id: 'u-123' }
+      params: ['u-123'],
     }) as any;
 
-    expect(mockClient.macros.test).toHaveBeenCalledWith('m-123', { user_id: 'u-123' });
+    expect(mockClient.macros.test).toHaveBeenCalledWith('m-123', ['u-123']);
     expect(result.content[0].text).toBe(JSON.stringify(mockResult, null, 2));
+  });
+
+  it('rejects non-array params for test', async () => {
+    const result = await handleMacrosTool({
+      action: 'test',
+      macro_id: 'm-123',
+      params: { user_id: 'u-123' },
+    }) as any;
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain('array of strings');
   });
 
   it('maps SDK errors correctly', async () => {

@@ -5,7 +5,7 @@ import * as tools from './tools/index.js';
 export const server = new Server(
   {
     name: 'snackbase-mcp',
-    version: '0.1.0',
+    version: '0.3.0',
   },
   {
     capabilities: {
@@ -34,6 +34,12 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     tools.emailTemplatesTool,
     tools.macrosTool,
     tools.migrationsTool,
+    tools.webhooksTool,
+    tools.hooksTool,
+    tools.endpointsTool,
+    tools.workflowsTool,
+    tools.jobsTool,
+    tools.filesTool,
   ],
 }));
 
@@ -71,6 +77,18 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       return await tools.handleMacrosTool(args);
     case 'snackbase_migrations':
       return await tools.handleMigrationsTool(args);
+    case 'snackbase_webhooks':
+      return await tools.handleWebhooksTool(args);
+    case 'snackbase_hooks':
+      return await tools.handleHooksTool(args);
+    case 'snackbase_endpoints':
+      return await tools.handleEndpointsTool(args);
+    case 'snackbase_workflows':
+      return await tools.handleWorkflowsTool(args);
+    case 'snackbase_jobs':
+      return await tools.handleJobsTool(args);
+    case 'snackbase_files':
+      return await tools.handleFilesTool(args);
     default:
       throw new Error(`Unknown tool: ${name}`);
   }

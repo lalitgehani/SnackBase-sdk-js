@@ -22,7 +22,9 @@ describe('snackbase_admin tool', () => {
         updateConfigurationValues: vi.fn(),
         updateConfigurationStatus: vi.fn(),
         createConfiguration: vi.fn(),
+        deleteConfiguration: vi.fn(),
         listProviders: vi.fn(),
+        getProviderSchema: vi.fn(),
         testConnection: vi.fn(),
         setConfigurationDefault: vi.fn(),
         unsetConfigurationDefault: vi.fn(),
@@ -105,25 +107,55 @@ describe('snackbase_admin tool', () => {
     expect(result.content[0].text).toBe(JSON.stringify(mockValues, null, 2));
   });
 
-  it('handles create action', async () => {
+  it('handles create action with ConfigurationCreate shape', async () => {
     const mockInput = {
-      name: 'New Config',
+      display_name: 'New Config',
       category: 'email',
       provider_name: 'smtp',
-      values: { host: 'localhost' },
-      is_system: true,
-      enabled: true
+      config: { host: 'localhost' },
+      enabled: true,
     };
-    const mockResponse = { id: 'cfg-123', ...mockInput };
+    const mockResponse = { id: 'cfg-123', status: 'created' };
     mockClient.admin.createConfiguration.mockResolvedValue(mockResponse);
 
-    const result = await handleAdminTool({ 
-      action: 'create', 
-      ...mockInput 
+    const result = await handleAdminTool({
+      action: 'create',
+      ...mockInput,
     }) as any;
 
-    expect(mockClient.admin.createConfiguration).toHaveBeenCalledWith(mockInput);
+    expect(mockClient.admin.createConfiguration).toHaveBeenCalledWith(
+      expect.objectContaining({
+        display_name: 'New Config',
+        category: 'email',
+        provider_name: 'smtp',
+        config: { host: 'localhost' },
+        enabled: true,
+      }),
+    );
+    const callArg = mockClient.admin.createConfiguration.mock.calls[0][0];
+    expect(callArg).not.toHaveProperty('name');
+    expect(callArg).not.toHaveProperty('values');
+    expect(callArg).not.toHaveProperty('is_system');
     expect(result.content[0].text).toBe(JSON.stringify(mockResponse, null, 2));
+  });
+
+  it('handles delete action', async () => {
+    mockClient.admin.deleteConfiguration.mockResolvedValue({ success: true });
+    const result = await handleAdminTool({ action: 'delete', config_id: 'cfg-123' }) as any;
+    expect(mockClient.admin.deleteConfiguration).toHaveBeenCalledWith('cfg-123');
+    expect(result.content[0].text).toBe(JSON.stringify({ success: true }, null, 2));
+  });
+
+  it('handles get_provider_schema action', async () => {
+    const schema = { type: 'object', properties: { host: { type: 'string' } } };
+    mockClient.admin.getProviderSchema.mockResolvedValue(schema);
+    const result = await handleAdminTool({
+      action: 'get_provider_schema',
+      category: 'email',
+      provider_name: 'smtp',
+    }) as any;
+    expect(mockClient.admin.getProviderSchema).toHaveBeenCalledWith('email', 'smtp');
+    expect(result.content[0].text).toBe(JSON.stringify(schema, null, 2));
   });
 
   it('handles list_providers action', async () => {

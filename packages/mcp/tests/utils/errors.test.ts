@@ -28,7 +28,28 @@ describe('handleToolError', () => {
     const error = new sdkErrors.NotFoundError('Collection not found');
     const result = handleToolError(error);
     expect(result.isError).toBe(true);
+    expect(result.content[0].text).toBeTruthy();
     expect(result.content[0].text).toContain('Not found: Collection not found');
+  });
+
+  it('should handle AuthorizationError (403-style)', () => {
+    const error = new sdkErrors.AuthorizationError('Insufficient permissions');
+    const result = handleToolError(error);
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toBeTruthy();
+    expect(result.content[0].text).toContain('Permission denied');
+    expect(result.content[0].text).not.toMatch(/sb_ak\./);
+  });
+
+  it('should handle AuthenticationError (401-style) without leaking keys', () => {
+    const error = new sdkErrors.AuthenticationError('Invalid credentials');
+    const result = handleToolError(error);
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toBeTruthy();
+    expect(result.content[0].text).toContain('Authentication failed');
+    expect(result.content[0].text).toContain('SNACKBASE_API_KEY');
+    // Must not echo secret material
+    expect(result.content[0].text).not.toMatch(/sb_ak\.[A-Za-z0-9]/);
   });
 
   it('should handle NetworkError', () => {

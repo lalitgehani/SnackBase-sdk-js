@@ -21,6 +21,7 @@ describe('snackbase_users tool', () => {
         delete: vi.fn(),
         setPassword: vi.fn(),
         verifyEmail: vi.fn(),
+        resendVerification: vi.fn(),
       },
     };
     (createClient as any).mockReturnValue(mockClient);
@@ -55,22 +56,50 @@ describe('snackbase_users tool', () => {
     expect(result.content[0].text).toContain('user_id is required');
   });
 
-  it('handles create action', async () => {
+  it('handles create action with UserCreate (role_id number)', async () => {
     const mockInput = {
       email: 'new@example.com',
       account_id: 'acc-123',
       password: 'password123',
+      role_id: 2,
     };
-    const mockResponse = { id: 'user-456', ...mockInput };
+    const mockResponse = { id: 'user-456', email: mockInput.email };
     mockClient.users.create.mockResolvedValue(mockResponse);
 
-    const result = await handleUsersTool({ 
-      action: 'create', 
-      ...mockInput 
+    const result = await handleUsersTool({
+      action: 'create',
+      ...mockInput,
     });
 
-    expect(mockClient.users.create).toHaveBeenCalledWith(expect.objectContaining(mockInput));
+    expect(mockClient.users.create).toHaveBeenCalledWith({
+      email: 'new@example.com',
+      account_id: 'acc-123',
+      password: 'password123',
+      role_id: 2,
+    });
+    const callArg = mockClient.users.create.mock.calls[0][0];
+    expect(callArg).not.toHaveProperty('role');
     expect(result.content[0].text).toBe(JSON.stringify(mockResponse, null, 2));
+  });
+
+  it('requires role_id on create', async () => {
+    const result = await handleUsersTool({
+      action: 'create',
+      email: 'new@example.com',
+      account_id: 'acc-123',
+    });
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain('role_id');
+  });
+
+  it('handles resend_verification action', async () => {
+    mockClient.users.resendVerification.mockResolvedValue({ success: true });
+    const result = await handleUsersTool({
+      action: 'resend_verification',
+      user_id: 'user-123',
+    });
+    expect(mockClient.users.resendVerification).toHaveBeenCalledWith('user-123');
+    expect(result.content[0].text).toBe(JSON.stringify({ success: true }, null, 2));
   });
 
   it('handles update action', async () => {

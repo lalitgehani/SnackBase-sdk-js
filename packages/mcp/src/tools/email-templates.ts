@@ -10,12 +10,16 @@ export const emailTemplatesTool: Tool = {
     properties: {
       action: {
         type: 'string',
-        enum: ['list', 'get', 'update', 'render', 'send_test', 'list_logs'],
+        enum: ['list', 'get', 'update', 'render', 'send_test', 'list_logs', 'get_log'],
         description: 'The action to perform on email templates.',
       },
       template_id: {
         type: 'string',
         description: 'The unique ID of the template (required for get, update, send_test).',
+      },
+      log_id: {
+        type: 'string',
+        description: 'The unique ID of an email log entry (required for get_log).',
       },
       // List filters
       filters: {
@@ -45,9 +49,6 @@ export const emailTemplatesTool: Tool = {
         type: 'object', 
         description: 'Variables for render and send_test actions.' 
       },
-      subject_override: { type: 'string', description: 'Subject override for render action.' },
-      html_body_override: { type: 'string', description: 'HTML body override for render action.' },
-      text_body_override: { type: 'string', description: 'Text body override for render action.' },
       // Send test fields
       recipient_email: { type: 'string', description: 'Recipient email for send_test action.' },
       provider: { type: 'string', description: 'Provider override for send_test action.' },
@@ -60,7 +61,8 @@ export async function handleEmailTemplatesTool(args: any) {
   const client = createClient();
   const { 
     action, 
-    template_id, 
+    template_id,
+    log_id,
     filters,
     subject, 
     html_body, 
@@ -69,9 +71,6 @@ export async function handleEmailTemplatesTool(args: any) {
     template_type,
     locale,
     variables,
-    subject_override,
-    html_body_override,
-    text_body_override,
     recipient_email,
     provider
   } = args;
@@ -111,9 +110,9 @@ export async function handleEmailTemplatesTool(args: any) {
             template_type,
             locale,
             variables,
-            subject_override,
-            html_body_override,
-            text_body_override
+            subject,
+            html_body,
+            text_body,
         });
         return {
           content: [{ type: 'text', text: JSON.stringify(renderResult, null, 2) }],
@@ -137,6 +136,13 @@ export async function handleEmailTemplatesTool(args: any) {
         const logs = await client.emailTemplates.listLogs(filters);
         return {
           content: [{ type: 'text', text: JSON.stringify(logs, null, 2) }],
+        };
+
+      case 'get_log':
+        if (!log_id) throw new Error('log_id is required for get_log action');
+        const log = await client.emailTemplates.getLog(log_id);
+        return {
+          content: [{ type: 'text', text: JSON.stringify(log, null, 2) }],
         };
 
       default:
