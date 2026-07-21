@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Deferred (non-blocking)
+
+- Skills for `@snackbase/react`, `@snackbase/pocketbase-compat`, `@snackbase/supabase-compat`
+- Exhaustive OpenAPI dump / full workflow action-type catalog
+- Multi-language client skills
+
+## [0.2.0] - 2026-07-21
+
+### Changed
+
+- **SDK 0.6.0 alignment** — skill tree rewritten against `@snackbase/sdk` 0.5.0/0.6.0 contracts
+- Filters documented as **string-only** (removed object filter auto-JSON-stringify guidance)
+- Records: `batchCreate` / `batchUpdate` / `batchDelete` (removed `bulk*`), correct aggregate params, cursor pagination, `query()` builder
+- Collections: valid FieldTypes including `reference`, `file`, `computed` (removed `relation` / `select` / `multi_select` / `phone` as field types)
+- Webhooks: events `create`|`update`|`delete`; `test` + `listDeliveries`; secret only on create (removed `getSecret` / `rotateSecret` / `trigger`)
+- Client: full service map; `accountId` for anonymous public access; `collectionRules` instead of inventing `PermissionService`
+- Files: `upload(file, { filename?, contentType? })`, `getDownloadUrl`, `delete`
+- Admin types aligned to `display_name` / `config` create payload
+- Auth/errors refresh (TokenType, snake_case reset fields, `ApiKeyRestrictedError`, `EmailVerificationRequiredError`)
+
+### Added
+
+- Automation guides: `hooks.md`, `endpoints.md`, `workflows.md`, `jobs.md`, `dashboard.md`
+- Secondary guides: `realtime.md`, `access-control.md`, `platform.md` (macros, email templates, migrations, API keys)
+- Structural gate: `scripts/verify-against-sdk.mjs` (`pnpm verify`)
+- Process notes: SDK release coupling, MCP vs skills boundary, deferred backlog, agent-failure feedback
+
+### Removed
+
+- Local dual tree `packages/skills/.claude/skills` as a second source of truth (publish/install source is only `skills/snackbase/`)
+
 ## [0.1.0] - 2026-02-21
 
 ### Added

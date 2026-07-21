@@ -1,4 +1,6 @@
-Collections define the structure for storing records. Use the `collections` service for all schema operations.
+Collections define the structure for storing records. Use the `collections` service for schema operations.
+
+Aligned with `CollectionService` and `types/collection.ts` in `@snackbase/sdk` ≥ 0.6.0.
 
 ## Table of Contents
 
@@ -7,68 +9,76 @@ Collections define the structure for storing records. Use the `collections` serv
 - [Get a Collection](#get-a-collection)
 - [Update a Collection](#update-a-collection)
 - [Delete a Collection](#delete-a-collection)
-- [Export Collections](#export-collections)
-- [Import Collections](#import-collections)
-- [Collection Properties](#collection-properties) (interfaces, field types)
+- [Export / Import](#export--import)
+- [Collection Properties](#collection-properties)
+- [Field Types](#field-types)
 
 ## Create a Collection
+
+Use only valid FieldTypes. Prefer `text` + `reference` + `computed` instead of invented types like `select`.
 
 ```typescript
 const collection = await client.collections.create({
   name: 'tasks',
   fields: [
     { name: 'title', type: 'text', required: true },
-    {
-      name: 'status',
-      type: 'select',
-      options: ['todo', 'in-progress', 'done'],
-      required: true
-    },
+    { name: 'status', type: 'text', required: true }, // store enum values as text
     { name: 'priority', type: 'number' },
-    { name: 'dueDate', type: 'datetime' },
-    { name: 'assigneeId', type: 'text' }
-  ]
+    { name: 'due_date', type: 'datetime' },
+    {
+      name: 'assignee_id',
+      type: 'reference',
+      collection: 'users',
+      on_delete: 'set_null', // cascade | set_null | restrict
+    },
+    {
+      name: 'priority_label',
+      type: 'computed',
+      expression: "CASE WHEN priority >= 4 THEN 'high' ELSE 'normal' END",
+      return_type: 'text',
+    },
+    {
+      name: 'contact_email',
+      type: 'email',
+      pii: true,
+      mask_type: 'email',
+    },
+  ],
+  list_rule: '', // empty string = public; null = locked
+  view_rule: '',
+  create_rule: '@request.auth.id != ""',
+  update_rule: '@request.auth.id != ""',
+  delete_rule: null, // locked
 });
 
-console.log(collection.id);    // Auto-generated ID
-console.log(collection.name);  // 'tasks'
-console.log(collection.fields); // Field definitions
+console.log(collection.id, collection.name, collection.has_public_access);
 ```
 
 ## List Collections
 
 ```typescript
 const collections = await client.collections.list();
+// Collection[] (SDK unwraps the backend items envelope)
 
-console.log(`Found ${collections.length} collections`);
-collections.forEach(col => {
+collections.forEach((col) => {
   console.log(`${col.name} - ${col.field_count} fields`);
 });
+
+// Names only
+const names = await client.collections.listNames();
 ```
 
 ## Get a Collection
 
 ```typescript
-// Get by collection ID
 const collection = await client.collections.get('collection-id');
-
-console.log(collection.name);
-console.log(collection.fields);
-console.log(collection.record_count);
+console.log(collection.name, collection.fields, collection.record_count);
+console.log(collection.has_public_access);
 ```
 
 ## Update a Collection
 
-```typescript
-await client.collections.update('collection-id', {
-  name: 'Project Tasks',
-  fields: [
-    // Updated field definitions
-  ]
-});
-```
-
-### Update Fields
+Field **types cannot be changed** for data safety. Backend accepts PUT.
 
 ```typescript
 const collection = await client.collections.get('collection-id');
@@ -76,8 +86,8 @@ const collection = await client.collections.get('collection-id');
 await client.collections.update('collection-id', {
   fields: [
     ...collection.fields,
-    { name: 'tags', type: 'multi_select', options: ['urgent', 'bug', 'feature'] }
-  ]
+    { name: 'notes', type: 'text' },
+  ],
 });
 ```
 
@@ -85,45 +95,37 @@ await client.collections.update('collection-id', {
 
 ```typescript
 await client.collections.delete('collection-id');
-// Warning: This also deletes all records in the collection
+// Also drops the physical table / records
 ```
 
-## Export Collections
+## Export / Import
 
 ```typescript
 const exportData = await client.collections.export({
-  collection_ids: ['collection-id-1', 'collection-id-2']
+  collection_ids: ['collection-id-1', 'collection-id-2'],
 });
 
-console.log(exportData.version); // Export format version
-console.log(exportData.exported_at); // ISO timestamp
-console.log(exportData.collections); // Array of collection schemas
-```
-
-## Import Collections
-
-```typescript
 const result = await client.collections.import({
-  data: exportData, // CollectionExportData from export
-  strategy: 'update' // 'error' | 'skip' | 'update'
+  data: exportData,
+  strategy: 'update', // 'error' | 'skip' | 'update'
 });
 
-console.log(result.success); // Overall success
-console.log(result.imported_count); // Number of collections imported
-console.log(result.collections); // Per-collection results
+console.log(result.success, result.imported_count);
 ```
 
 ## Collection Properties
 
 ```typescript
 interface Collection {
-  id: string;           // Unique ID
-  name: string;         // Collection name
-  fields: FieldDefinition[]; // Field definitions
-  record_count: number; // Number of records
-  field_count: number;  // Number of fields
-  created_at: string;   // ISO timestamp
-  updated_at: string;   // ISO timestamp
+  id: string;
+  name: string;
+  fields: FieldDefinition[];
+  record_count: number;
+  field_count: number;
+  created_at: string;
+  updated_at: string;
+  /** Accessible without authentication when rules allow */
+  has_public_access?: boolean;
 }
 
 interface FieldDefinition {
@@ -132,21 +134,66 @@ interface FieldDefinition {
   required?: boolean;
   default?: any;
   unique?: boolean;
-  options?: string[]; // For select and multi_select
-  collection?: string; // For relation fields
+  options?: string[] | Record<string, any> | null;
+  /** Target collection name (required for reference) */
+  collection?: string | null;
+  /** cascade | set_null | restrict */
+  on_delete?: 'cascade' | 'set_null' | 'restrict' | string | null;
+  pii?: boolean;
+  mask_type?: 'email' | 'ssn' | 'phone' | 'name' | 'full' | 'custom' | string | null;
+  expression?: string | null; // computed fields
+  return_type?: 'text' | 'number' | 'boolean' | 'datetime' | null;
 }
+```
 
+## Field Types
+
+Valid `FieldType` values (backend enum):
+
+```typescript
 type FieldType =
   | 'text'
   | 'number'
   | 'boolean'
-  | 'date'
   | 'datetime'
   | 'email'
   | 'url'
-  | 'phone'
-  | 'select'
-  | 'multi_select'
-  | 'relation'
-  | 'json';
+  | 'json'
+  | 'reference'
+  | 'file'
+  | 'date'
+  | 'computed';
 ```
+
+**Not supported** as field types: `relation`, `select`, `multi_select`, `phone`.
+Use `reference` for relations, `text` (or `json`) for constrained values, and `mask_type: 'phone'` only as a PII mask strategy when `pii: true`.
+
+### Reference fields
+
+```typescript
+{
+  name: 'project_id',
+  type: 'reference',
+  collection: 'projects',
+  on_delete: 'cascade',
+}
+```
+
+### Computed fields
+
+```typescript
+{
+  name: 'full_name',
+  type: 'computed',
+  expression: "first_name || ' ' || last_name",
+  return_type: 'text',
+}
+```
+
+### Access rules on create
+
+Rule semantics (Permission System V2):
+
+- `null` — locked (access denied)
+- `""` (empty string) — public
+- expression string — evaluated against request context

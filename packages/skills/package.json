@@ -1,8 +1,8 @@
 {
   "name": "@snackbase/skills",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
-  "description": "Claude AI skills for SnackBase",
+  "description": "Claude AI skills for SnackBase SDK (@snackbase/sdk ≥ 0.6.0)",
   "license": "MIT",
   "publishConfig": {
     "access": "public"
@@ -15,10 +15,18 @@
   },
   "files": [
     "skills",
-    "install.js"
+    "install.js",
+    "scripts/verify-against-sdk.mjs",
+    "CHANGELOG.md",
+    "README.md"
   ],
-  "bin": "./install.js",
+  "bin": {
+    "skills": "./install.js"
+  },
   "scripts": {
-    "postinstall": "node install.js"
+    "postinstall": "node install.js",
+    "verify": "node scripts/verify-against-sdk.mjs",
+    "test": "node --test scripts/verify-against-sdk.test.mjs",
+    "prepublishOnly": "node scripts/verify-against-sdk.mjs"
   }
 }

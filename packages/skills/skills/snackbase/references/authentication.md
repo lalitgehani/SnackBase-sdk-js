@@ -1,37 +1,44 @@
-The SDK supports multiple authentication methods: email/password, OAuth, SAML, and API keys. Auth state is automatically managed and persisted to storage.
+The SDK supports email/password, OAuth, SAML, and API keys. Auth state is managed by interceptors and `AuthManager`.
+
+Aligned with `AuthService` / `types/auth.ts` in `@snackbase/sdk` ≥ 0.6.0.
 
 ## Table of Contents
 
-- [Email/Password Authentication](#emailpassword-authentication) (Login, Logout, Registration)
-- [OAuth Flow](#oauth-flow) (Redirect, Callback)
+- [Email/Password](#emailpassword)
+- [OAuth Flow](#oauth-flow)
 - [SAML Flow](#saml-flow)
-- [Session Management](#session-management) (Get State, Check Expiry)
+- [Session Helpers](#session-helpers)
 - [Auth Events](#auth-events)
-- [Password Reset](#password-reset) (Request, Complete)
+- [Password Reset](#password-reset)
 - [Email Verification](#email-verification)
-- [Dual Authentication](#dual-authentication) (API Key + JWT)
+- [TokenType and Dual Auth](#tokentype-and-dual-auth)
 
-## Email/Password Authentication
+## Email/Password
 
 ### Login
 
 ```typescript
 const result = await client.auth.login({
   email: 'user@example.com',
-  password: 'password123'
+  password: 'password123',
+  account: 'my-account-slug', // optional multi-tenant account
 });
 
-console.log(result.user);      // User object
-console.log(result.account);   // Account object
-console.log(result.token);     // JWT token
-console.log(result.expiresAt); // Expiry timestamp
+// AuthResponse (snake_case and camelCase fields may both appear)
+console.log(result.user);
+console.log(result.account);
+console.log(result.token);
+console.log(result.refresh_token ?? result.refreshToken);
+console.log(result.expires_in ?? result.expiresAt);
 ```
+
+Also available as `client.login(credentials)`.
 
 ### Logout
 
 ```typescript
 await client.auth.logout();
-// Auth state is cleared from storage
+// or await client.logout();
 ```
 
 ### Registration
@@ -40,136 +47,129 @@ await client.auth.logout();
 const result = await client.auth.register({
   email: 'newuser@example.com',
   password: 'SecurePassword123!',
-  account_name: 'My Account'
+  account_name: 'My Account',
+  account_slug: 'my-account',
 });
 ```
 
 ## OAuth Flow
 
-### Step 1: Redirect to OAuth Provider
+### Step 1: Authorization URL
+
+`getOAuthUrl` returns `OAuthUrlResponse` (not a bare string):
 
 ```typescript
-const authUrl = await client.auth.getOAuthUrl(
-  'github', // or 'google', 'microsoft', 'apple'
+const { authorization_url, state, provider } = await client.auth.getOAuthUrl(
+  'github', // 'google' | 'github' | 'microsoft' | 'apple'
   'https://myapp.com/auth/callback',
-  crypto.randomUUID() // state for CSRF protection
+  crypto.randomUUID(),
 );
 
-window.location.href = authUrl;
+window.location.href = authorization_url;
+// store `state` for CSRF validation on callback
 ```
 
-### Step 2: Handle Callback
+### Step 2: Callback
 
 ```typescript
 const urlParams = new URLSearchParams(window.location.search);
-const code = urlParams.get('code');
-const state = urlParams.get('state');
+const code = urlParams.get('code')!;
+const state = urlParams.get('state')!;
 
-if (code && state === expectedState) {
-  const result = await client.auth.handleOAuthCallback({
-    provider: 'github',
-    code,
-    redirectUri: 'https://myapp.com/auth/callback',
-    state
-  });
+const result = await client.auth.handleOAuthCallback({
+  provider: 'github',
+  code,
+  redirectUri: 'https://myapp.com/auth/callback',
+  state,
+});
 
-  // User is now logged in
-  console.log(result.user);
-}
+console.log(result.user, result.isNewUser, result.isNewAccount);
 ```
 
 ## SAML Flow
 
 ```typescript
-// Initiate SAML login
-const authUrl = await client.auth.getSAMLUrl(
-  'okta', // or 'azure_ad', 'generic_saml'
-  'my-account', // account slug/ID
-  'https://myapp.com/auth/saml/callback' // relayState (optional)
+const { url } = await client.auth.getSAMLUrl(
+  'okta', // 'okta' | 'azure_ad' | 'generic_saml'
+  'my-account',
+  'https://myapp.com/auth/saml/callback',
 );
 
-window.location.href = authUrl;
+window.location.href = url;
+
+// ACS callback
+await client.auth.handleSAMLCallback({
+  SAMLResponse: formSamlResponse,
+  relayState: optionalRelay,
+});
 ```
 
-## Session Management
+## Session Helpers
 
-### Get Current State
+Prefer client getters (backed by `AuthManager`):
 
 ```typescript
-const state = client.auth.getState();
-
-if (state?.isAuthenticated) {
-  console.log('User:', state.user);
-  console.log('Account:', state.account);
-  console.log('Expires:', state.expiresAt);
+if (client.isAuthenticated) {
+  console.log(client.user);
+  console.log(client.account);
+  console.log(client.tokenType); // TokenType enum
+  console.log(client.isSuperadmin);
+  console.log(client.isApiKeySession);
+  console.log(client.isPersonalTokenSession);
+  console.log(client.isOAuthSession);
 }
+
+const me = await client.auth.getCurrentUser();
+// or await client.getCurrentUser();
 ```
 
-### Check Session Expiry
-
 ```typescript
-const state = client.auth.getState();
-if (state) {
-  const now = Date.now();
-  const expiresAt = state.expiresAt ?? 0;
-
-  if (now >= expiresAt) {
-    console.log('Session expired');
-  } else {
-    const minutesLeft = Math.floor((expiresAt - now) / 1000 / 60);
-    console.log(`Session valid for ${minutesLeft} minutes`);
-  }
+enum TokenType {
+  JWT = 'jwt',
+  API_KEY = 'api_key',
+  PERSONAL_TOKEN = 'personal_token',
+  OAUTH = 'oauth',
 }
 ```
 
 ## Auth Events
 
-Listen to authentication state changes:
+Subscribe on the **client** (not `client.auth.on`):
 
 ```typescript
-// Login
-client.auth.on('auth:login', (state) => {
-  console.log('User logged in:', state.user);
-  router.push('/dashboard');
+const unsubLogin = client.on('auth:login', (state) => {
+  console.log('User logged in:', state.user, state.tokenType);
 });
 
-// Logout
-client.auth.on('auth:logout', () => {
+client.on('auth:logout', () => {
   console.log('User logged out');
-  router.push('/login');
 });
 
-// Token refresh (automatic)
-client.auth.on('auth:refresh', (state) => {
-  console.log('Token refreshed');
+client.on('auth:refresh', (state) => {
+  console.log('Token refreshed', state.expiresAt);
 });
 
-// Errors
-client.auth.on('auth:error', (error) => {
+client.on('auth:error', (error) => {
   console.error('Auth error:', error);
 });
 
-// Clean up listeners
-const handleLogin = (state) => console.log('Logged in');
-client.auth.on('auth:login', handleLogin);
-// Later: client.auth.off('auth:login', handleLogin);
+// unsubLogin() to remove
 ```
 
 ## Password Reset
 
-### Request Reset
-
 ```typescript
-await client.auth.forgotPassword({ email: 'user@example.com' });
-```
+await client.auth.forgotPassword({
+  email: 'user@example.com',
+  account: 'my-account', // optional
+});
 
-### Complete Reset
+const check = await client.auth.verifyResetToken(token);
+// { valid, expires_at }
 
-```typescript
 await client.auth.resetPassword({
   token: 'reset_token_from_email',
-  newPassword: 'NewPassword123!',
-  newPasswordConfirm: 'NewPassword123!'
+  new_password: 'NewPassword123!', // snake_case field
 });
 ```
 
@@ -177,26 +177,28 @@ await client.auth.resetPassword({
 
 ```typescript
 await client.auth.verifyEmail('verification_token');
+await client.auth.resendVerificationEmail();
+await client.auth.sendVerification('user@example.com');
 ```
 
-## Dual Authentication
+`EmailVerificationRequiredError` may be thrown when a verified email is required.
 
-The SDK supports both API Key and JWT authentication:
+## TokenType and Dual Auth
 
-- **API Key** - Added via `X-API-Key` header to all requests (except user-specific OAuth/SAML operations)
-- **JWT Token** - Added via `Authorization: Bearer` header when available
-- Both can coexist as a fallback mechanism
+- **API Key** — `X-API-Key` from config `apiKey` (format `sb_ak...`)
+- **JWT** — `Authorization: Bearer` when logged in
+- Both can coexist; OAuth/SAML user flows restrict pure API-key sessions (`ApiKeyRestrictedError`)
 
 ```typescript
-// Server-side: API Key only (server-to-server)
+// Server-to-server
 const client = new SnackBaseClient({
   baseUrl: process.env.SNACKBASE_URL!,
-  apiKey: process.env.SNACKBASE_API_KEY
+  apiKey: process.env.SNACKBASE_API_KEY, // sb_ak...
 });
 
-// Client-side: JWT authentication
-const client = new SnackBaseClient({
-  baseUrl: 'https://your-project.snackbase.dev'
+// Browser user session
+const browser = new SnackBaseClient({
+  baseUrl: 'https://your-project.snackbase.dev',
 });
-await client.auth.login({ email, password }); // JWT now available
+await browser.auth.login({ email, password });
 ```

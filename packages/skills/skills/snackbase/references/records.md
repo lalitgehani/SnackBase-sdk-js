@@ -1,35 +1,35 @@
 The `records` service provides dynamic CRUD operations for any collection. Use generics for type safety.
 
+Aligned with `RecordService` in `@snackbase/sdk` ≥ 0.6.0.
+
 ## Table of Contents
 
 - [Type-Safe Operations](#type-safe-operations)
 - [Create a Record](#create-a-record)
 - [Get a Record](#get-a-record)
-- [Update a Record](#update-a-record) (PATCH, PUT)
+- [Update a Record](#update-a-record)
 - [Delete a Record](#delete-a-record)
-- [List Records](#list-records) (Pagination, Sorting, Field Selection)
-- [Filtering](#filtering) (Exact Match, Comparison, String, Logical Operators, Object Format)
-- [Bulk Operations](#bulk-operations) (Create, Update, Delete)
+- [List Records](#list-records)
+- [Cursor Pagination](#cursor-pagination)
+- [Filtering](#filtering)
+- [Query Builder](#query-builder)
+- [Batch Operations](#batch-operations)
 - [Aggregation](#aggregation)
 - [Base Record Properties](#base-record-properties)
-- [Dynamic Collections](#dynamic-collections)
 
 ## Type-Safe Operations
 
-Define your record types:
-
 ```typescript
 interface Task {
-  id: string;
   title: string;
   status: 'todo' | 'in-progress' | 'done';
   priority: number;
   due_date?: string;
   assignee_id?: string;
-  created_at: string;
-  updated_at: string;
 }
 ```
+
+System fields (`id`, `account_id`, `created_at`, `updated_at`, optional `created_by` / `updated_by`) are on `BaseRecord` and merged into responses.
 
 ## Create a Record
 
@@ -37,7 +37,7 @@ interface Task {
 const task = await client.records.create<Task>('tasks', {
   title: 'Fix authentication bug',
   status: 'todo',
-  priority: 5
+  priority: 5,
 });
 
 console.log(task.id); // Auto-generated
@@ -47,190 +47,204 @@ console.log(task.id); // Auto-generated
 
 ```typescript
 const task = await client.records.get<Task>('tasks', taskId);
-console.log(task.title);
+// Optional fields / expand (arrays are comma-joined)
+const slim = await client.records.get<Task>('tasks', taskId, {
+  fields: ['id', 'title'],
+  expand: ['assignee_id'], // reference field paths
+});
 ```
 
 ## Update a Record
 
-### Partial Update (PATCH)
+### Full Replacement (PUT) — `update`
 
 ```typescript
-const updated = await client.records.update(
-  'tasks',
-  taskId,
-  { status: 'done' } // Only updates provided fields
-);
+const replaced = await client.records.update('tasks', taskId, {
+  title: 'Updated title',
+  status: 'todo',
+  priority: 3,
+});
 ```
 
-### Full Replacement (PUT)
+### Partial Update (PATCH) — `patch`
 
 ```typescript
-const replaced = await client.records.replace(
-  'tasks',
-  taskId,
-  {
-    title: 'Updated title',
-    status: 'todo',
-    priority: 3
-    // All required fields must be provided
-  }
-);
+const updated = await client.records.patch('tasks', taskId, {
+  status: 'done', // only provided fields change
+});
 ```
 
 ## Delete a Record
 
 ```typescript
 await client.records.delete('tasks', taskId);
-// Returns true if successful
+// Returns { success: true }
 ```
 
 ## List Records
 
 ```typescript
 const result = await client.records.list<Task>('tasks', {
-  // Pagination
   skip: 0,
   limit: 50,
-
-  // Sorting
-  sort: '-priority,created_at', // Descending priority, then ascending created_at
-
-  // Field selection
+  sort: '-priority,created_at',
   fields: ['id', 'title', 'status'],
-
-  // Expand relations
-  expand: ['created_by', 'assignee']
+  expand: ['assignee_id'], // reference field paths, comma-joined over the wire
+  filter: 'status = "todo" AND priority > 3',
 });
 
-console.log(result.items);   // Task[]
-console.log(result.total);    // Total count
-console.log(result.skip);    // Records skipped
-console.log(result.limit);   // Max records returned
+console.log(result.items);
+console.log(result.total);
+console.log(result.skip);
+console.log(result.limit);
+```
+
+## Cursor Pagination
+
+```typescript
+const page1 = await client.records.list<Task>('tasks', {
+  limit: 20,
+  cursor: undefined,
+  include_count: true,
+});
+
+// Forward
+const page2 = await client.records.list<Task>('tasks', {
+  limit: 20,
+  cursor: page1.next_cursor ?? undefined,
+});
+
+// Backward
+const prev = await client.records.list<Task>('tasks', {
+  limit: 20,
+  cursor_before: page2.prev_cursor ?? undefined,
+});
+
+console.log(page1.next_cursor, page1.prev_cursor, page1.has_more);
 ```
 
 ## Filtering
 
-The SDK supports SQL-style filter expressions:
+Filters are **string only**. Do not pass object literals as `filter`.
 
-### Exact Match
+### Operators (query builder / backend)
+
+| Operator | Meaning |
+| -------- | ------- |
+| `=` `!=` | Equality |
+| `>` `>=` `<` `<=` | Comparison |
+| `~` | Contains / LIKE-style match |
+| `IN` | Membership in a list |
+| `IS NULL` / `IS NOT NULL` | Null checks |
 
 ```typescript
-filter: 'status="todo"'
-```
+// Exact match
+filter: 'status = "todo"'
 
-### Comparison Operators
-
-```typescript
+// Comparison
 filter: 'priority > 3'
-filter: 'priority >= 4'
-filter: 'priority < 3'
 filter: 'created_at <= "2025-01-01"'
+
+// Contains (~), not SQL LIKE as the primary operator
+filter: 'title ~ "bug"'
+
+// Logical
+filter: 'status = "todo" AND priority > 3'
+filter: '(status = "urgent" OR priority >= 4)'
 ```
 
-### String Operators
+## Query Builder
 
 ```typescript
-filter: 'name LIKE "John%"'    // Starts with
-filter: 'email LIKE "%@company.com"'  // Contains
-filter: 'title LIKE "%bug"'    // Ends with
+// First page
+const page1 = await client.records
+  .query<Task>('tasks')
+  .filter('status = "todo"')
+  .filter('priority', '>', 3)
+  .get();
+
+// Next page — cursor() requires a string token (e.g. from list/query next_cursor)
+const page2 = await client.records
+  .query<Task>('tasks')
+  .filter('status = "todo"')
+  .cursor(page1.next_cursor!)
+  .get();
 ```
 
-### Logical Operators
+`query(collection)` returns a `QueryBuilder` with `.filter`, `.select`, `.expand`, `.sort`, `.cursor(token: string)`, `.get`, etc.
+
+## Batch Operations
+
+Use `batchCreate` / `batchUpdate` / `batchDelete` (not bulk*).
+
+### Batch Create
 
 ```typescript
-// AND (implicit)
-filter: 'status="todo" AND priority > 3'
-
-// OR
-filter: '(status="urgent" OR priority >= 4)'
-
-// NOT
-filter: 'NOT status="archived"'
-```
-
-### Using Object Format (Auto-Converted)
-
-For simple exact matches, you can pass an object:
-
-```typescript
-filter: { status: 'todo' }
-// Auto-converted to: 'status="todo"'
-```
-
-## Bulk Operations
-
-### Bulk Create
-
-```typescript
-const tasks = await client.records.bulkCreate<Task>('tasks', [
+const created = await client.records.batchCreate('tasks', [
   { title: 'Task 1', status: 'todo', priority: 1 },
   { title: 'Task 2', status: 'todo', priority: 2 },
-  { title: 'Task 3', status: 'todo', priority: 3 }
 ]);
+// { created: BaseRecord[], count: number }
 ```
 
-### Bulk Update
+### Batch Update
+
+Payload items are `{ id, data }` (not `{ id, changes }`):
 
 ```typescript
-const updated = await client.records.bulkUpdate(
-  'tasks',
-  [
-    { id: '1', changes: { status: 'done' } },
-    { id: '2', changes: { status: 'done' } }
-  ]
-);
+const updated = await client.records.batchUpdate('tasks', [
+  { id: '1', data: { status: 'done' } },
+  { id: '2', data: { status: 'done' } },
+]);
+// { updated: BaseRecord[], count: number }
 ```
 
-### Bulk Delete
+### Batch Delete
 
 ```typescript
-const result = await client.records.bulkDelete(
-  'tasks',
-  ['task-1', 'task-2', 'task-3']
-);
-
-console.log(result.deleted); // Array of deleted IDs
-console.log(result.failed);  // Array of failed IDs
+const result = await client.records.batchDelete('tasks', [
+  'task-1',
+  'task-2',
+  'task-3',
+]);
+// { deleted: string[], count: number }
 ```
 
 ## Aggregation
 
+Params use string `functions`, optional `group_by`, `filter`, and `having`:
+
 ```typescript
 const result = await client.records.aggregate('tasks', {
-  groupBy: ['status'],
-  aggregates: {
-    count: { count: '*' },
-    avgPriority: { avg: 'priority' },
-    maxPriority: { max: 'priority' }
-  }
+  functions: 'count(),avg(priority),max(priority)',
+  group_by: 'status',
+  filter: 'priority > 0',
+  having: 'count() > 5',
 });
 
-// Result:
-// [
-//   { status: 'todo', count: 10, avgPriority: 3.2, maxPriority: 5 },
-//   { status: 'done', count: 5, avgPriority: 2.8, maxPriority: 4 }
-// ]
+// AggregationResponse: { results: Record<string, any>[], total_groups: number }
+console.log(result.results, result.total_groups);
 ```
 
 ## Base Record Properties
 
-All records have these base properties:
-
 ```typescript
 interface BaseRecord {
-  id: string;           // Unique ID
-  collection_id: string; // Collection ID
-  collection_name: string; // Collection name
-  created_at: string;    // ISO timestamp
-  updated_at: string;    // ISO timestamp
+  id: string;
+  account_id: string;
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
+  updated_by?: string;
+  [key: string]: any;
 }
 ```
 
-## Dynamic Collections
+There is no required `collection_id` / `collection_name` on records.
 
-For collections without a defined type, use `any`:
+## Dynamic Collections
 
 ```typescript
 const records = await client.records.list('dynamic_collection');
-// Returns: RecordListResponse<any>
+// RecordListResponse<any>
 ```

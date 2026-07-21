@@ -2,8 +2,11 @@ The SDK uses Vitest for testing. Services should be tested by mocking the `HttpC
 
 ## Table of Contents
 
-- [Test Setup](#test-setup) (Mock HttpClient Pattern)
-- [Testing Service Methods](#testing-service-methods) (List, Get, Create, Update, Delete)
+- [Test Setup](#test-setup)
+- [Testing Service Methods](#testing-service-methods)
+- [Testing Toggle / PATCH Endpoints](#testing-toggle--patch-endpoints)
+- [Asserting limit / offset](#asserting-limit--offset)
+- [Dashboard range](#dashboard-range)
 - [Testing Error Handling](#testing-error-handling)
 - [Testing Records with Generics](#testing-records-with-generics)
 - [Running Tests](#running-tests)
@@ -11,6 +14,8 @@ The SDK uses Vitest for testing. Services should be tested by mocking the `HttpC
 ## Test Setup
 
 ### Mock HttpClient Pattern
+
+Include **`put` and `patch`** so toggle endpoints and full updates can be asserted:
 
 ```typescript
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -20,8 +25,9 @@ describe('UserService', () => {
   const mockHttp = {
     get: vi.fn(),
     post: vi.fn(),
+    put: vi.fn(),
     patch: vi.fn(),
-    delete: vi.fn()
+    delete: vi.fn(),
   };
 
   let service: UserService;
@@ -30,8 +36,6 @@ describe('UserService', () => {
     vi.clearAllMocks();
     service = new UserService(mockHttp as any);
   });
-
-  // Tests go here...
 });
 ```
 
@@ -45,11 +49,11 @@ describe('list', () => {
     const mockData = {
       items: [
         { id: '1', email: 'user1@example.com' },
-        { id: '2', email: 'user2@example.com' }
+        { id: '2', email: 'user2@example.com' },
       ],
       total: 2,
       skip: 0,
-      limit: 20
+      limit: 20,
     };
     mockHttp.get.mockResolvedValue({ data: mockData });
 
@@ -58,79 +62,105 @@ describe('list', () => {
     expect(mockHttp.get).toHaveBeenCalledWith('/api/v1/users', { params: undefined });
     expect(result).toEqual(mockData);
   });
+});
+```
 
-  it('should pass query parameters', async () => {
-    mockHttp.get.mockResolvedValue({ data: { items: [], total: 0, skip: 0, limit: 10 } });
+### Create / Update / Delete
 
-    await service.list({ skip: 10, limit: 10 });
+```typescript
+it('should create a new user', async () => {
+  const newUser = { email: 'new@example.com', password: 'password123' };
+  mockHttp.post.mockResolvedValue({ data: { id: '1', ...newUser } });
+  const result = await service.create(newUser);
+  expect(mockHttp.post).toHaveBeenCalledWith('/api/v1/users', newUser);
+  expect(result.id).toBe('1');
+});
+```
 
-    expect(mockHttp.get).toHaveBeenCalledWith('/api/v1/users', {
-      params: { skip: 10, limit: 10 }
-    });
+## Testing Toggle / PATCH Endpoints
+
+Automation services use `PATCH .../toggle`:
+
+```typescript
+import { HookService } from './hook-service';
+
+describe('HookService.toggle', () => {
+  const mockHttp = {
+    get: vi.fn(),
+    post: vi.fn(),
+    put: vi.fn(),
+    patch: vi.fn(),
+    delete: vi.fn(),
+  };
+  const service = new HookService(mockHttp as any);
+
+  it('should PATCH toggle path', async () => {
+    const hook = { id: 'h1', enabled: false };
+    mockHttp.patch.mockResolvedValue({ data: { ...hook, enabled: true } });
+
+    const result = await service.toggle('h1');
+
+    expect(mockHttp.patch).toHaveBeenCalledWith('/api/v1/hooks/h1/toggle');
+    expect(result.enabled).toBe(true);
   });
 });
 ```
 
-### Get Method
+Same pattern for `client.endpoints.toggle`, `client.workflows.toggle`.
+
+## Asserting limit / offset
+
+Automation list APIs use `limit` / `offset` (not `page` / `page_size`):
 
 ```typescript
-describe('get', () => {
-  it('should get user by ID', async () => {
-    const mockUser = { id: '123', email: 'test@example.com' };
-    mockHttp.get.mockResolvedValue({ data: mockUser });
+import { WorkflowService } from './workflow-service';
 
-    const result = await service.get('123');
+it('should pass limit and offset query keys', async () => {
+  const mockHttp = {
+    get: vi.fn().mockResolvedValue({ data: { items: [], total: 0 } }),
+    post: vi.fn(),
+    put: vi.fn(),
+    patch: vi.fn(),
+    delete: vi.fn(),
+  };
+  const service = new WorkflowService(mockHttp as any);
 
-    expect(mockHttp.get).toHaveBeenCalledWith('/api/v1/users/123');
-    expect(result).toEqual(mockUser);
+  await service.list({ trigger_type: 'manual', enabled: true, limit: 10, offset: 20 });
+
+  expect(mockHttp.get).toHaveBeenCalledWith('/api/v1/workflows', {
+    params: { trigger_type: 'manual', enabled: true, limit: 10, offset: 20 },
   });
+  const params = mockHttp.get.mock.calls[0][1].params;
+  expect(params).toHaveProperty('limit', 10);
+  expect(params).toHaveProperty('offset', 20);
+  expect(params).not.toHaveProperty('page');
+  expect(params).not.toHaveProperty('page_size');
 });
 ```
 
-### Create Method
+## Dashboard range
 
 ```typescript
-describe('create', () => {
-  it('should create a new user', async () => {
-    const newUser = { email: 'new@example.com', password: 'password123' };
-    const mockResponse = { id: '1', ...newUser };
-    mockHttp.post.mockResolvedValue({ data: mockResponse });
+import { DashboardService } from './dashboard-service';
 
-    const result = await service.create(newUser);
+it('should pass range param', async () => {
+  const mockHttp = {
+    get: vi.fn().mockResolvedValue({
+      data: {
+        total_accounts: 1,
+        range: '30d',
+        system_health: { database_status: 'ok', storage_usage_mb: 1 },
+        previous_period: { new_accounts: 0, new_users: 0 },
+        // ...other DashboardStats fields as needed
+      },
+    }),
+  };
+  const service = new DashboardService(mockHttp as any);
 
-    expect(mockHttp.post).toHaveBeenCalledWith('/api/v1/users', newUser);
-    expect(result).toEqual(mockResponse);
-  });
-});
-```
+  await service.getStats({ range: '30d' });
 
-### Update Method
-
-```typescript
-describe('update', () => {
-  it('should update a user', async () => {
-    const updates = { name: 'Updated Name' };
-    const mockResponse = { id: '1', ...updates };
-    mockHttp.patch.mockResolvedValue({ data: mockResponse });
-
-    const result = await service.update('1', updates);
-
-    expect(mockHttp.patch).toHaveBeenCalledWith('/api/v1/users/1', updates);
-    expect(result).toEqual(mockResponse);
-  });
-});
-```
-
-### Delete Method
-
-```typescript
-describe('delete', () => {
-  it('should delete a user', async () => {
-    mockHttp.delete.mockResolvedValue(undefined);
-
-    await service.delete('1');
-
-    expect(mockHttp.delete).toHaveBeenCalledWith('/api/v1/users/1');
+  expect(mockHttp.get).toHaveBeenCalledWith('/api/v1/dashboard/stats', {
+    params: { range: '30d' },
   });
 });
 ```
@@ -138,22 +168,11 @@ describe('delete', () => {
 ## Testing Error Handling
 
 ```typescript
-describe('error handling', () => {
-  it('should throw AuthenticationError on 401', async () => {
-    const error = new AuthenticationError('Unauthorized');
-    mockHttp.get.mockRejectedValue(error);
+import { AuthenticationError, ValidationError } from './errors';
 
-    await expect(service.get('1')).rejects.toThrow(AuthenticationError);
-  });
-
-  it('should throw ValidationError on 422', async () => {
-    const error = new ValidationError('Validation failed', {
-      email: ['Invalid email']
-    });
-    mockHttp.post.mockRejectedValue(error);
-
-    await expect(service.create({ email: 'invalid' })).rejects.toThrow(ValidationError);
-  });
+it('should throw AuthenticationError on 401', async () => {
+  mockHttp.get.mockRejectedValue(new AuthenticationError('Unauthorized'));
+  await expect(service.get('1')).rejects.toThrow(AuthenticationError);
 });
 ```
 
@@ -161,7 +180,13 @@ describe('error handling', () => {
 
 ```typescript
 describe('RecordService', () => {
-  const mockHttp = { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() };
+  const mockHttp = {
+    get: vi.fn(),
+    post: vi.fn(),
+    put: vi.fn(),
+    patch: vi.fn(),
+    delete: vi.fn(),
+  };
   let service: RecordService;
 
   beforeEach(() => {
@@ -169,20 +194,13 @@ describe('RecordService', () => {
     service = new RecordService(mockHttp as any);
   });
 
-  describe('list', () => {
-    it('should return typed records', async () => {
-      interface Task { id: string; title: string; }
-      const mockData = {
-        items: [{ id: '1', title: 'Task 1' }],
-        total: 1,
-        skip: 0,
-        limit: 20
-      };
-      mockHttp.get.mockResolvedValue({ data: mockData });
-
-      const result = await service.list<Task>('tasks');
-
-      expect(result.items[0].title).toBe('Task 1');
+  it('should batchUpdate with { id, data }', async () => {
+    mockHttp.patch.mockResolvedValue({
+      data: { updated: [], count: 1 },
+    });
+    await service.batchUpdate('tasks', [{ id: '1', data: { status: 'done' } }]);
+    expect(mockHttp.patch).toHaveBeenCalledWith('/api/v1/records/tasks/batch', {
+      records: [{ id: '1', data: { status: 'done' } }],
     });
   });
 });
@@ -191,21 +209,11 @@ describe('RecordService', () => {
 ## Running Tests
 
 ```bash
-# Run all tests
+# From SnackBase-sdk-js monorepo root
 pnpm test
-
-# Run tests in watch mode
-pnpm test:watch
-
-# Run tests for a specific file
-pnpm test -- foo-service.test.ts
-
-# Run tests matching a pattern
-pnpm test -- -t "should return list"
-
-# Run unit tests only
 pnpm test:unit
-
-# Run integration tests only
 pnpm test:integration
+
+# Targeted
+pnpm --filter @snackbase/sdk test -- hook-service.test.ts
 ```

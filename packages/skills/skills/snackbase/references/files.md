@@ -1,88 +1,101 @@
-The `files` service handles file uploads and downloads with support for progress tracking.
+The `files` service uploads, builds download URLs, and deletes files.
+
+Aligned with `FileService` and `types/file.ts` in `@snackbase/sdk` ≥ 0.6.0.
 
 ## Table of Contents
 
 - [Upload a File](#upload-a-file)
 - [Upload Options](#upload-options)
-- [Download a File](#download-a-file)
-- [File Record](#file-record) (interface)
-- [Complete Example: React Component](#complete-example-react-component)
-- [File Size Limits](#file-size-limits)
-- [Supported File Types](#supported-file-types)
+- [Download URL](#download-url)
+- [Delete a File](#delete-a-file)
+- [File Metadata](#file-metadata)
 - [Linking Files to Records](#linking-files-to-records)
+- [React Example](#react-example)
 
 ## Upload a File
 
 ```typescript
 const file = fileInput.files[0];
 
-const result = await client.files.upload(file, {
-  collection: 'documents',
-  record: docId,
-  field: 'attachment'
+const meta = await client.files.upload(file, {
+  filename: 'report.pdf', // optional
+  contentType: 'application/pdf', // optional
 });
 
-console.log(result); // File record with token, url, etc.
+console.log(meta.path); // {account_id}/{uuid_filename}
+console.log(meta.filename, meta.size, meta.mime_type);
 ```
+
+Upload does **not** accept `collection`, `record`, or `field` options. Link files to records by storing the returned `path` (or a field of type `file`) on the record.
 
 ## Upload Options
 
 ```typescript
 interface FileUploadOptions {
-  collection?: string;  // Optional: Link to a collection
-  record?: string;     // Optional: Link to a specific record
-  field?: string;       // Optional: Field name for the file reference
+  filename?: string;
+  contentType?: string;
 }
 ```
 
-## Download a File
+Endpoint: `POST /api/v1/files/upload` (multipart form field `file`).
+
+## Download URL
 
 ```typescript
-// Get download URL from file token
-const url = client.files.getUrl('file-token-here');
-
-// Or download the file as Blob
-const blob = await client.files.download('file-token-here');
-
-// Save to disk in browser
-const a = document.createElement('a');
-a.href = URL.createObjectURL(blob);
-a.download = 'filename.pdf';
-a.click();
+// path from upload response
+const url = client.files.getDownloadUrl(meta.path);
+// GET {baseUrl}/api/v1/files/{path}?token=... when authenticated
 ```
 
-## File Record
+There is no `getUrl` or `download` method on `FileService` — use `getDownloadUrl` and fetch the URL in the browser or with your HTTP stack.
+
+## Delete a File
 
 ```typescript
-interface FileRecord {
-  id: string;
-  token: string;        // Access token
-  filename: string;     // Original filename
-  mimetype: string;     // MIME type
-  size: number;         // File size in bytes
-  created_at: string;   // ISO timestamp
+await client.files.delete(meta.path);
+// DELETE /api/v1/files/{path} → { success: true }
+```
+
+## File Metadata
+
+```typescript
+interface FileMetadata {
+  filename: string;
+  size: number;
+  mime_type: string;
+  path: string; // {account_id}/{uuid_filename}
 }
 ```
 
-## Complete Example: React Component
+## Linking Files to Records
+
+```typescript
+// 1. Upload
+const file = await client.files.upload(blob, { filename: 'avatar.png' });
+
+// 2. Store path on a record (field type `file` or `text`)
+await client.records.patch('profiles', profileId, {
+  avatar: file.path,
+});
+
+// 3. Later resolve download URL
+const url = client.files.getDownloadUrl(file.path);
+```
+
+## React Example
 
 ```typescript
 import { useState } from 'react';
 import { client } from './snackbase';
 
-export function FileUpload() {
+export function FileUpload({ profileId }: { profileId: string }) {
   const [uploading, setUploading] = useState(false);
 
   const handleUpload = async (file: File) => {
     setUploading(true);
-
     try {
-      const result = await client.files.upload(file, {
-        collection: 'documents',
-        record: docId
-      });
-
-      console.log('Uploaded:', result);
+      const meta = await client.files.upload(file, { filename: file.name });
+      await client.records.patch('profiles', profileId, { avatar: meta.path });
     } finally {
       setUploading(false);
     }
@@ -96,41 +109,4 @@ export function FileUpload() {
     />
   );
 }
-```
-
-## File Size Limits
-
-- **Default limit**: 50MB per file
-- **Recommended**: Use chunked uploads for files > 10MB
-
-## Supported File Types
-
-All standard MIME types are supported:
-
-| Type | MIME Type |
-|------|-----------|
-| Images | `image/png`, `image/jpeg`, `image/gif`, `image/webp` |
-| Videos | `video/mp4`, `video/webm`, `video/quicktime` |
-| Audio | `audio/mpeg`, `audio/wav`, `audio/ogg` |
-| Documents | `application/pdf`, `text/plain`, etc. |
-
-## Linking Files to Records
-
-To associate a file with a record:
-
-```typescript
-// 1. Upload the file
-const fileRecord = await client.files.upload(file, {
-  collection: 'profiles',
-  record: profileId,
-  field: 'avatar'
-});
-
-// 2. Update the record with the file token
-await client.records.update('profiles', profileId, {
-  avatar: fileRecord.token
-});
-
-// 3. Later, get the download URL
-const url = client.files.getUrl(fileRecord.token);
 ```
