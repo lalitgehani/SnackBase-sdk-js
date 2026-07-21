@@ -56,7 +56,7 @@ Create `App.js`:
 import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { SnackBaseProvider } from "@snackbase/sdk/react";
+import { SnackBaseProvider } from "@snackbase/react";
 import { SNACKBASE_CONFIG } from "./config";
 
 import LoginPage from "./screens/LoginPage";
@@ -112,7 +112,7 @@ import {
   Alert,
   ActivityIndicator,
 } from "react-native";
-import { useAuth } from "@snackbase/sdk/react";
+import { useAuth } from "@snackbase/react";
 import { useNavigation } from "@react-navigation/native";
 
 export default function LoginPage() {
@@ -234,7 +234,7 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from "react-native";
-import { useQuery, useSubscription, useAuth } from "@snackbase/sdk/react";
+import { useQuery, useSubscription, useAuth } from "@snackbase/react";
 import { useNavigation } from "@react-navigation/native";
 
 export default function PostsListScreen() {
@@ -448,7 +448,7 @@ import {
   ActivityIndicator,
   Button,
 } from "react-native";
-import { useRecord } from "@snackbase/sdk/react";
+import { useRecord } from "@snackbase/react";
 
 export default function PostDetailScreen({ route }) {
   const { postId } = route.params;
@@ -594,7 +594,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import { useMutation } from "@snackbase/sdk/react";
+import { useMutation } from "@snackbase/react";
 import { useNavigation } from "@react-navigation/native";
 
 export default function CreatePostScreen() {

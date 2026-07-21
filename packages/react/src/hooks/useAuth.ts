@@ -1,14 +1,47 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSnackBase } from '../SnackBaseContext';
-import { AuthState, LoginCredentials, RegisterData, PasswordResetRequest, PasswordResetConfirm } from '@snackbase/sdk';
+import { readAuthState, clearedAuthState } from '../internal/authState';
+import type {
+  AuthState,
+  LoginCredentials,
+  RegisterData,
+  PasswordResetRequest,
+  PasswordResetConfirm,
+  OAuthProvider,
+  OAuthCallbackParams,
+  SAMLProvider,
+  SAMLCallbackParams,
+} from '@snackbase/sdk';
 
+/**
+ * Concurrent auth actions share a single `isLoading` flag (last write wins).
+ * Prefer sequential auth UX for predictable loading indicators.
+ */
+/**
+ * Auth state + actions. Note: AuthState already has field `refreshToken` (string | null),
+ * so the refresh action is named `refreshAccessToken` to avoid a type/runtime clash.
+ */
 export interface UseAuthResult extends AuthState {
   login: (credentials: LoginCredentials) => Promise<any>;
   logout: () => Promise<void>;
   register: (data: RegisterData) => Promise<any>;
   forgotPassword: (data: PasswordResetRequest) => Promise<any>;
   resetPassword: (data: PasswordResetConfirm) => Promise<any>;
+  /** Calls `client.refreshToken()` — named to avoid clashing with AuthState.refreshToken string field */
+  refreshAccessToken: () => Promise<any>;
+  getCurrentUser: () => Promise<any>;
+  verifyEmail: (token: string) => Promise<any>;
+  resendVerificationEmail: () => Promise<any>;
+  sendVerification: (email: string) => Promise<any>;
+  verifyResetToken: (token: string) => Promise<any>;
+  getOAuthUrl: (provider: OAuthProvider, redirectUri: string, state?: string) => Promise<any>;
+  handleOAuthCallback: (params: OAuthCallbackParams) => Promise<any>;
+  getSAMLUrl: (provider: SAMLProvider, account: string, relayState?: string) => Promise<any>;
+  handleSAMLCallback: (params: SAMLCallbackParams) => Promise<any>;
+  getSAMLMetadata: (provider: SAMLProvider, account: string) => Promise<any>;
   isLoading: boolean;
+  /** Last error from auth:error events or failed actions; cleared on successful auth events */
+  error: Error | null;
   isSuperadmin: boolean;
   isApiKeySession: boolean;
   isPersonalTokenSession: boolean;
@@ -17,100 +50,150 @@ export interface UseAuthResult extends AuthState {
 
 export const useAuth = (): UseAuthResult => {
   const client = useSnackBase();
-  const [state, setState] = useState<AuthState>({
-    user: client.user,
-    account: client.account,
-    token: client.internalAuthManager.token,
-    refreshToken: client.internalAuthManager.refreshToken,
-    isAuthenticated: client.isAuthenticated,
-    expiresAt: null,
-    tokenType: client.tokenType
-  });
+  const [state, setState] = useState<AuthState>(() => readAuthState(client));
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+  // Session flags derived from client on each render so they stay fresh
+  const [sessionTick, setSessionTick] = useState(0);
 
   useEffect(() => {
-    // Initial state sync
-    setState({
-      user: client.user,
-      account: client.account,
-      token: client.internalAuthManager.token,
-      refreshToken: client.internalAuthManager.refreshToken,
-      isAuthenticated: client.isAuthenticated,
-      expiresAt: null,
-      tokenType: client.tokenType
-    });
+    setState(readAuthState(client));
+    setSessionTick((t) => t + 1);
 
-    const updateState = (newState: AuthState) => {
+    const onAuthSuccess = (newState: AuthState) => {
       setState(newState);
+      setError(null);
+      setSessionTick((t) => t + 1);
     };
 
-    const clearState = () => {
-      setState({
-        user: null,
-        account: null,
-        token: null,
-        refreshToken: null,
-        isAuthenticated: false,
-        expiresAt: null,
-        tokenType: client.tokenType // Still keep the type or default to JWT? PRD says default to JWT. client.tokenType is safer.
-      });
+    const onLogout = () => {
+      setState(clearedAuthState(client.tokenType));
+      setError(null);
+      setSessionTick((t) => t + 1);
     };
 
-    const unsubscribeLogin = client.on('auth:login', updateState);
-    const unsubscribeRefresh = client.on('auth:refresh', updateState);
-    const unsubscribeLogout = client.on('auth:logout', clearState);
+    const onError = (err: Error) => {
+      setError(err);
+      setSessionTick((t) => t + 1);
+    };
+
+    const unsubscribeLogin = client.on('auth:login', onAuthSuccess);
+    const unsubscribeRefresh = client.on('auth:refresh', onAuthSuccess);
+    const unsubscribeLogout = client.on('auth:logout', onLogout);
+    const unsubscribeError = client.on('auth:error', onError);
 
     return () => {
       unsubscribeLogin();
       unsubscribeRefresh();
       unsubscribeLogout();
+      unsubscribeError();
     };
   }, [client]);
 
-  const login = useCallback(async (credentials: LoginCredentials) => {
-    setIsLoading(true);
-    try {
-      return await client.login(credentials);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [client]);
+  const withLoading = useCallback(
+    async <T,>(fn: () => Promise<T>): Promise<T> => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        return await fn();
+      } catch (err: any) {
+        const e = err instanceof Error ? err : new Error(String(err));
+        setError(e);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    []
+  );
 
-  const logout = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      await client.logout();
-    } finally {
-      setIsLoading(false);
-    }
-  }, [client]);
+  const login = useCallback(
+    (credentials: LoginCredentials) => withLoading(() => client.login(credentials)),
+    [client, withLoading]
+  );
 
-  const register = useCallback(async (data: RegisterData) => {
-    setIsLoading(true);
-    try {
-      return await client.register(data);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [client]);
+  const logout = useCallback(
+    () => withLoading(async () => { await client.logout(); }),
+    [client, withLoading]
+  );
 
-  const forgotPassword = useCallback(async (data: PasswordResetRequest) => {
-    setIsLoading(true);
-    try {
-      return await client.forgotPassword(data);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [client]);
+  const register = useCallback(
+    (data: RegisterData) => withLoading(() => client.register(data)),
+    [client, withLoading]
+  );
 
-  const resetPassword = useCallback(async (data: PasswordResetConfirm) => {
-    setIsLoading(true);
-    try {
-      return await client.resetPassword(data);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [client]);
+  const forgotPassword = useCallback(
+    (data: PasswordResetRequest) => withLoading(() => client.forgotPassword(data)),
+    [client, withLoading]
+  );
+
+  const resetPassword = useCallback(
+    (data: PasswordResetConfirm) => withLoading(() => client.resetPassword(data)),
+    [client, withLoading]
+  );
+
+  const refreshAccessToken = useCallback(
+    () => withLoading(() => client.refreshToken()),
+    [client, withLoading]
+  );
+
+  const getCurrentUser = useCallback(
+    () => withLoading(() => client.getCurrentUser()),
+    [client, withLoading]
+  );
+
+  const verifyEmail = useCallback(
+    (token: string) => withLoading(() => client.verifyEmail(token)),
+    [client, withLoading]
+  );
+
+  const resendVerificationEmail = useCallback(
+    () => withLoading(() => client.resendVerificationEmail()),
+    [client, withLoading]
+  );
+
+  const sendVerification = useCallback(
+    (email: string) => withLoading(() => client.auth.sendVerification(email)),
+    [client, withLoading]
+  );
+
+  const verifyResetToken = useCallback(
+    (token: string) => withLoading(() => client.auth.verifyResetToken(token)),
+    [client, withLoading]
+  );
+
+  const getOAuthUrl = useCallback(
+    (provider: OAuthProvider, redirectUri: string, state?: string) =>
+      withLoading(() => client.auth.getOAuthUrl(provider, redirectUri, state)),
+    [client, withLoading]
+  );
+
+  const handleOAuthCallback = useCallback(
+    (params: OAuthCallbackParams) =>
+      withLoading(() => client.auth.handleOAuthCallback(params)),
+    [client, withLoading]
+  );
+
+  const getSAMLUrl = useCallback(
+    (provider: SAMLProvider, account: string, relayState?: string) =>
+      withLoading(() => client.getSAMLUrl(provider, account, relayState)),
+    [client, withLoading]
+  );
+
+  const handleSAMLCallback = useCallback(
+    (params: SAMLCallbackParams) =>
+      withLoading(() => client.handleSAMLCallback(params)),
+    [client, withLoading]
+  );
+
+  const getSAMLMetadata = useCallback(
+    (provider: SAMLProvider, account: string) =>
+      withLoading(() => client.getSAMLMetadata(provider, account)),
+    [client, withLoading]
+  );
+
+  // Force re-read of session flags after auth events (sessionTick)
+  void sessionTick;
 
   return {
     ...state,
@@ -119,10 +202,22 @@ export const useAuth = (): UseAuthResult => {
     register,
     forgotPassword,
     resetPassword,
+    refreshAccessToken,
+    getCurrentUser,
+    verifyEmail,
+    resendVerificationEmail,
+    sendVerification,
+    verifyResetToken,
+    getOAuthUrl,
+    handleOAuthCallback,
+    getSAMLUrl,
+    handleSAMLCallback,
+    getSAMLMetadata,
     isLoading,
+    error,
     isSuperadmin: client.isSuperadmin,
     isApiKeySession: client.isApiKeySession,
     isPersonalTokenSession: client.isPersonalTokenSession,
-    isOAuthSession: client.isOAuthSession
+    isOAuthSession: client.isOAuthSession,
   };
 };

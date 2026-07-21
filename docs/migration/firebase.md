@@ -464,7 +464,7 @@ import {
   SnackBaseProvider,
   useQuery,
   useSubscription,
-} from "@snackbase/sdk/react";
+} from "@snackbase/react";
 
 function App() {
   return (

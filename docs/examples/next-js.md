@@ -37,7 +37,7 @@ Create `app/providers.tsx`:
 ```tsx
 "use client";
 
-import { SnackBaseProvider } from "@snackbase/sdk/react";
+import { SnackBaseProvider } from "@snackbase/react";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -179,7 +179,7 @@ Create `app/login/page.tsx`:
 ```tsx
 "use client";
 
-import { useAuth } from "@snackbase/sdk/react";
+import { useAuth } from "@snackbase/react";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
@@ -253,7 +253,7 @@ Create `app/dashboard/page.tsx`:
 ```tsx
 "use client";
 
-import { useAuth } from "@snackbase/sdk/react";
+import { useAuth } from "@snackbase/react";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
@@ -382,7 +382,7 @@ export function CreatePostForm() {
 "use client";
 
 import { useState, useEffect } from "react";
-import { useQuery, useSubscription } from "@snackbase/sdk/react";
+import { useQuery, useSubscription } from "@snackbase/react";
 import type { Post } from "@snackbase/sdk";
 
 export function LivePostList() {

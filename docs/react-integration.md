@@ -5,31 +5,35 @@ The SnackBase SDK provides first-class React integration through hooks and conte
 ## Installation
 
 ```bash
-npm install @snackbase/sdk react
+npm install @snackbase/react @snackbase/sdk react
 ```
 
 ## Setup
 
 ### Wrapping Your App
 
-Wrap your application with `SnackBaseProvider`:
+**Client form (recommended):** construct `SnackBaseClient` and pass `{ client }`.
+
+**Config form:** pass `{ baseUrl, ... }` — the provider builds a stable client.
 
 ```tsx
+import { SnackBaseClient } from "@snackbase/sdk";
 import { SnackBaseProvider } from "@snackbase/react";
-import type { SnackBaseConfig } from "@snackbase/sdk";
 
-const config: SnackBaseConfig = {
+const client = new SnackBaseClient({
   baseUrl: "https://your-project.snackbase.dev",
-  apiKey: "your-api-key", // Optional for public access
-};
+  apiKey: "your-api-key", // Optional
+});
 
 function App() {
   return (
-    <SnackBaseProvider {...config}>
+    <SnackBaseProvider client={client}>
       <YourApp />
     </SnackBaseProvider>
   );
 }
+
+// Or: <SnackBaseProvider baseUrl="https://your-project.snackbase.dev">...</SnackBaseProvider>
 ```
 
 ### Environment Variables
@@ -102,37 +106,59 @@ function LoginForm() {
 }
 ```
 
-**useAuth Return Value:**
+**useAuth Return Value (selected):**
 
 ```typescript
-interface UseAuthResult {
-  user: User | null;
-  account: Account | null;
-  token: string | null;
-  refreshToken: string | null;
-  isAuthenticated: boolean;
+interface UseAuthResult extends AuthState {
+  // AuthState fields include: user, account, token, refreshToken (string | null),
+  // isAuthenticated, expiresAt, tokenType
+  expiresAt: string | null; // synced from AuthManager — not hard-coded null
+  error: Error | null; // auth:error events + failed actions
   isLoading: boolean;
-  login: (credentials: LoginCredentials) => Promise<AuthState>;
+  isSuperadmin: boolean;
+  isApiKeySession: boolean;
+  isPersonalTokenSession: boolean;
+  isOAuthSession: boolean;
+  login: (credentials: LoginCredentials) => Promise<any>;
   logout: () => Promise<void>;
-  register: (data: RegisterData) => Promise<AuthState>;
-  forgotPassword: (data: PasswordResetRequest) => Promise<void>;
-  resetPassword: (data: PasswordResetConfirm) => Promise<void>;
+  register: (data: RegisterData) => Promise<any>;
+  forgotPassword: (data: PasswordResetRequest) => Promise<any>;
+  resetPassword: (data: PasswordResetConfirm) => Promise<any>;
+  /** Calls client.refreshToken() — named to avoid clashing with AuthState.refreshToken string */
+  refreshAccessToken: () => Promise<any>;
+  getCurrentUser: () => Promise<any>;
+  verifyEmail: (token: string) => Promise<any>;
+  resendVerificationEmail: () => Promise<any>;
+  sendVerification: (email: string) => Promise<any>;
+  verifyResetToken: (token: string) => Promise<any>;
+  getOAuthUrl: (provider: OAuthProvider, redirectUri: string, state?: string) => Promise<any>;
+  handleOAuthCallback: (params: OAuthCallbackParams) => Promise<any>;
+  getSAMLUrl: (provider: SAMLProvider, account: string, relayState?: string) => Promise<any>;
+  handleSAMLCallback: (params: SAMLCallbackParams) => Promise<any>;
+  getSAMLMetadata: (provider: SAMLProvider, account: string) => Promise<any>;
 }
 ```
 
+**Security:** Do not render or log `token` / `refreshToken`.
+
 ### useQuery
 
-Fetches a list of records from a collection.
+Fetches a list of records from a collection. Supports `RecordListParams` **or** a QueryBuilder factory, plus optional `enabled`.
 
 ```tsx
 import { useQuery } from "@snackbase/react";
 
 function PostList() {
   const { data, loading, error, refetch } = useQuery<Post>("posts", {
-    filter: { status: "published" },
-    sort: "-createdAt",
-    expand: "author",
+    sort: "-created_at",
+    limit: 20,
   });
+
+  // QueryBuilder form:
+  // useQuery("posts", (qb) => qb.filter('status = "published"').sort("-created_at"))
+
+  // Conditional:
+  // useQuery("posts", undefined, { enabled: Boolean(userId) })
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error: {error.message}</p>;
@@ -144,13 +170,9 @@ function PostList() {
         {data?.items.map((post) => (
           <li key={post.id}>
             <h3>{post.title}</h3>
-            <p>By {post.author?.name}</p>
           </li>
         ))}
       </ul>
-      <p>
-        Page {data?.page} of {data?.totalPages} ({data?.totalItems} total)
-      </p>
     </div>
   );
 }
@@ -165,6 +187,8 @@ interface UseQueryResult<T> {
   error: Error | null;
   refetch: () => Promise<void>;
 }
+
+// options?: { enabled?: boolean; listenToInvalidation?: boolean }
 ```
 
 ### useRecord
@@ -254,68 +278,116 @@ function CreatePost() {
 ```typescript
 interface UseMutationResult<T> {
   create: (data: Partial<T>) => Promise<T & BaseRecord>;
-  update: (id: string, data: Partial<T>) => Promise<T & BaseRecord>;
+  update: (id: string, data: Partial<T>) => Promise<T & BaseRecord>; // full PUT
+  patch: (id: string, data: Partial<T>) => Promise<T & BaseRecord>;
   del: (id: string) => Promise<boolean>;
+  batchCreate: (records: Record<string, any>[]) => Promise<BatchCreateResponse>;
+  batchUpdate: (items: BatchUpdateItem[]) => Promise<BatchUpdateResponse>;
+  batchDelete: (ids: string[]) => Promise<BatchDeleteResponse>;
+  aggregate: (params: AggregationParams) => Promise<AggregationResponse>;
   loading: boolean;
   error: Error | null;
 }
+
+// options?: { invalidateOnSuccess?: boolean } — default false
+// When true, successful mutations refetch mounted useQuery/useRecord for the same collection
 ```
 
 ### useSubscription
 
-Subscribes to real-time updates on a collection.
+Subscribes to real-time updates on a collection. Auto-connects when needed; `connected` is true only when transport state is `'connected'`. Shared subscriptions are ref-counted and **operations are merged** across hooks on the same collection (LivePosts multi-hook pattern works).
+
+**Legacy form** `(collection, event, callback)` and **multi-handler form** `(collection, operations, handlers)` are both supported.
 
 ```tsx
 import { useState } from "react";
 import { useSubscription } from "@snackbase/react";
 
+// Preferred multi-handler form
 function LivePosts() {
   const [posts, setPosts] = useState<Post[]>([]);
-
-  useSubscription("posts", "create", (event) => {
-    setPosts((prev) => [...prev, event.record]);
-  });
-
-  useSubscription("posts", "update", (event) => {
-    setPosts((prev) =>
-      prev.map((p) => (p.id === event.record.id ? event.record : p)),
-    );
-  });
-
-  useSubscription("posts", "delete", (event) => {
-    setPosts((prev) => prev.filter((p) => p.id !== event.record.id));
-  });
+  const { connected, error } = useSubscription(
+    "posts",
+    ["create", "update", "delete"],
+    {
+      create: (post) => setPosts((prev) => [...prev, post]),
+      update: (post) =>
+        setPosts((prev) => prev.map((p) => (p.id === post.id ? post : p))),
+      delete: (post) => setPosts((prev) => prev.filter((p) => p.id !== post.id)),
+    },
+  );
 
   return (
-    <ul>
-      {posts.map((post) => (
-        <li key={post.id}>{post.title}</li>
-      ))}
-    </ul>
+    <div>
+      <span>{connected ? "Live" : "Offline"}</span>
+      {error && <p>{error.message}</p>}
+      <ul>
+        {posts.map((post) => (
+          <li key={post.id}>{post.title}</li>
+        ))}
+      </ul>
+    </div>
   );
+}
+
+// Legacy form (still supported) — ops are merged across multiple hooks on same collection
+function LivePostsLegacy() {
+  const [posts, setPosts] = useState<Post[]>([]);
+  useSubscription("posts", "create", (data) => setPosts((prev) => [...prev, data]));
+  useSubscription("posts", "update", (data) =>
+    setPosts((prev) => prev.map((p) => (p.id === data.id ? data : p))),
+  );
+  useSubscription("posts", "delete", (data) =>
+    setPosts((prev) => prev.filter((p) => p.id !== data.id)),
+  );
+  return null;
 }
 ```
 
-**Parameters:**
+**Parameters (overloads):**
 
 ```typescript
+// Legacy
 function useSubscription(
-  collection: string,      // Collection name
-  event: string,           // Event type: 'create', 'update', 'delete', or '*'
-  callback: (data: any) => void  // Callback function
-): UseSubscriptionResult
+  collection: string,
+  event: string, // 'create' | 'update' | 'delete' | '*'
+  callback: (data: any) => void
+): UseSubscriptionResult;
+
+// Multi-handler
+function useSubscription(
+  collection: string,
+  operations: Array<"create" | "update" | "delete" | string>,
+  handlers: {
+    create?: (data: any, event?: any) => void;
+    update?: (data: any, event?: any) => void;
+    delete?: (data: any, event?: any) => void;
+    "*"? : (data: any, event?: any) => void;
+  }
+): UseSubscriptionResult;
 ```
 
 **useSubscription Return Value:**
 
 ```typescript
 interface UseSubscriptionResult {
-  connected: boolean;
+  connected: boolean; // true only when realtime.getState() === 'connected'
   error: Error | null;
 }
 ```
 
-**Note:** The callback receives the event data directly, which includes the `record` property.
+**Note:** Callbacks receive event payload data (from `event.data` when present). Handler keys are `create` / `update` / `delete` (not `onCreate`).
+
+### Additional hooks (v0.3.0+)
+
+| Hook | Purpose |
+| ---- | ------- |
+| `useRealtime()` | Connection state + `connect` / `disconnect` |
+| `useFiles()` | `upload`, `getDownloadUrl`, `remove` |
+| `useInvitation()` | `getPublic(token)`, `accept(token, password)` |
+| `useClientAction(fn)` | Generic `{ run, loading, error, data, reset }` for admin calls |
+
+Admin domains (`workflows`, `webhooks`, `jobs`, …) have **no** dedicated hooks — use `useSnackBase()` or `useClientAction`.
 
 ### useSnackBase
 

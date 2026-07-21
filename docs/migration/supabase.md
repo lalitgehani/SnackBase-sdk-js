@@ -481,7 +481,7 @@ function Posts() {
 ### SnackBase with React
 
 ```tsx
-import { SnackBaseProvider, useQuery } from "@snackbase/sdk/react";
+import { SnackBaseProvider, useQuery } from "@snackbase/react";
 
 function App() {
   return (

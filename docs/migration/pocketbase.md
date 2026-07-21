@@ -411,7 +411,7 @@ function usePB() {
 ### SnackBase with React
 
 ```tsx
-import { SnackBaseProvider, useAuth, useQuery } from "@snackbase/sdk/react";
+import { SnackBaseProvider, useAuth, useQuery } from "@snackbase/react";
 
 function App() {
   return (
