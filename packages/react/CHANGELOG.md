@@ -8,7 +8,7 @@
   - `useCodelistValues(code, { lang, active, accountId, enabled })` — effective values for pickers
   - `useCodelists({ scope, active, enabled })` — list codelist metadata
   - `useCodelistOverride()` — `setOverride` / `clearOverride` with loading/error
-- Migration: region catalog pickers should use `useCodelistValues('regions')`, not `records.list('regions')`
+- Prefer `useCodelistValues(code)` for shared picker dictionaries (example: a product-seeded `regions` list)
 
 ## 0.3.0
 

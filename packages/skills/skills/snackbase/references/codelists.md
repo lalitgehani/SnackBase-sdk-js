@@ -15,7 +15,7 @@ Aligned with `@snackbase/sdk` (`client.codelists`) and `@snackbase/react` hooks.
 | Override | Per-account delta only: visibility, default, sort, metadata merge |
 | Field option | Collection field may set `"codelist": "regions"` for create/update membership checks |
 
-**Breaking:** Do **not** model the region catalog as a per-account `regions` collection or fan-out seed. Use the system codelist only.
+Prefer codelists for shared dictionaries instead of copying catalog rows into every tenant collection. Platform migrate does not seed a default list.
 
 ## SDK
 
@@ -46,13 +46,10 @@ await client.codelists.setOverride(
 );
 ```
 
-### Migration from collection catalog
+### Loading picker values
 
 ```typescript
-// ❌ Old (fan-out / collection SoT)
-await client.records.list('regions', { filter: 'status = "available"' });
-
-// ✅ New
+// Effective values for a codelist the operator created (example code: regions)
 await client.codelists.getValues('regions', { lang: 'en', active: true });
 ```
 

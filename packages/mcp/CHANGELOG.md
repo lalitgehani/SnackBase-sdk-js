@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **`snackbase_codelists`** tool for first-class codelists (list/get/get_values, create/update/delete, create_value, set_override/clear_override)
 - Coverage inventory includes SDK `client.codelists` and 22 registered domain tools
-- Prefer `get_values` for region pickers — not a `regions` collection fan-out
+- Prefer `get_values` for shared picker dictionaries created by operators/product seeds
 
 ## [0.3.0] - 2026-07-21
 

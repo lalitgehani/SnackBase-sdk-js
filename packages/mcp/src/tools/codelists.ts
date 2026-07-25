@@ -6,8 +6,7 @@ export const codelistsTool: Tool = {
   name: 'snackbase_codelists',
   description:
     'Manage SnackBase first-class codelists (shared reference dictionaries). ' +
-    'Effective values are the picker source of truth — do NOT use a regions collection fan-out. ' +
-    'Builtin example: code "regions" with value "eu-01". ' +
+    'Effective values power pickers for operator-created catalogs. ' +
     'Superadmin set_override/clear_override require tenant account_id (not the system account).',
   inputSchema: {
     type: 'object',

@@ -13,8 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Reads: `list`, `get`, `getValues(code, { lang, active, account_id })`
   - Mutations: `create`, `update`, `delete`, `createValue`, `setOverride`, `clearOverride`
   - Types exported from `@snackbase/sdk` (`Codelist`, `EffectiveCodelistValue`, etc.)
-  - **Migration**: region catalog is no longer a per-account `regions` collection. Prefer:
-    `client.codelists.getValues('regions', { lang: 'en', active: true })`
+  - Prefer `client.codelists.getValues(code, { lang, active })` for shared picker dictionaries
+    created by operators or product seeds (platform does not ship a default list).
 
 ## [0.6.0] - 2026-07-21
 
