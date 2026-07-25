@@ -35,7 +35,7 @@ export SNACKBASE_API_KEY=your-key
 
 Smoke is skipped when env is unset; unit + structural tests remain the CI gate.
 
-## Registered tools (21)
+## Registered tools (22)
 
 | Tool | Domain |
 |------|--------|
@@ -60,6 +60,7 @@ Smoke is skipped when env is unset; unit + structural tests remain the CI gate.
 | `snackbase_workflows` | Workflows + instances |
 | `snackbase_jobs` | Job queue (**superadmin**) |
 | `snackbase_files` | Download URL + delete |
+| `snackbase_codelists` | Shared dictionaries / effective values (regions SoT) |
 
 ### Intentional non-exposure
 

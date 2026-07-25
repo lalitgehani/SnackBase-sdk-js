@@ -14,9 +14,12 @@ description: >
   (10) Handling SDK errors (AuthenticationError, ValidationError, ApiKeyRestrictedError, etc.),
   (11) Writing tests that mock HttpClient with Vitest,
   (12) Configuring storage backends, macros, email templates, migrations, API keys,
-  (13) Managing system/account configurations and providers via AdminService.
+  (13) Managing system/account configurations and providers via AdminService,
+  (14) Using first-class codelists (client.codelists / useCodelistValues) for shared
+  dimensions such as regions pickers — not collection fan-out.
   Trigger on mentions of SnackBase, @snackbase/sdk, SnackBaseClient, hooks, workflows,
-  endpoints, jobs, dashboard, realtime, collection rules, or any SnackBase service name.
+  endpoints, jobs, dashboard, realtime, collection rules, codelists, controlled terminology,
+  regions catalog, or any SnackBase service name.
 ---
 
 # SnackBase SDK
@@ -76,6 +79,7 @@ const record = await client.records.get("posts", "record_id");
 | Write tests (Vitest) | [references/testing.md](references/testing.md) |
 | Configure storage | [references/storage.md](references/storage.md) |
 | Admin configurations & providers | [references/admin.md](references/admin.md) |
+| Codelists (shared dimensions / regions) | [references/codelists.md](references/codelists.md) |
 | Full API reference | [references/api-reference.md](references/api-reference.md) |
 
 ## Service Architecture

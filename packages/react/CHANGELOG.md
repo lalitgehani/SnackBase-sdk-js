@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- **Codelist hooks** (requires `@snackbase/sdk` with `client.codelists`):
+  - `useCodelistValues(code, { lang, active, accountId, enabled })` — effective values for pickers
+  - `useCodelists({ scope, active, enabled })` — list codelist metadata
+  - `useCodelistOverride()` — `setOverride` / `clearOverride` with loading/error
+- Migration: region catalog pickers should use `useCodelistValues('regions')`, not `records.list('regions')`
+
 ## 0.3.0
 
 Parity release of `@snackbase/react` against `@snackbase/sdk` 0.6.x (Phases 1–4 of PRD-react-sdk-parity).

@@ -40,6 +40,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     tools.workflowsTool,
     tools.jobsTool,
     tools.filesTool,
+    tools.codelistsTool,
   ],
 }));
 
@@ -89,6 +90,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       return await tools.handleJobsTool(args);
     case 'snackbase_files':
       return await tools.handleFilesTool(args);
+    case 'snackbase_codelists':
+      return await tools.handleCodelistsTool(args);
     default:
       throw new Error(`Unknown tool: ${name}`);
   }

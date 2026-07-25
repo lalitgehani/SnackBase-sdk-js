@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`CodelistService`** via `client.codelists` for first-class shared reference dictionaries (system/account codelists, effective values, overrides).
+  - Reads: `list`, `get`, `getValues(code, { lang, active, account_id })`
+  - Mutations: `create`, `update`, `delete`, `createValue`, `setOverride`, `clearOverride`
+  - Types exported from `@snackbase/sdk` (`Codelist`, `EffectiveCodelistValue`, etc.)
+  - **Migration**: region catalog is no longer a per-account `regions` collection. Prefer:
+    `client.codelists.getValues('regions', { lang: 'en', active: true })`
+
 ## [0.6.0] - 2026-07-21
 
 Contract alignment with SnackBase backend **v0.7.x** (including post-v0.7.1 HEAD dashboard and workflow APIs). Prefer this release when targeting current server schemas.

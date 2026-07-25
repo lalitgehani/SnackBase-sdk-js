@@ -63,6 +63,7 @@ const HOOK_COVERED_SERVICES = [
   'realtime',
   'files',
   'invitations',
+  'codelists',
 ] as const;
 
 /**
@@ -114,6 +115,7 @@ const EXPECTED_SERVICE_GETTERS = [
   'endpoints',
   'workflows',
   'jobs',
+  'codelists',
 ] as const;
 
 describe('SDK ↔ React parity inventory (regression gate)', () => {
@@ -165,6 +167,9 @@ describe('SDK ↔ React parity inventory (regression gate)', () => {
       'useFiles',
       'useInvitation',
       'useClientAction',
+      'useCodelistValues',
+      'useCodelists',
+      'useCodelistOverride',
       'TokenType',
     ];
     for (const name of required) {
@@ -176,6 +181,9 @@ describe('SDK ↔ React parity inventory (regression gate)', () => {
     expect(indexSource).toContain('./hooks/useFiles');
     expect(indexSource).toContain('./hooks/useInvitation');
     expect(indexSource).toContain('./hooks/useClientAction');
+    expect(indexSource).toContain('./hooks/useCodelistValues');
+    expect(indexSource).toContain('./hooks/useCodelists');
+    expect(indexSource).toContain('./hooks/useCodelistOverride');
     expect(indexSource).toContain('./types');
   });
 

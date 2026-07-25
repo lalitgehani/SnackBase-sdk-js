@@ -35,6 +35,7 @@ There is **no** `PermissionService` / `client.permissions`. Use `client.collecti
 | EndpointService | `client.endpoints` | [endpoints.md](endpoints.md) |
 | WorkflowService | `client.workflows` | [workflows.md](workflows.md) |
 | JobService | `client.jobs` | [jobs.md](jobs.md) |
+| CodelistService | `client.codelists` | [codelists.md](codelists.md) |
 | DashboardService | `client.dashboard` | [dashboard.md](dashboard.md) |
 | RealTimeService | `client.realtime` | [realtime.md](realtime.md) |
 | GroupsService | `client.groups` | [access-control.md](access-control.md) |

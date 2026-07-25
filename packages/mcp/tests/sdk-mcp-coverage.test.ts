@@ -59,6 +59,7 @@ const SDK_SERVICES: Record<string, string> = {
   endpoints: 'endpoint-service.ts',
   workflows: 'workflow-service.ts',
   jobs: 'job-service.ts',
+  codelists: 'codelist-service.ts',
 };
 
 /** MCP tool module stem -> SDK client getter it wraps */
@@ -84,6 +85,7 @@ const MCP_TOOL_TO_SERVICE: Record<string, string> = {
   users: 'users',
   webhooks: 'webhooks',
   workflows: 'workflows',
+  codelists: 'codelists',
 };
 
 /**
@@ -256,7 +258,7 @@ describe('SDK vs MCP coverage inventory (structural)', () => {
     .filter((f) => f.endsWith('.ts') && f !== 'index.ts' && !f.endsWith('.test.ts'))
     .map((f) => f.replace(/\.ts$/, ''));
 
-  it('SDK client exposes all 23 expected domain services', () => {
+  it('SDK client exposes all expected domain services (incl. codelists)', () => {
     expect(clientGetters.sort()).toEqual(Object.keys(SDK_SERVICES).sort());
     for (const getter of Object.keys(SDK_SERVICES)) {
       expect(clientSource).toMatch(new RegExp(`get ${getter}\\(\\)`));
@@ -267,9 +269,9 @@ describe('SDK vs MCP coverage inventory (structural)', () => {
     expect(exportedModules.sort()).toEqual(toolModules.sort());
   });
 
-  it('server.ts registers all 21 domain tools (15 original + 5 automation + files)', () => {
-    expect(registeredToolNames).toHaveLength(21);
-    expect(listedToolExports).toHaveLength(21);
+  it('server.ts registers all 22 domain tools (incl. codelists)', () => {
+    expect(registeredToolNames).toHaveLength(22);
+    expect(listedToolExports).toHaveLength(22);
 
     const expectedRegistered = [
       'collections',
@@ -293,6 +295,7 @@ describe('SDK vs MCP coverage inventory (structural)', () => {
       'workflows',
       'jobs',
       'files',
+      'codelists',
     ].sort();
 
     const actualRegistered = registeredToolNames

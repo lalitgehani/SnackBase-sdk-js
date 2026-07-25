@@ -119,6 +119,7 @@ client.hooks            // Automation hooks
 client.endpoints        // Custom HTTP endpoints
 client.workflows        // Multi-step workflows
 client.jobs             // Superadmin job queue
+client.codelists        // First-class shared dictionaries (see codelists.md)
 ```
 
 ## Auth State Getters

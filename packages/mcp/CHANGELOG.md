@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`snackbase_codelists`** tool for first-class codelists (list/get/get_values, create/update/delete, create_value, set_override/clear_override)
+- Coverage inventory includes SDK `client.codelists` and 22 registered domain tools
+- Prefer `get_values` for region pickers — not a `regions` collection fan-out
+
 ## [0.3.0] - 2026-07-21
 
 ### Added
