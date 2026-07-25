@@ -1,8 +1,8 @@
 {
   "name": "@snackbase/skills",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": false,
-  "description": "Claude AI skills for SnackBase SDK (@snackbase/sdk ≥ 0.6.0)",
+  "description": "Claude AI skills for SnackBase SDK (@snackbase/sdk ≥ 0.7.0)",
   "license": "MIT",
   "publishConfig": {
     "access": "public"

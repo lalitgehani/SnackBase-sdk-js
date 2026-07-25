@@ -13,6 +13,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Exhaustive OpenAPI dump / full workflow action-type catalog
 - Multi-language client skills
 
+## [0.3.0] - 2026-07-26
+
+### Added
+
+- **`references/codelists.md`** — first-class `client.codelists` guidance (list/get/getValues, admin manage, overrides)
+- Client and API reference maps include `codelists` for `@snackbase/sdk` ≥ 0.7.0
+
+### Changed
+
+- Prefer `client.codelists.getValues(code)` for shared picker dictionaries created by operators or product seeds (no platform-default regions list)
+
 ## [0.2.0] - 2026-07-21
 
 ### Changed

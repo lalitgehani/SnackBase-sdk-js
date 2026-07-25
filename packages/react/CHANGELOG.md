@@ -2,9 +2,11 @@
 
 ## Unreleased
 
+## 0.4.0 - 2026-07-26
+
 ### Added
 
-- **Codelist hooks** (requires `@snackbase/sdk` with `client.codelists`):
+- **Codelist hooks** (requires `@snackbase/sdk` ≥ 0.7.0 with `client.codelists`):
   - `useCodelistValues(code, { lang, active, accountId, enabled })` — effective values for pickers
   - `useCodelists({ scope, active, enabled })` — list codelist metadata
   - `useCodelistOverride()` — `setOverride` / `clearOverride` with loading/error
