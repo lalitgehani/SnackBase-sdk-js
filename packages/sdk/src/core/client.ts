@@ -34,6 +34,7 @@ import { HookService } from './hook-service';
 import { EndpointService } from './endpoint-service';
 import { WorkflowService } from './workflow-service';
 import { JobService } from './job-service';
+import { CodelistService } from './codelist-service';
 import { createStorageBackend } from './storage';
 import { 
   User, 
@@ -79,6 +80,7 @@ export class SnackBaseClient {
   private endpointService: EndpointService;
   private workflowService: WorkflowService;
   private jobService: JobService;
+  private codelistService: CodelistService;
 
   /**
    * Initialize a new SnackBaseClient instance.
@@ -165,6 +167,7 @@ export class SnackBaseClient {
     this.endpointService = new EndpointService(this.http);
     this.workflowService = new WorkflowService(this.http);
     this.jobService = new JobService(this.http);
+    this.codelistService = new CodelistService(this.http);
 
     this.setupInterceptors();
     this.authManager.initialize();
@@ -298,6 +301,13 @@ export class SnackBaseClient {
    */
   get records(): RecordService {
     return this.recordService;
+  }
+
+  /**
+   * Access to first-class codelists (effective values, admin manage).
+   */
+  get codelists(): CodelistService {
+    return this.codelistService;
   }
 
   /**

@@ -23,7 +23,9 @@ export * from './types/hook';
 export * from './types/endpoint';
 export * from './types/workflow';
 export * from './types/job';
+export * from './types/codelist';
 export * from './core/query-builder';
+export { CodelistService } from './core/codelist-service';
 export * from './utils/platform';
 
 // Type alias for convenience
