@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-08-03
+
+### Changed
+
+- Release alignment with `@snackbase/sdk` 0.8.0 and SnackBase backend 0.8.0.
+- The 22-tool surface, including `snackbase_codelists`, remains the supported MCP contract.
+
 ## [0.4.0] - 2026-07-26
 
 ### Added

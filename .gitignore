@@ -56,5 +56,6 @@ pids
 /*.md
 !README.md
 !CLAUDE.md
+!AGENTS.md
 !CHANGELOG.md
 .claude

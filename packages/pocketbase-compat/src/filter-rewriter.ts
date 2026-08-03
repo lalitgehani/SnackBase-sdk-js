@@ -23,7 +23,7 @@ export function rewriteFilterFields(filter: string): string {
   if (typeof filter !== 'string') {
     throw new TypeError(
       `rewriteFilterFields: expected a string filter, got ${typeof filter}. ` +
-        'SnackBase v0.7.0 only accepts SQL-like string filters (e.g., \'status = "active"\').',
+        'SnackBase v0.8.0 only accepts SQL-like string filters (e.g., \'status = "active"\').',
     );
   }
 
@@ -78,7 +78,7 @@ export function pbFilter(raw: string, params?: Record<string, any>): string {
   if (typeof raw !== 'string') {
     throw new TypeError(
       `pbFilter: expected a string filter template, got ${typeof raw}. ` +
-        'SnackBase v0.7.0 only accepts SQL-like string filters.',
+        'SnackBase v0.8.0 only accepts SQL-like string filters.',
     );
   }
 

@@ -1,6 +1,6 @@
 # @snackbase/skills
 
-Agent Skills for SnackBase, aligned with **`@snackbase/sdk` ≥ 0.7.0**.
+Agent Skills for SnackBase, aligned with **`@snackbase/sdk` ≥ 0.8.0**.
 
 This package contains specialized knowledge and best practices for working with SnackBase, formatted according to the [Agent Skills specification](https://agentskills.io/specification).
 
@@ -92,7 +92,7 @@ If an agent generates client code that fails against the real SDK **because of s
 
 ### Deferred backlog
 
-Not blocking 0.2.0 alignment:
+Deferred for the current release:
 
 - `@snackbase/react` skill pack
 - pocketbase-compat / supabase-compat skills
@@ -114,4 +114,4 @@ npm publish --access public   # requires npm auth; same as SDK publish
 
 ## Version
 
-Current: **0.3.0** — codelists + alignment with `@snackbase/sdk` 0.7.0 (see CHANGELOG).
+Current: **0.4.0** — alignment with `@snackbase/sdk` 0.8.0 (see CHANGELOG).

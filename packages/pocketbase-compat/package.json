@@ -1,6 +1,6 @@
 {
   "name": "@snackbase/pocketbase-compat",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Drop-in replacement for the PocketBase JS SDK backed by SnackBase",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",

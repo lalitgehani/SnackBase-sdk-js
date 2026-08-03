@@ -1,6 +1,6 @@
 {
   "name": "@snackbase/supabase-compat",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Drop-in replacement for @supabase/supabase-js backed by SnackBase",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",

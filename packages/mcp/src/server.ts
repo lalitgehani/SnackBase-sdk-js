@@ -5,7 +5,7 @@ import * as tools from './tools/index.js';
 export const server = new Server(
   {
     name: 'snackbase-mcp',
-    version: '0.4.0',
+    version: '0.5.0',
   },
   {
     capabilities: {

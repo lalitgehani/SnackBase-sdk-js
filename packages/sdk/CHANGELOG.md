@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-08-03
+
+### Changed
+
+- Release alignment with SnackBase backend **v0.8.0**. The codelist APIs and types introduced in the prior release remain the supported path for shared system/account dictionaries and effective values.
+
 ## [0.7.0] - 2026-07-26
 
 ### Added

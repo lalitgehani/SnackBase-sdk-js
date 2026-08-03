@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Structural verification that @snackbase/skills markdown stays aligned with
- * @snackbase/sdk ≥ 0.6.0 public contracts (no banned obsolete APIs).
+ * @snackbase/sdk ≥ 0.8.0 public contracts (no banned obsolete APIs).
  *
  * Usage (from packages/skills):
  *   node scripts/verify-against-sdk.mjs

@@ -37,6 +37,10 @@ type AdminListResult = {
   error: CompatError | null;
 };
 
+// SnackBase seeds role 2 as the regular user role. Supabase admin.createUser
+// does not expose a role selection in this compatibility surface.
+const DEFAULT_USER_ROLE_ID = 2;
+
 // ── Mapping helpers ───────────────────────────────────────────────────────────
 
 /**
@@ -161,7 +165,7 @@ export class AuthBridge {
         options.provider as any,
         redirectTo,
       );
-      return { provider: options.provider, url: oauthUrl.url };
+      return { provider: options.provider, url: oauthUrl.authorization_url };
     });
   }
 
@@ -412,6 +416,7 @@ export class AuthAdminBridge {
         email: attributes.email,
         password: attributes.password,
         account_id: accountId,
+        role_id: DEFAULT_USER_ROLE_ID,
       });
 
       // Auto-verify email if requested

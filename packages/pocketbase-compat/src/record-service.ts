@@ -246,8 +246,8 @@ export class RecordServiceCompat<M extends RecordModel = RecordModel> {
     const redirectUri = config.redirectUrl ?? '';
     try {
       const result = await this.snackbase.auth.getOAuthUrl(config.provider as any, redirectUri);
-      if (config.urlCallback && result.url) {
-        config.urlCallback(result.url);
+      if (config.urlCallback && result.authorization_url) {
+        config.urlCallback(result.authorization_url);
       }
     } catch {
       // Ignore errors from URL generation — still throw NotSupportedError below
@@ -309,7 +309,7 @@ export class RecordServiceCompat<M extends RecordModel = RecordModel> {
     _opts: SendOptions = {},
   ): Promise<boolean> {
     return wrapThrow(async () => {
-      await this.snackbase.auth.resetPassword({ token, newPassword: password });
+      await this.snackbase.auth.resetPassword({ token, new_password: password });
       return true;
     });
   }

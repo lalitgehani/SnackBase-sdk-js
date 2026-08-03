@@ -1,6 +1,6 @@
 # @snackbase/mcp release checklist
 
-Use for parity releases (e.g. 0.3.0 MCP–SDK parity).
+Use for parity releases (e.g. 0.5.0 MCP–SDK parity).
 
 1. [ ] `pnpm --filter @snackbase/mcp test` green (includes `sdk-mcp-coverage.test.ts`)
 2. [ ] `pnpm --filter @snackbase/mcp typecheck` green

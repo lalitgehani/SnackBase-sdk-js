@@ -65,7 +65,7 @@ console.log("Logged in as:", authState.user.email);
 
 // List records from a collection
 const records = await client.records.list("posts", {
-  filter: { status: "published" },
+  filter: 'status = "published"',
   sort: "-createdAt",
 });
 
@@ -94,7 +94,7 @@ function App() {
 function Posts() {
   const { user, login, logout } = useAuth();
   const { data: posts, loading } = useRecord("posts", {
-    filter: { status: "published" },
+    filter: 'status = "published"',
   });
 
   if (!user) {
@@ -157,6 +157,7 @@ The SDK provides 17+ services for interacting with SnackBase:
 - `client.admin` - Admin operations
 - `client.emailTemplates` - Email template management
 - `client.files` - File upload/download
+- `client.codelists` - Shared system/account dictionaries and effective values
 - `client.realtime` - Real-time subscriptions
 - `client.query` - Query builder
 
@@ -172,9 +173,8 @@ const results = await client
   .filter("status", "=", "published")
   .filter("createdAt", ">", "2024-01-01")
   .sort("createdAt", "desc")
-  .page(1)
-  .perPage(20)
-  .execute();
+  .page(1, 20)
+  .get();
 ```
 
 ## Real-Time Subscriptions

@@ -13,6 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Exhaustive OpenAPI dump / full workflow action-type catalog
 - Multi-language client skills
 
+## [0.4.0] - 2026-08-03
+
+### Changed
+
+- Release alignment with `@snackbase/sdk` 0.8.0 and SnackBase backend 0.8.0.
+- The codelist guidance remains the source of truth for shared dictionaries and effective values.
+
 ## [0.3.0] - 2026-07-26
 
 ### Added

@@ -2,7 +2,7 @@
 name: snackbase-sdk
 description: >
   SnackBase JavaScript/TypeScript SDK patterns, best practices, and API reference.
-  Use when working with the SnackBase-js client library (@snackbase/sdk ≥ 0.7.0) for any of
+  Use when working with the SnackBase-js client library (@snackbase/sdk ≥ 0.8.0) for any of
   these tasks: (1) Initializing SnackBaseClient with configuration options including accountId,
   (2) Implementing authentication flows (email/password, OAuth, SAML, API keys),
   (3) Performing CRUD operations on collections or records with string filters and batch APIs,
@@ -24,7 +24,7 @@ description: >
 
 # SnackBase SDK
 
-Aligned with **@snackbase/sdk ≥ 0.7.0**. Skills document the TypeScript client only
+Aligned with **@snackbase/sdk ≥ 0.8.0**. Skills document the TypeScript client only
 (not MCP tool schemas — see [@snackbase/mcp](https://www.npmjs.com/package/@snackbase/mcp)
 for Claude tool-use servers).
 

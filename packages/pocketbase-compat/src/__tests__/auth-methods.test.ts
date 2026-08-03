@@ -230,7 +230,7 @@ describe('RecordServiceCompat.confirmPasswordReset', () => {
 
     expect(snackbase.auth.resetPassword).toHaveBeenCalledWith({
       token: 'reset-tok',
-      newPassword: 'newpass123',
+      new_password: 'newpass123',
     });
   });
 
@@ -355,7 +355,11 @@ describe('RecordServiceCompat.authWithOAuth2', () => {
 
   it('fires urlCallback with the OAuth URL before throwing', async () => {
     const snackbase = makeMockSnackbase();
-    (snackbase.auth.getOAuthUrl as any).mockResolvedValue({ url: 'https://oauth.example.com/auth', state: 'abc' });
+    (snackbase.auth.getOAuthUrl as any).mockResolvedValue({
+      authorization_url: 'https://oauth.example.com/auth',
+      state: 'abc',
+      provider: 'google',
+    });
     const service = new RecordServiceCompat(snackbase, 'users');
 
     const urlCallback = vi.fn();

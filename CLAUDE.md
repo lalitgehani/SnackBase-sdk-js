@@ -2,6 +2,11 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+- Do not preserve backward compatibility.
+- Choose the simplest implementation that fully meets the current requirements.
+- Prefer established, well-maintained libraries over custom implementations.
+- Make architectural decisions for the long term. Do not accept a stopgap that only works for now and is meant to be replaced later.
+
 ## Project Overview
 
 SnackBase-js is a **pnpm monorepo** containing the JavaScript/TypeScript SDK ecosystem for SnackBase API. It provides type-safe, service-oriented architecture for interacting with SnackBase's REST API and real-time WebSocket/SSE endpoints.
