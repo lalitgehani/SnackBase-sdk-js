@@ -35,6 +35,7 @@ import { EndpointService } from './endpoint-service';
 import { WorkflowService } from './workflow-service';
 import { JobService } from './job-service';
 import { CodelistService } from './codelist-service';
+import { FunctionsService } from './functions-service';
 import { createStorageBackend } from './storage';
 import { 
   User, 
@@ -81,6 +82,7 @@ export class SnackBaseClient {
   private workflowService: WorkflowService;
   private jobService: JobService;
   private codelistService: CodelistService;
+  private functionsService: FunctionsService;
 
   /**
    * Initialize a new SnackBaseClient instance.
@@ -168,6 +170,9 @@ export class SnackBaseClient {
     this.workflowService = new WorkflowService(this.http);
     this.jobService = new JobService(this.http);
     this.codelistService = new CodelistService(this.http);
+    this.functionsService = new FunctionsService(this.http, () => {
+      return this.authManager.account?.slug || this.config.defaultAccount;
+    });
 
     this.setupInterceptors();
     this.authManager.initialize();
@@ -413,6 +418,13 @@ export class SnackBaseClient {
    */
   get hooks(): HookService {
     return this.hookService;
+  }
+
+  /**
+   * Access to function invoke methods.
+   */
+  get functions(): FunctionsService {
+    return this.functionsService;
   }
 
   /**

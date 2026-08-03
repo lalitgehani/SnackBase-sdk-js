@@ -26,6 +26,11 @@ export * from './types/job';
 export * from './types/codelist';
 export * from './core/query-builder';
 export { CodelistService } from './core/codelist-service';
+export { FunctionsService } from './core/functions-service';
+export type {
+  FunctionInvokeOptions,
+  FunctionInvokeResult,
+} from './core/functions-service';
 export * from './utils/platform';
 
 // Type alias for convenience
