@@ -231,4 +231,32 @@ export class RecordService {
     );
     return response.data;
   }
+
+  /**
+   * Reveal plaintext for encrypted collection fields.
+   *
+   * Requires an account-bound service API key with the `records:secrets:read`
+   * scope. Normal user JWTs receive HTTP 403. Does not log or cache plaintext.
+   *
+   * @param collection Collection name
+   * @param recordId Record ID
+   * @param fields Optional encrypted field names (max 20). When omitted, all
+   *   encrypted fields are returned if the record has 20 or fewer.
+   * @returns `{ data: { fieldName: plaintext } }`
+   */
+  async getSecrets(
+    collection: string,
+    recordId: string,
+    fields?: string[] | string
+  ): Promise<{ data: Record<string, unknown> }> {
+    const params: Record<string, string> = {};
+    if (fields !== undefined) {
+      params.fields = Array.isArray(fields) ? fields.join(',') : fields;
+    }
+    const response = await this.http.get<{ data: Record<string, unknown> }>(
+      `/api/v1/records/${collection}/${recordId}/secrets`,
+      { params }
+    );
+    return response.data;
+  }
 }

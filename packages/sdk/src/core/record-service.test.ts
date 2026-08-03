@@ -239,6 +239,45 @@ describe('RecordService', () => {
     });
   });
 
+  describe('getSecrets', () => {
+    it('should GET secrets with fields query and return data only', async () => {
+      const mockSecrets = { data: { api_token: 'plain' } };
+      const getSpy = vi.spyOn(httpClient, 'get').mockResolvedValue({
+        data: mockSecrets,
+        status: 200,
+        headers: new Headers(),
+        request: {} as any,
+      });
+
+      const result = await recordService.getSecrets('integrations', 'rec-1', [
+        'api_token',
+      ]);
+
+      expect(getSpy).toHaveBeenCalledWith(
+        '/api/v1/records/integrations/rec-1/secrets',
+        { params: { fields: 'api_token' } }
+      );
+      expect(result).toEqual(mockSecrets);
+      expect(result.data.api_token).toBe('plain');
+    });
+
+    it('should omit fields param when not provided', async () => {
+      const getSpy = vi.spyOn(httpClient, 'get').mockResolvedValue({
+        data: { data: {} },
+        status: 200,
+        headers: new Headers(),
+        request: {} as any,
+      });
+
+      await recordService.getSecrets('integrations', 'rec-1');
+
+      expect(getSpy).toHaveBeenCalledWith(
+        '/api/v1/records/integrations/rec-1/secrets',
+        { params: {} }
+      );
+    });
+  });
+
   describe('batchCreate', () => {
     it('should POST records array to batch endpoint', async () => {
       const r1 = { name: 'Record 1' };

@@ -37,6 +37,12 @@ export interface FieldDefinition {
   pii?: boolean;
   /** Mask type for PII fields (only when pii=true). */
   mask_type?: MaskType | string | null;
+  /**
+   * When true, values are encrypted at rest and redacted in normal API
+   * responses as `••••••••`. Only allowed on `text` and `json` fields.
+   * Encrypted fields are non-queryable (no sort/filter/search/unique).
+   */
+  encrypted?: boolean;
   /** SQL expression for computed (virtual) fields. */
   expression?: string | null;
   /** Return type of a computed field expression. */
