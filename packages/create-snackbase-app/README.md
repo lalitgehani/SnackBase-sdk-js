@@ -10,11 +10,14 @@ You can create a new SnackBase project by running:
 npx create-snackbase-app@latest
 ```
 
-Or, if you want to specify a project name and template:
+Specify a project name and template when you want a non-interactive starting point:
 
 ```bash
-npx create-snackbase-app@latest my-app --template todo-app
+npx create-snackbase-app@latest my-app --template todo --yes
 ```
+
+The CLI also supports `--git` to initialize a repository and `--install` to install
+dependencies with the package manager that launched the command.
 
 ## Features
 
@@ -25,12 +28,12 @@ npx create-snackbase-app@latest my-app --template todo-app
 
 ## Templates
 
-Currently supported templates:
+Currently supported template names:
 
-- `todo-app`: A simple todo application with authentication.
-- `todo-single-tenant`: A todo application tailored for single-tenant use cases.
-- `realtime-demo`: A demonstration of SnackBase's real-time capabilities.
-- `voting-app`: A feature voting application.
+- `todo`: Multi-account todo application with authentication.
+- `todo-single-tenant`: Todo application for single-tenant or internal use cases.
+- `realtime`: Real-time subscription demo.
+- `voting`: Feature voting application with authentication and realtime updates.
 
 ## Development
 
@@ -39,7 +42,10 @@ To contribute to this CLI:
 1.  Clone the repository: `git clone https://github.com/lalitgehani/snackbase-js.git`
 2.  Install dependencies: `pnpm install`
 3.  Navigate to the CLI package: `cd packages/create-snackbase-app`
-4.  Run in dev mode: `npm run dev`
+4.  Run in dev mode: `pnpm --filter create-snackbase-app dev`
+
+The generated applications use Vite and expose the usual `dev`, `build`, `lint`, and
+`preview` scripts.
 
 ## License
 

@@ -1,6 +1,6 @@
 # {PROJECT_NAME}
 
-A feature request and voting application powered by [SnackBase](https://snackbase.io). Features email authentication, real-time updates, and a voting system for feature requests.
+A feature request and voting application powered by [SnackBase](https://snackbase.dev). Features email authentication, real-time updates, and a voting system for feature requests.
 
 ## Features
 

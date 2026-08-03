@@ -2,6 +2,10 @@
 
 A drop-in replacement for the `pocketbase` JS SDK that routes all requests to a SnackBase backend.
 
+The compatibility client is created with `new PocketBase(url)` and exports both the
+default `PocketBase` name and the named `PocketBaseCompat` class. It delegates storage,
+authentication, records, and realtime behavior to `@snackbase/sdk`.
+
 ## Quick Start
 
 ### 1. Install
@@ -73,6 +77,7 @@ That's it! Your existing PocketBase code now talks to SnackBase.
 - `pb.collections.import()` is currently unsupported.
 - `pb.backups`, `pb.crons`, `pb.settings`, and `pb.logs` are not supported and will throw a `NotSupportedError`.
 - OAuth2 `authWithOAuth2()` only supports the direct callback flow; the popup relay mechanism is not implemented.
+- `pb.health.check()` returns a synthetic healthy response because the SDK has no health endpoint.
 
 ---
 

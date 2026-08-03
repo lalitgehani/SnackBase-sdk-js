@@ -63,8 +63,10 @@ SnackBase treats storage as a flat file system. When you use `supabase.storage.f
 
 ### 2. Error Handling
 
-Like the Supabase SDK, all methods return `{ data, error }` and **never throw**.
-SnackBase errors are automatically mapped to the Supabase error shape.
+Supported compatibility operations return `{ data, error }` and map SnackBase errors to
+the Supabase error shape. Explicitly unsupported surfaces such as `supabase.rpc()` and
+`supabase.functions` throw `NotSupportedError` (and `storage.from().list()` returns an
+error result).
 
 ### 3. User Metadata
 
@@ -84,6 +86,9 @@ Payloads are normalized to match Supabase's `postgres_changes` format:
   commit_timestamp: '...'
 }
 ```
+
+`channel().on('postgres_changes', ...)` supports table and event filters. Presence and
+broadcast channels are not implemented.
 
 ---
 

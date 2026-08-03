@@ -1,287 +1,88 @@
-# Integration Tests
+# SDK integration tests
 
-This directory contains integration tests that run against a live SnackBase server.
+These tests exercise `@snackbase/sdk` against a live SnackBase backend. They create
+temporary users, accounts, collections, records, and automation resources, then clean up
+the resources they track.
 
-## Setup
+## Configuration
 
-### 1. Environment Variables
-
-Create a `.env` file in the root of the project:
-
-```env
-SNACKBASE_URL=https://your-test-server.snackbase.dev
-SNACKBASE_API_KEY=your-test-api-key
-SNACKBASE_TEST_EMAIL=test@example.com
-SNACKBASE_TEST_PASSWORD=testpassword123
-```
-
-Or pass them inline when running tests:
+From the monorepo root, set the backend URL and, for admin or email-verification flows,
+an API key:
 
 ```bash
-SNACKBASE_URL=http://localhost:8000 SNACKBASE_API_KEY=your-api-key pnpm test:integration
+export SNACKBASE_URL=http://localhost:8090
+export SNACKBASE_API_KEY=your-api-key
+export SNACKBASE_TEST_EMAIL=test@example.com       # optional fixed test identity
+export SNACKBASE_TEST_PASSWORD='TestPass123!'       # optional
 ```
 
-> **Important:** `SNACKBASE_API_KEY` is required for integration tests. The tests register new users during setup, and without an API key the test runner cannot auto-verify their email addresses — causing all tests to fail with `EMAIL_VERIFICATION_REQUIRED`. You can create an API key from the Admin UI under **API Keys**, or via the SnackBase CLI.
+`SNACKBASE_URL` defaults to `http://localhost:8090`. `SNACKBASE_API_KEY` is needed for
+superadmin operations and for manually verifying newly registered users; provide it for
+the full suite. Some admin-only cases return early without a key, but auth and record
+scenarios still need a disposable backend configured for the test flow.
 
-> **Note:** The default backend URL is `http://localhost:8090`. If your local server runs on a different port (e.g. `8000`), set `SNACKBASE_URL` accordingly.
+Realtime integration tests require Node.js 21+ so the WebSocket transport is available
+globally. Other SDK development commands require Node.js 20+.
 
-### 2. Test Server Setup
+## Running the tests
 
-You can set up a test SnackBase server in several ways:
-
-#### Option 1: Local Development Server
-
-```bash
-# Run SnackBase locally (from the SnackBase directory)
-cd SnackBase
-uv run python -m snackbase serve
-# Server starts at http://localhost:8000 by default
-```
-
-#### Option 2: SnackBase Cloud Staging
-
-Use a staging project on SnackBase Cloud for integration testing.
-
-#### Option 3: Mock Server
-
-Use a mock server like `msw` for integration tests (see `setup.ts`).
-
-### 3. Running Tests
+Run the integration project from the monorepo root. The workspace config runs these tests
+sequentially to avoid SQLite locking:
 
 ```bash
-# Run all integration tests
 pnpm test:integration
 
-# Run with a custom backend URL and API key
-SNACKBASE_URL=http://localhost:8000 SNACKBASE_API_KEY=your-api-key pnpm test:integration
+# Or with a custom backend:
+SNACKBASE_URL=http://localhost:8000 \
+SNACKBASE_API_KEY=your-api-key \
+pnpm test:integration
 ```
 
-## Test Structure
+`pnpm --filter @snackbase/sdk test` runs the SDK unit-test project only; it does not run
+these integration tests.
 
-```
+## Test layout
+
+```text
 tests/integration/
-├── README.md
-├── setup.ts           # Test setup and utilities
-├── auth.test.ts       # Authentication tests
-├── records.test.ts    # Record CRUD tests
-├── realtime.test.ts   # Real-time subscription tests
-├── files.test.ts      # File upload/download tests
-└── helpers/
-    ├── cleanup.ts     # Cleanup utilities
-    └── fixtures.ts    # Test data fixtures
+├── setup.ts
+├── accounts.integration.test.ts
+├── admin.integration.test.ts
+├── api-keys.integration.test.ts
+├── audit-logs.integration.test.ts
+├── auth.integration.test.ts
+├── collection-rules.integration.test.ts
+├── collections.integration.test.ts
+├── dashboard.integration.test.ts
+├── email-templates.integration.test.ts
+├── endpoints.integration.test.ts
+├── files.integration.test.ts
+├── groups.integration.test.ts
+├── hooks.integration.test.ts
+├── invitations.integration.test.ts
+├── jobs.integration.test.ts
+├── macros.integration.test.ts
+├── migrations.integration.test.ts
+├── realtime.integration.test.ts
+├── records.integration.test.ts
+├── roles.integration.test.ts
+├── users.integration.test.ts
+├── webhooks.integration.test.ts
+└── workflows.integration.test.ts
 ```
 
-## Writing Integration Tests
+`setup.ts` provides `createTestClient()`, unique test-data generators, resource tracking,
+cleanup, `verifyUser()`, `waitFor()`, and retry helpers. Keep tests independent and use
+unique names for resources shared by the live backend.
 
-### Example Test
+## Local backend
 
-```typescript
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { SnackBaseClient } from "@snackbase/sdk";
-import { createTestUser, cleanupTestUser } from "../helpers/fixtures";
+Start SnackBase separately before running the tests:
 
-describe("Authentication Integration Tests", () => {
-  let client: SnackBaseClient;
-  let testUserId: string;
-
-  beforeEach(async () => {
-    client = new SnackBaseClient({
-      baseUrl: process.env.SNACKBASE_URL!,
-      apiKey: process.env.SNACKBASE_API_KEY,
-    });
-  });
-
-  afterEach(async () => {
-    if (testUserId) {
-      await cleanupTestUser(client, testUserId);
-    }
-  });
-
-  it("should register a new user", async () => {
-    const userData = {
-      email: `test-${Date.now()}@example.com`,
-      password: "testpassword123",
-      passwordConfirm: "testpassword123",
-      name: "Test User",
-    };
-
-    const authState = await client.auth.register(userData);
-
-    expect(authState.user).toBeDefined();
-    expect(authState.user.email).toBe(userData.email);
-    expect(authState.isAuthenticated).toBe(true);
-
-    testUserId = authState.user.id;
-  });
-
-  it("should login with email and password", async () => {
-    // First create a user
-    const authState = await createTestUser(client);
-    testUserId = authState.user.id;
-
-    // Logout
-    await client.auth.logout();
-
-    // Login again
-    const loginState = await client.auth.login({
-      email: authState.user.email,
-      password: "testpassword123",
-    });
-
-    expect(loginState.user.id).toBe(testUserId);
-    expect(loginState.isAuthenticated).toBe(true);
-  });
-});
+```bash
+cd /path/to/SnackBase
+uv run python -m snackbase serve
 ```
 
-## Test Utilities
-
-### Fixtures
-
-```typescript
-// helpers/fixtures.ts
-
-export async function createTestUser(client: SnackBaseClient) {
-  const email = `test-${Date.now()}@example.com`;
-  const authState = await client.auth.register({
-    email,
-    password: "testpassword123",
-    passwordConfirm: "testpassword123",
-    name: "Test User",
-  });
-  return authState;
-}
-
-export async function createTestCollection(
-  client: SnackBaseClient,
-  name: string,
-) {
-  const collection = await client.collections.create({
-    name,
-    schema: {
-      type: "base",
-      fields: [
-        { name: "title", type: "text", required: true },
-        { name: "content", type: "text" },
-      ],
-    },
-  });
-  return collection;
-}
-
-export async function cleanupTestUser(client: SnackBaseClient, userId: string) {
-  await client.users.delete(userId);
-}
-
-export async function cleanupTestCollection(
-  client: SnackBaseClient,
-  collectionId: string,
-) {
-  await client.collections.delete(collectionId);
-}
-```
-
-### Cleanup
-
-```typescript
-// helpers/cleanup.ts
-
-const createdResources = {
-  users: [] as string[],
-  collections: [] as string[],
-  records: [] as string[],
-};
-
-export function trackUser(userId: string) {
-  createdResources.users.push(userId);
-}
-
-export function trackCollection(collectionId: string) {
-  createdResources.collections.push(collectionId);
-}
-
-export async function cleanupAll(client: SnackBaseClient) {
-  // Delete all tracked records
-  for (const recordId of createdResources.records) {
-    // Determine collection and delete
-  }
-
-  // Delete all tracked collections
-  for (const collectionId of createdResources.collections) {
-    await client.collections.delete(collectionId).catch(() => {});
-  }
-
-  // Delete all tracked users
-  for (const userId of createdResources.users) {
-    await client.users.delete(userId).catch(() => {});
-  }
-
-  // Clear arrays
-  createdResources.users = [];
-  createdResources.collections = [];
-  createdResources.records = [];
-}
-```
-
-## Best Practices
-
-1. **Isolation**: Each test should be independent and clean up after itself
-2. **Unique Data**: Use timestamps or UUIDs to create unique test data
-3. **Cleanup**: Always delete created resources in `afterEach`
-4. **Timeouts**: Set appropriate timeouts for network requests
-5. **Retry Logic**: Handle transient network failures gracefully
-6. **Parallel Tests**: Avoid state conflicts between parallel tests
-
-## CI/CD Integration
-
-Add to your CI workflow:
-
-```yaml
-# .github/workflows/ci.yml
-integration-test:
-  name: Integration Tests
-  runs-on: ubuntu-latest
-  services:
-    snackbase:
-      image: snackbase/server:latest
-      ports:
-        - 8090:8090
-      env:
-        SNACKBASE_ADMIN_EMAIL: admin@test.com
-        SNACKBASE_ADMIN_PASSWORD: password123
-
-  steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-node@v4
-      with:
-        node-version: 20
-
-    - name: Install dependencies
-      run: npm ci
-
-    - name: Run integration tests
-      env:
-        SNACKBASE_URL: http://localhost:8090
-        SNACKBASE_API_KEY: ${{ secrets.TEST_API_KEY }}
-      run: npm run test:integration
-```
-
-## Troubleshooting
-
-### Tests Fail Intermittently
-
-- Add retry logic for network operations
-- Increase timeouts
-- Run tests serially instead of in parallel
-
-### Tests Timeout
-
-- Check if the server is running
-- Verify network connectivity
-- Increase the test timeout in vitest config
-
-### Cleanup Fails
-
-- Ensure resources are properly tracked
-- Add error handling to cleanup operations
-- Use unique identifiers for test resources
+If the server uses port `8000`, set `SNACKBASE_URL=http://localhost:8000`. Do not point
+the suite at production data: integration tests create and delete resources.

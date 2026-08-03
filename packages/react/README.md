@@ -1,9 +1,9 @@
 # @snackbase/react
 
-React bindings for [SnackBase](https://github.com/snackbase) — thin hooks over `@snackbase/sdk`.
+React bindings for [SnackBase](https://snackbase.dev) — thin hooks over `@snackbase/sdk`.
 
 **Peer dependencies:** `react` / `react-dom` `>=18`  
-**SDK:** workspace / compatible with `@snackbase/sdk` 0.6.x
+**SDK:** `@snackbase/sdk` `0.8.x` (workspace dependency during development)
 
 ## Install
 
@@ -49,6 +49,9 @@ function App() {
 | `useRealtime` | Connection state / connect / disconnect |
 | `useFiles` | upload / getDownloadUrl / remove |
 | `useInvitation` | public get + accept |
+| `useCodelistValues` | Effective values for shared picker dictionaries |
+| `useCodelists` | List codelist metadata |
+| `useCodelistOverride` | Set / clear account-level codelist overrides |
 | `useClientAction` | Generic `{ run, loading, error, data, reset }` for any async fn |
 | `useSnackBase` | Raw client escape hatch |
 
@@ -103,6 +106,12 @@ When `@snackbase/sdk` adds a client `*Service` getter:
 3. Ship hook + tests, or document the non-wrapper.
 
 Example PR note: *“Added `client.billing` → intentional non-wrapper via `useSnackBase()` until product demand.”*
+
+## SDK compatibility
+
+The React package is intentionally a thin integration over `@snackbase/sdk`. Keep the
+two packages on the same release line when possible; the current package release targets
+SDK `0.8.x` and exposes `client.codelists` through the codelist hooks.
 
 ## Docs
 

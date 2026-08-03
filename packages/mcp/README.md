@@ -1,6 +1,6 @@
 # @snackbase/mcp
 
-Model Context Protocol (MCP) server for [SnackBase](https://github.com/snackbase). Exposes SnackBase domain operations as MCP tools for AI agents (Claude, Cursor, etc.).
+Model Context Protocol (MCP) server for [SnackBase](https://snackbase.dev). Exposes SnackBase domain operations as MCP tools for AI agents (Claude, Cursor, etc.).
 
 ## Requirements
 
@@ -13,9 +13,10 @@ Model Context Protocol (MCP) server for [SnackBase](https://github.com/snackbase
 |----------|----------|-------------|
 | `SNACKBASE_URL` | yes | Base URL of the SnackBase API |
 | `SNACKBASE_API_KEY` | yes | API key (`sb_ak.…`) |
-| `SNACKBASE_ACCOUNT_ID` | no | Account scope when the key can access multiple accounts |
-| `SNACKBASE_TIMEOUT` | no | Request timeout ms (default 30000) |
-| `SNACKBASE_DEBUG` | no | Extra stderr logging |
+
+The current server entry point reads only `SNACKBASE_URL` and `SNACKBASE_API_KEY`. Use
+the SDK directly in application code when you need account scoping, custom timeouts, or
+logging; those options are not exposed by this MCP entry point.
 
 ### Auth policy (API key only)
 
@@ -29,8 +30,7 @@ Model Context Protocol (MCP) server for [SnackBase](https://github.com/snackbase
 ```bash
 export SNACKBASE_URL=http://localhost:8000
 export SNACKBASE_API_KEY=your-key
-# Call ListTools / a read action via your MCP client, or drive the SDK:
-# list collections, list webhooks, list jobs (superadmin)
+# Call ListTools or a read action from your MCP client.
 ```
 
 Smoke is skipped when env is unset; unit + structural tests remain the CI gate.
