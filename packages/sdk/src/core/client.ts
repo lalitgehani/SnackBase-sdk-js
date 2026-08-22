@@ -56,6 +56,7 @@ import {
  */
 export class SnackBaseClient {
   private config: Required<SnackBaseConfig>;
+  private usesExternalToken: boolean;
   private http: HttpClient;
   private logger: Logger;
   private authManager: AuthManager;
@@ -93,6 +94,7 @@ export class SnackBaseClient {
     this.validateConfig(config);
 
     const usesExternalToken = typeof config.getAccessToken === 'function';
+    this.usesExternalToken = usesExternalToken;
     const resolvedStorageBackend = usesExternalToken
       ? 'memory'
       : (config.storageBackend || getAutoDetectedStorage());
@@ -562,14 +564,14 @@ export class SnackBaseClient {
   }
 
   private resolveAccessToken(): string | null {
-    if (this.config.getAccessToken) {
+    if (this.usesExternalToken && this.config.getAccessToken) {
       return this.config.getAccessToken();
     }
     return this.authManager.token;
   }
 
   private assertExternalTokenAuthAllowed(method: string): void {
-    if (this.config.getAccessToken) {
+    if (this.usesExternalToken) {
       throw new ExternalTokenAuthError(method);
     }
   }
