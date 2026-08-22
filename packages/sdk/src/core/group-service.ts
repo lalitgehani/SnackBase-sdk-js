@@ -4,6 +4,7 @@ import {
   GroupCreate,
   GroupUpdate,
   GroupListParams,
+  GroupListResponse,
 } from '../types/group';
 
 /**
@@ -15,11 +16,15 @@ export class GroupsService {
   /**
    * List all groups in the current account.
    */
-  async list(params?: GroupListParams): Promise<Group[]> {
-    const response = await this.http.get<Group[]>('/api/v1/groups', {
+  async list(params?: GroupListParams): Promise<GroupListResponse> {
+    const response = await this.http.get<GroupListResponse | Group[]>('/api/v1/groups', {
       params,
     });
-    return response.data;
+    const data = response.data;
+    if (Array.isArray(data)) {
+      return { items: data, total: data.length, page: 1, page_size: data.length };
+    }
+    return data;
   }
 
   /**

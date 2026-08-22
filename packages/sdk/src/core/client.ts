@@ -2,6 +2,7 @@ import { SnackBaseConfig, DEFAULT_CONFIG } from '../types/config';
 import { getAutoDetectedStorage } from '../utils/platform';
 import { HttpClient } from './http-client';
 import { Logger, LogLevel as LoggerLevel } from './logger';
+import { ExternalTokenAuthError } from './errors';
 import { 
   contentTypeInterceptor, 
   createAuthInterceptor, 
@@ -90,11 +91,18 @@ export class SnackBaseClient {
    */
   constructor(config: SnackBaseConfig) {
     this.validateConfig(config);
-    
+
+    const usesExternalToken = typeof config.getAccessToken === 'function';
+    const resolvedStorageBackend = usesExternalToken
+      ? 'memory'
+      : (config.storageBackend || getAutoDetectedStorage());
+
     this.config = {
       ...DEFAULT_CONFIG,
-      storageBackend: config.storageBackend || getAutoDetectedStorage(),
       ...config,
+      storageBackend: resolvedStorageBackend,
+      enableAutoRefresh: usesExternalToken ? false : config.enableAutoRefresh ?? DEFAULT_CONFIG.enableAutoRefresh!,
+      getAccessToken: config.getAccessToken,
     } as Required<SnackBaseConfig>;
 
     // Initialize Logger
@@ -128,6 +136,7 @@ export class SnackBaseClient {
 
     this.authManager = new AuthManager({
       storage: createStorageBackend(this.config.storageBackend),
+      storageKey: this.config.authStorageKey,
     });
 
     this.authService = new AuthService(
@@ -153,11 +162,11 @@ export class SnackBaseClient {
     this.fileService = new FileService(
       this.http,
       () => this.config.baseUrl,
-      () => this.authManager.token
+      () => this.resolveAccessToken()
     );
     this.realtimeService = new RealTimeService({
       baseUrl: this.config.baseUrl,
-      getToken: () => this.authManager.token,
+      getToken: () => this.resolveAccessToken(),
       authManager: this.authManager,
       maxRetries: this.config.maxRealTimeRetries,
       reconnectionDelay: this.config.realTimeReconnectionDelay,
@@ -201,7 +210,7 @@ export class SnackBaseClient {
     this.http.addRequestInterceptor(contentTypeInterceptor);
     this.http.addRequestInterceptor(
       createAuthInterceptor(
-        () => this.authManager.token || undefined,
+        () => this.resolveAccessToken() || undefined,
         this.config.apiKey,
         this.config.accountId
       )
@@ -461,6 +470,7 @@ export class SnackBaseClient {
    * Authenticate a user with email and password.
    */
   async login(credentials: LoginCredentials) {
+    this.assertExternalTokenAuthAllowed('login');
     return this.authService.login(credentials);
   }
 
@@ -468,6 +478,7 @@ export class SnackBaseClient {
    * Log out the current user.
    */
   async logout() {
+    this.assertExternalTokenAuthAllowed('logout');
     return this.authService.logout();
   }
 
@@ -482,6 +493,7 @@ export class SnackBaseClient {
    * Refresh the access token using the refresh token.
    */
   async refreshToken() {
+    this.assertExternalTokenAuthAllowed('refresh');
     return this.authService.refreshToken();
   }
 
@@ -547,6 +559,19 @@ export class SnackBaseClient {
    */
   get internalAuthManager(): AuthManager {
     return this.authManager;
+  }
+
+  private resolveAccessToken(): string | null {
+    if (this.config.getAccessToken) {
+      return this.config.getAccessToken();
+    }
+    return this.authManager.token;
+  }
+
+  private assertExternalTokenAuthAllowed(method: string): void {
+    if (this.config.getAccessToken) {
+      throw new ExternalTokenAuthError(method);
+    }
   }
 
   /**

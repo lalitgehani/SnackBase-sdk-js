@@ -42,8 +42,10 @@ export class HookService {
     return response.data;
   }
 
-  async trigger(id: string): Promise<{ queued: boolean }> {
-    const response = await this.http.post<{ queued: boolean }>(`/api/v1/hooks/${id}/trigger`);
+  async trigger(id: string): Promise<Record<string, unknown>> {
+    const response = await this.http.post<Record<string, unknown>>(
+      `/api/v1/hooks/${id}/trigger`,
+    );
     return response.data;
   }
 

@@ -157,6 +157,19 @@ export class TimeoutError extends SnackBaseError {
 }
 
 /**
+ * Thrown when login, logout, or refresh is attempted on a client with an external token provider.
+ */
+export class ExternalTokenAuthError extends SnackBaseError {
+  constructor(method: string) {
+    super(
+      `SnackBaseClient: ${method}() is not available when getAccessToken is configured`,
+      'EXTERNAL_TOKEN_AUTH_ERROR',
+    );
+    Object.setPrototypeOf(this, ExternalTokenAuthError.prototype);
+  }
+}
+
+/**
  * Thrown when a server error occurs (500+).
  */
 export class ServerError extends SnackBaseError {

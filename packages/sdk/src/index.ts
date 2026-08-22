@@ -30,6 +30,17 @@ export { FunctionsService } from './core/functions-service';
 export type {
   FunctionInvokeOptions,
   FunctionInvokeResult,
+  FunctionItem,
+  FunctionListResponse,
+  FunctionVersion,
+  FunctionBody,
+  FunctionExecution,
+  FunctionSecret,
+  FunctionStats,
+  CreateFunctionPayload,
+  UpdateFunctionPayload,
+  DeployPayload,
+  TestPayload,
 } from './core/functions-service';
 export * from './utils/platform';
 

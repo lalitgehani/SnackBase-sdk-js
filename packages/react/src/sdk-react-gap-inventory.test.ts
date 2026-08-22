@@ -89,6 +89,7 @@ const INTENTIONAL_NON_WRAPPERS = [
   'groups',
   'apiKeys',
   'roles',
+  'functions',
 ] as const;
 
 const EXPECTED_SERVICE_GETTERS = [
@@ -116,6 +117,7 @@ const EXPECTED_SERVICE_GETTERS = [
   'workflows',
   'jobs',
   'codelists',
+  'functions',
 ] as const;
 
 describe('SDK ↔ React parity inventory (regression gate)', () => {

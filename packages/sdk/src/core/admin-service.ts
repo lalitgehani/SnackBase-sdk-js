@@ -74,8 +74,8 @@ export class AdminService {
    * @param configId Configuration ID
    * @param values New configuration values
    */
-  async updateConfigurationValues(configId: string, values: Record<string, any>): Promise<{ status: string }> {
-    const response = await this.http.patch<{ status: string }>(`/api/v1/admin/configuration/${configId}/values`, values);
+  async updateConfigurationValues(configId: string, values: Record<string, any>): Promise<Configuration> {
+    const response = await this.http.patch<Configuration>(`/api/v1/admin/configuration/${configId}/values`, values);
     return response.data;
   }
 

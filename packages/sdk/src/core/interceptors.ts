@@ -96,7 +96,12 @@ export const errorInterceptor: ErrorInterceptor = (error: any) => {
  */
 function createErrorFromResponse(response: HttpResponse): SnackBaseError {
   const { status, data } = response;
-  const message = data?.message || data?.error || 'An unexpected error occurred';
+  const detail = data?.detail;
+  const message =
+    (typeof detail === 'string' ? detail : undefined) ||
+    data?.message ||
+    data?.error ||
+    'An unexpected error occurred';
   
   switch (status) {
     case 401:

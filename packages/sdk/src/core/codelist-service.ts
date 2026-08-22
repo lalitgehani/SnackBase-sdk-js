@@ -110,4 +110,65 @@ export class CodelistService {
       params: accountId ? { account_id: accountId } : undefined,
     });
   }
+
+  /** List raw manage values (admin). */
+  async listManageValues(code: string, includeInactive = true): Promise<unknown[]> {
+    const response = await this.http.get<unknown[]>(
+      `/api/v1/codelists/${code}/manage/values`,
+      { params: { include_inactive: includeInactive } },
+    );
+    return response.data;
+  }
+
+  /** Update a manage value. */
+  async updateValue(code: string, valueCode: string, data: unknown): Promise<unknown> {
+    const response = await this.http.patch(
+      `/api/v1/codelists/${code}/manage/values/${valueCode}`,
+      data,
+    );
+    return response.data;
+  }
+
+  /** Upsert labels for a manage value. */
+  async upsertLabels(
+    code: string,
+    valueCode: string,
+    labels: Array<{
+      language: string;
+      label: string;
+      description?: string | null;
+      is_preferred?: boolean;
+    }>,
+  ): Promise<unknown> {
+    const response = await this.http.post(
+      `/api/v1/codelists/${code}/manage/values/${valueCode}/labels`,
+      labels,
+    );
+    return response.data;
+  }
+
+  /** List account overrides for a codelist. */
+  async listOverrides(code: string, accountId?: string): Promise<CodelistOverride[]> {
+    const response = await this.http.get<CodelistOverride[]>(
+      `/api/v1/codelists/${code}/overrides`,
+      { params: accountId ? { account_id: accountId } : undefined },
+    );
+    return response.data;
+  }
+
+  /** Export codelist package JSON. */
+  async export(code: string): Promise<Record<string, unknown>> {
+    const response = await this.http.get<Record<string, unknown>>(
+      `/api/v1/codelists/${code}/export`,
+    );
+    return response.data;
+  }
+
+  /** Import codelist package JSON. */
+  async import(packageData: Record<string, unknown>): Promise<Codelist> {
+    const response = await this.http.post<Codelist>('/api/v1/codelists/import', {
+      package: packageData,
+    });
+    return response.data;
+  }
 }

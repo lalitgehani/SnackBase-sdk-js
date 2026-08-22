@@ -65,18 +65,35 @@ export class UserService {
   }
 
   /**
+   * Reset password — direct set or send reset link.
+   */
+  async resetPassword(
+    userId: string,
+    data: { new_password?: string; send_reset_link?: boolean },
+  ): Promise<{ message: string }> {
+    const response = await this.http.put<{ message: string }>(
+      `/api/v1/users/${userId}/password`,
+      data,
+    );
+    return response.data;
+  }
+
+  /**
    * Manually verify a user's email address.
    */
-  async verifyEmail(userId: string): Promise<{ success: boolean }> {
-    await this.http.post(`/api/v1/users/${userId}/verify`, {});
-    return { success: true };
+  async verifyEmail(userId: string): Promise<{ message: string }> {
+    const response = await this.http.post<{ message: string }>(`/api/v1/users/${userId}/verify`, {});
+    return response.data;
   }
 
   /**
    * Resend the verification email to a user.
    */
-  async resendVerification(userId: string): Promise<{ success: boolean }> {
-    await this.http.post(`/api/v1/users/${userId}/resend-verification`, {});
-    return { success: true };
+  async resendVerification(userId: string): Promise<{ message: string }> {
+    const response = await this.http.post<{ message: string }>(
+      `/api/v1/users/${userId}/resend-verification`,
+      {},
+    );
+    return response.data;
   }
 }

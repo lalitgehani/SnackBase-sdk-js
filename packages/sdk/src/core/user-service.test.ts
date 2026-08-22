@@ -98,23 +98,23 @@ describe('UserService', () => {
 
   describe('verifyEmail', () => {
     it('should call POST /api/v1/users/:id/verify', async () => {
-      mockHttpClient.post.mockResolvedValue({});
+      mockHttpClient.post.mockResolvedValue({ data: { message: 'Email verified' } });
 
       const result = await userService.verifyEmail('user-1');
 
       expect(mockHttpClient.post).toHaveBeenCalledWith('/api/v1/users/user-1/verify', {});
-      expect(result).toEqual({ success: true });
+      expect(result).toEqual({ message: 'Email verified' });
     });
   });
 
   describe('resendVerification', () => {
     it('should call POST /api/v1/users/:id/resend-verification', async () => {
-      mockHttpClient.post.mockResolvedValue({});
+      mockHttpClient.post.mockResolvedValue({ data: { message: 'Verification sent' } });
 
       const result = await userService.resendVerification('user-1');
 
       expect(mockHttpClient.post).toHaveBeenCalledWith('/api/v1/users/user-1/resend-verification', {});
-      expect(result).toEqual({ success: true });
+      expect(result).toEqual({ message: 'Verification sent' });
     });
   });
 });

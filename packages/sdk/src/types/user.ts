@@ -22,16 +22,20 @@ export interface UserCreate {
 export interface UserUpdate {
   email?: string;
   role?: string;
+  role_id?: number;
   is_active?: boolean;
 }
 
 export interface UserListParams {
   page?: number;
   page_size?: number;
+  skip?: number;
+  limit?: number;
   account_id?: string;
-  role_id?: string;
+  role_id?: string | number;
   is_active?: boolean;
   search?: string;
+  sort?: string;
   sort_by?: string;
   sort_order?: 'asc' | 'desc';
   [key: string]: string | number | boolean | undefined;

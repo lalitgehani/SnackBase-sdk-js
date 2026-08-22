@@ -18,9 +18,15 @@ export class MacroService {
   /**
    * List all macros, including built-in ones.
    */
-  async list(): Promise<MacroListResponse> {
-    const response = await this.http.get<MacroListResponse>('/api/v1/macros');
-    return response.data;
+  async list(params?: { skip?: number; limit?: number }): Promise<MacroListResponse | Macro[]> {
+    const response = await this.http.get<MacroListResponse | Macro[]>('/api/v1/macros', {
+      params,
+    });
+    const data = response.data;
+    if (Array.isArray(data)) {
+      return { items: data, total: data.length };
+    }
+    return data;
   }
 
   /**

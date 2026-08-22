@@ -8,6 +8,13 @@ import {
 import { AuthManager } from './auth';
 import { Logger } from './logger';
 
+function appendToBasePath(baseUrl: string, suffix: string): URL {
+  const url = new URL(baseUrl);
+  const basePath = url.pathname.replace(/\/$/, '');
+  url.pathname = `${basePath}${suffix}`;
+  return url;
+}
+
 export interface RealTimeOptions {
   baseUrl: string;
   getToken: () => string | null;
@@ -223,9 +230,8 @@ export class RealTimeService {
 
   private connectWebSocket(token: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      const url = new URL(this.options.baseUrl);
+      const url = appendToBasePath(this.options.baseUrl, '/api/v1/realtime/ws');
       url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
-      url.pathname = '/api/v1/realtime/ws';
       url.searchParams.set('token', token);
 
       const ws = new WebSocket(url.toString());
@@ -283,8 +289,7 @@ export class RealTimeService {
 
   private connectSSE(token: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      const url = new URL(this.options.baseUrl);
-      url.pathname = '/api/v1/realtime/subscribe';
+      const url = appendToBasePath(this.options.baseUrl, '/api/v1/realtime/subscribe');
       url.searchParams.set('token', token);
       
       // SSE subscriptions are specified at connection time

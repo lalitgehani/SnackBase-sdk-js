@@ -53,6 +53,11 @@ export interface SnackBaseConfig {
   storageBackend?: StorageBackend;
 
   /**
+   * localStorage/sessionStorage key for persisted auth state (default: sb_auth_state).
+   */
+  authStorageKey?: string;
+
+  /**
    * Enable request/response logging (default: false in production)
    */
   enableLogging?: boolean;
@@ -98,6 +103,14 @@ export interface SnackBaseConfig {
    * Initial delay for real-time reconnection in milliseconds (default: 1000)
    */
   realTimeReconnectionDelay?: number;
+
+  /**
+   * Optional external access token provider. When set, the client uses this instead of
+   * `authManager.token` for HTTP and realtime requests, forces `storageBackend: 'memory'`,
+   * disables auto-refresh, and blocks login/logout/refresh. The returned token must be a
+   * decodable JWT carrying `exp` (required for realtime expiry checks).
+   */
+  getAccessToken?: () => string | null;
 }
 
 export const DEFAULT_CONFIG: Partial<SnackBaseConfig> = {

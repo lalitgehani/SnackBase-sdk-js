@@ -24,7 +24,7 @@ describe('MacroService', () => {
 
       const result = await macroService.list();
 
-      expect(mockHttpClient.get).toHaveBeenCalledWith('/api/v1/macros');
+      expect(mockHttpClient.get).toHaveBeenCalledWith('/api/v1/macros', { params: undefined });
       expect(result).toEqual(mockResponse.data);
     });
   });

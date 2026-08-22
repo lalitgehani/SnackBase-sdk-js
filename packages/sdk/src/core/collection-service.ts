@@ -26,6 +26,34 @@ export class CollectionService {
   }
 
   /**
+   * List collections with pagination, search, and sorting (admin Studio envelope).
+   */
+  async listPaginated(params?: {
+    page?: number;
+    page_size?: number;
+    sort_by?: string;
+    sort_order?: 'asc' | 'desc';
+    search?: string;
+  }): Promise<{
+    items: Array<{
+      id: string;
+      name: string;
+      table_name: string;
+      fields_count: number;
+      records_count: number;
+      has_public_access: boolean;
+      created_at: string;
+    }>;
+    total: number;
+    page: number;
+    page_size: number;
+    total_pages: number;
+  }> {
+    const response = await this.http.get('/api/v1/collections', { params });
+    return response.data;
+  }
+
+  /**
    * List collection names only.
    * Backend returns { names: string[], total: number }; we unwrap to the array.
    */

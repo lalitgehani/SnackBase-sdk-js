@@ -36,9 +36,12 @@ export class InvitationService {
   /**
    * Resend an invitation email.
    */
-  async resend(invitationId: string): Promise<{ success: boolean }> {
-    await this.http.post(`/api/v1/invitations/${invitationId}/resend`, {});
-    return { success: true };
+  async resend(invitationId: string): Promise<{ message: string; token: string }> {
+    const response = await this.http.post<{ message: string; token: string }>(
+      `/api/v1/invitations/${invitationId}/resend`,
+      {},
+    );
+    return response.data;
   }
 
   /**
@@ -54,10 +57,9 @@ export class InvitationService {
    * Accept an invitation using a token and password.
    * Creates the user account and returns authentication tokens.
    */
-  async accept(token: string, password: string): Promise<AuthResponse> {
-    const response = await this.http.post<AuthResponse>(`/api/v1/invitations/${token}/accept`, {
-      password,
-    });
+  async accept(token: string, password?: string): Promise<AuthResponse> {
+    const body = password !== undefined ? { password } : {};
+    const response = await this.http.post<AuthResponse>(`/api/v1/invitations/${token}/accept`, body);
     return response.data;
   }
 

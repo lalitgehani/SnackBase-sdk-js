@@ -49,12 +49,13 @@ describe('InvitationService', () => {
 
   describe('resend', () => {
     it('should call POST /api/v1/invitations/:id/resend', async () => {
-      mockHttpClient.post.mockResolvedValue({});
+      const mockResponse = { data: { message: 'Invitation resent', token: 'new-token' } };
+      mockHttpClient.post.mockResolvedValue(mockResponse);
 
       const result = await invitationService.resend('inv-1');
 
       expect(mockHttpClient.post).toHaveBeenCalledWith('/api/v1/invitations/inv-1/resend', {});
-      expect(result).toEqual({ success: true });
+      expect(result).toEqual(mockResponse.data);
     });
   });
 
