@@ -121,12 +121,16 @@ const INTENTIONAL_NON_EXPOSURE: Record<string, string[]> = {
     'unsubscribe',
     'getSubscriptions',
   ],
-  // Fluent QueryBuilder factory — not a single RPC
-  records: ['query'],
   // End-user browser invitation flows
   invitations: ['getPublic', 'accept'],
   // Multipart binary upload not safe over MCP without encoding design
   files: ['upload'],
+  // `list` already returns every collection; listPaginated is the UI's pagination envelope
+  collections: ['listPaginated'],
+  // Returns decrypted values of encrypted fields — deliberately not reachable by an MCP agent
+  records: ['query', 'getSecrets'],
+  // Admin password changes go through the existing users `set_password` action
+  users: ['resetPassword'],
 };
 
 /** Map MCP action snake_case names to SDK method names where they differ */

@@ -1,6 +1,6 @@
 {
   "name": "@snackbase/pocketbase-compat",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Drop-in replacement for the PocketBase JS SDK backed by SnackBase",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
@@ -46,7 +46,8 @@
   },
   "devDependencies": {
     "@snackbase/tsconfig": "workspace:*",
-    "typescript": "^5.4.0",
-    "vitest": "^2.0.0"
+    "tsdown": "^0.20.0-beta.4",
+    "typescript": "^5.3.3",
+    "vitest": "^3.2.7"
   }
 }

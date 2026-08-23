@@ -126,8 +126,8 @@ async function init() {
   
   if (fs.existsSync(templateDir)) {
     // Get latest SDK and React version from packages if available, or fallback
-    let sdkVersion = '0.8.0';
-    let reactPackageVersion = '0.5.0';
+    let sdkVersion = '0.9.0';
+    let reactPackageVersion = '0.6.0';
     try {
       const sdkPkgPath = path.resolve(__dirname, '../../../sdk/package.json');
       if (fs.existsSync(sdkPkgPath)) {

@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+## 0.6.0 - 2026-08-24
+
+### Changed
+
+- Requires `@snackbase/sdk` 0.9.0. Published builds pin the SDK exactly, so this release is
+  required to pick up the 0.9.0 client — installing `@snackbase/sdk@0.9.0` alongside
+  `@snackbase/react@0.5.0` resolves two SDK copies and the provider hands out the older one.
+- The SDK's new `getAccessToken` config passes through `SnackBaseProvider` as part of
+  `SnackBaseConfig`, letting a host application supply its own bearer tokens instead of the
+  SDK auth manager. Note the provider's client memo key is a `JSON.stringify` of the config,
+  so function props are not part of it — swapping the callback identity alone does not
+  rebuild the client. Pass a stable callback, or use the `client` prop.
+
 ## 0.5.0 - 2026-08-03
 
 ### Changed

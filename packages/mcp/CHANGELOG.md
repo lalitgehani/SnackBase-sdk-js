@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-08-24
+
+### Added
+
+- `snackbase_roles` gains six permission actions: `get_permissions`, `get_permissions_matrix`,
+  `validate_rule`, `test_rule`, `update_permissions_bulk`, `delete_permission`.
+- `snackbase_codelists` gains six admin actions: `list_manage_values`, `update_value`,
+  `upsert_labels`, `list_overrides`, `export`, `import`.
+
+### Changed
+
+- Requires `@snackbase/sdk` 0.9.0. Published builds pin the SDK exactly, so this release is
+  required to pick up the 0.9.0 client.
+- The tool count is still 22; the two modules above grew new actions.
+- Three new SDK 0.9.0 methods are deliberately **not** exposed and are recorded in the coverage
+  test's allowlist: `collections.listPaginated` (the existing `list` action already returns every
+  collection), `records.getSecrets` (returns decrypted values of encrypted fields), and
+  `users.resetPassword` (admin password changes go through the existing `set_password` action).
+
 ## [0.5.0] - 2026-08-03
 
 ### Changed

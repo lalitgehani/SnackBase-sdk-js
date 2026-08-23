@@ -1,6 +1,6 @@
 {
   "name": "@snackbase/react",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "React integration for SnackBase",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
@@ -46,8 +46,11 @@
     "access": "public"
   },
   "devDependencies": {
+    "@snackbase/tsconfig": "workspace:*",
     "@types/react": "^19.2.13",
     "@types/react-dom": "^19.2.3",
-    "@snackbase/tsconfig": "workspace:*"
+    "tsdown": "^0.20.0-beta.4",
+    "typescript": "^5.3.3",
+    "vitest": "^3.2.7"
   }
 }

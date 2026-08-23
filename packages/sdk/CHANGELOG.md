@@ -7,6 +7,66 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-08-24
+
+### Added
+
+- **`FunctionsService`** via `client.functions` for SnackBase Functions.
+  - Invoke: `invoke(slug, options)`
+  - Authoring: `list`, `get`, `create`, `update`, `delete`, `deploy`, `getBody`
+  - Versions: `listVersions`, `activateVersion`
+  - Operations: `updateGrants`, `listExecutions`, `test`, `stats`
+  - Secrets: `listSecrets`, `upsertSecret`, `deleteSecret`
+  - Types exported from `@snackbase/sdk` (`FunctionItem`, `FunctionVersion`, `FunctionStats`, etc.)
+- **External access token provider** via `config.getAccessToken`. When set, the client
+  sources bearer tokens from the callback instead of `authManager.token` for both HTTP and
+  realtime, forces `storageBackend: 'memory'`, disables auto-refresh, and throws
+  `ExternalTokenAuthError` from `login`/`logout`/`refresh`. The returned token must be a
+  decodable JWT carrying `exp`, which realtime uses for expiry checks. This is how a host
+  application (for example an embedded Studio) drives the SDK with tokens it already owns.
+- `config.authStorageKey` to override the persisted auth-state storage key
+  (default `sb_auth_state`).
+- `collections.listPaginated(params)` returning the backend's `{ items, total, page,
+  page_size, total_pages }` envelope, alongside the existing `list()` which unwraps to an
+  array.
+- `records.getSecrets(collection, id, fields)` to read encrypted field values.
+- `FieldDefinition.encrypted` for fields encrypted at rest and redacted as `••••••••` in
+  normal responses. Allowed on `text` and `json` only; encrypted fields are non-queryable.
+- Codelist admin methods: `listManageValues`, `updateValue`, `upsertLabels`,
+  `listOverrides`, `export`, `import`.
+- Role permission methods: `getPermissions`, `getPermissionsMatrix`, `validateRule`,
+  `testRule`, `updatePermissionsBulk`, `deletePermission`.
+- `users.resetPassword(userId, password)`.
+- `macros.list(params)` now accepts `{ skip, limit }`.
+- `UserUpdate.role_id`, and `skip` / `limit` / `sort` on `UserListParams`.
+- `ExternalTokenAuthError` exported from `@snackbase/sdk`.
+
+### Changed
+
+- Error messages now prefer the backend's FastAPI `detail` field before falling back to
+  `message` / `error`, so validation failures surface the server's own text.
+- Realtime WebSocket and SSE URLs are appended to the configured base path instead of
+  replacing it, so a client pointed at `https://host/instance-a` connects to
+  `https://host/instance-a/api/v1/realtime/ws`.
+- `admin.updateConfigurationValues` returns the updated `Configuration` instead of
+  `{ status }`.
+- `users.verifyEmail` and `users.resendVerification` return `{ message }` instead of
+  `{ success }`.
+- `hooks.trigger` returns the raw response body (`Record<string, unknown>`) instead of
+  `{ queued }`.
+- `invitations.accept(token, password?)` — `password` is now optional, for invitations
+  accepted without setting one.
+- `UserListParams.role_id` widened to `string | number`.
+
+### Breaking Changes
+
+- `groups.list()` returns `GroupListResponse` (`{ items, total, page, page_size }`) instead
+  of `Group[]`. A bare array from the server is normalized into the envelope. Callers
+  iterating the result directly must switch to `result.items`.
+- `macros.list()` returns `MacroListResponse | Macro[]`. Narrow the union before use.
+- `invitations.resend()` returns `{ message, token }` instead of `{ success: boolean }`.
+- `WebhookTestResponse.response_body` removed; the backend does not return it.
+
 ## [0.8.0] - 2026-08-03
 
 ### Changed

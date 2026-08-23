@@ -57,4 +57,13 @@ export default defineWorkspace([
       globals: true,
     },
   },
+  {
+    test: {
+      name: 'pocketbase-compat',
+      root: 'packages/pocketbase-compat',
+      environment: 'node',
+      include: ['src/**/*.test.ts'],
+      globals: true,
+    },
+  },
 ]);

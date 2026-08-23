@@ -7,10 +7,9 @@
     "dev": "pnpm -r --parallel --filter './packages/{sdk,react,create-snackbase-app,mcp,supabase-compat,pocketbase-compat}' dev",
     "test": "vitest",
     "test:watch": "vitest --watch",
-    "test:unit": "vitest run --project sdk --project react",
+    "test:unit": "vitest run --project sdk --project react --project mcp --project supabase-compat --project pocketbase-compat",
     "test:integration": "vitest run --project integration",
     "typecheck": "pnpm -r --filter './packages/**' typecheck",
-    "lint": "eslint packages --ext .ts,.tsx",
     "clean": "pnpm -r clean && rm -rf node_modules"
   },
   "peerDependencies": {

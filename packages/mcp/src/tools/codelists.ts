@@ -23,6 +23,12 @@ export const codelistsTool: Tool = {
           'create_value',
           'set_override',
           'clear_override',
+          'list_manage_values',
+          'update_value',
+          'upsert_labels',
+          'list_overrides',
+          'export',
+          'import',
         ],
         description: 'The action to perform on codelists.',
       },
@@ -110,6 +116,18 @@ export const codelistsTool: Tool = {
         type: 'object',
         description: 'Override metadata merge (set_override).',
       },
+      include_inactive: {
+        type: 'boolean',
+        description: 'Include inactive values in list_manage_values (default true).',
+      },
+      value: {
+        type: 'object',
+        description: 'Partial value fields to apply (update_value).',
+      },
+      package: {
+        type: 'object',
+        description: 'Codelist package JSON produced by the export action (import).',
+      },
     },
     required: ['action'],
   },
@@ -137,6 +155,9 @@ export async function handleCodelistsTool(args: any) {
     visibility,
     is_default,
     metadata_override,
+    include_inactive,
+    value,
+    package: packageData,
   } = args;
 
   try {
@@ -269,6 +290,65 @@ export async function handleCodelistsTool(args: any) {
               text: JSON.stringify({ success: true, code, value_code }, null, 2),
             },
           ],
+        };
+      }
+
+      case 'list_manage_values': {
+        if (!code) throw new Error('code is required for list_manage_values action');
+        const manageValues = await client.codelists.listManageValues(
+          code,
+          include_inactive ?? true,
+        );
+        return {
+          content: [{ type: 'text', text: JSON.stringify(manageValues, null, 2) }],
+        };
+      }
+
+      case 'update_value': {
+        if (!code || !value_code) {
+          throw new Error('code and value_code are required for update_value action');
+        }
+        if (!value) throw new Error('value is required for update_value action');
+        const updatedValue = await client.codelists.updateValue(code, value_code, value);
+        return {
+          content: [{ type: 'text', text: JSON.stringify(updatedValue, null, 2) }],
+        };
+      }
+
+      case 'upsert_labels': {
+        if (!code || !value_code) {
+          throw new Error('code and value_code are required for upsert_labels action');
+        }
+        if (!Array.isArray(labels)) {
+          throw new Error('labels must be an array for upsert_labels action');
+        }
+        const upserted = await client.codelists.upsertLabels(code, value_code, labels);
+        return {
+          content: [{ type: 'text', text: JSON.stringify(upserted, null, 2) }],
+        };
+      }
+
+      case 'list_overrides': {
+        if (!code) throw new Error('code is required for list_overrides action');
+        const overrides = await client.codelists.listOverrides(code, account_id);
+        return {
+          content: [{ type: 'text', text: JSON.stringify(overrides, null, 2) }],
+        };
+      }
+
+      case 'export': {
+        if (!code) throw new Error('code is required for export action');
+        const exported = await client.codelists.export(code);
+        return {
+          content: [{ type: 'text', text: JSON.stringify(exported, null, 2) }],
+        };
+      }
+
+      case 'import': {
+        if (!packageData) throw new Error('package is required for import action');
+        const imported = await client.codelists.import(packageData);
+        return {
+          content: [{ type: 'text', text: JSON.stringify(imported, null, 2) }],
         };
       }
 

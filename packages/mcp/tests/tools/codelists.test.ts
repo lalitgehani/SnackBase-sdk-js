@@ -22,6 +22,12 @@ describe('snackbase_codelists tool', () => {
         createValue: vi.fn(),
         setOverride: vi.fn(),
         clearOverride: vi.fn(),
+        listManageValues: vi.fn(),
+        updateValue: vi.fn(),
+        upsertLabels: vi.fn(),
+        listOverrides: vi.fn(),
+        export: vi.fn(),
+        import: vi.fn(),
       },
     };
     (createClient as any).mockReturnValue(mockClient);
@@ -92,5 +98,122 @@ describe('snackbase_codelists tool', () => {
       'acct-a',
     );
     expect(result.content[0].text).toBe(JSON.stringify(ov, null, 2));
+  });
+
+  it('handles list_manage_values action and defaults include_inactive to true', async () => {
+    const values = [{ code: 'eu-01', is_active: false }];
+    mockClient.codelists.listManageValues.mockResolvedValue(values);
+
+    const result = (await handleCodelistsTool({
+      action: 'list_manage_values',
+      code: 'regions',
+    })) as any;
+
+    expect(mockClient.codelists.listManageValues).toHaveBeenCalledWith('regions', true);
+    expect(result.content[0].text).toBe(JSON.stringify(values, null, 2));
+  });
+
+  it('honours include_inactive false for list_manage_values', async () => {
+    mockClient.codelists.listManageValues.mockResolvedValue([]);
+
+    await handleCodelistsTool({
+      action: 'list_manage_values',
+      code: 'regions',
+      include_inactive: false,
+    });
+
+    expect(mockClient.codelists.listManageValues).toHaveBeenCalledWith('regions', false);
+  });
+
+  it('handles update_value action', async () => {
+    const updated = { code: 'eu-01', sort_order: 5 };
+    mockClient.codelists.updateValue.mockResolvedValue(updated);
+
+    const result = (await handleCodelistsTool({
+      action: 'update_value',
+      code: 'regions',
+      value_code: 'eu-01',
+      value: { sort_order: 5 },
+    })) as any;
+
+    expect(mockClient.codelists.updateValue).toHaveBeenCalledWith('regions', 'eu-01', {
+      sort_order: 5,
+    });
+    expect(result.content[0].text).toBe(JSON.stringify(updated, null, 2));
+  });
+
+  it('errors when value is missing for update_value', async () => {
+    const result = (await handleCodelistsTool({
+      action: 'update_value',
+      code: 'regions',
+      value_code: 'eu-01',
+    })) as any;
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain('value is required');
+  });
+
+  it('handles upsert_labels action', async () => {
+    const labels = [{ language: 'de', label: 'EU Zentral' }];
+    mockClient.codelists.upsertLabels.mockResolvedValue(labels);
+
+    const result = (await handleCodelistsTool({
+      action: 'upsert_labels',
+      code: 'regions',
+      value_code: 'eu-01',
+      labels,
+    })) as any;
+
+    expect(mockClient.codelists.upsertLabels).toHaveBeenCalledWith('regions', 'eu-01', labels);
+    expect(result.content[0].text).toBe(JSON.stringify(labels, null, 2));
+  });
+
+  it('errors when labels is not an array for upsert_labels', async () => {
+    const result = (await handleCodelistsTool({
+      action: 'upsert_labels',
+      code: 'regions',
+      value_code: 'eu-01',
+    })) as any;
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain('labels must be an array');
+  });
+
+  it('handles list_overrides action', async () => {
+    const overrides = [{ value_code: 'eu-01', visibility: 'hidden' }];
+    mockClient.codelists.listOverrides.mockResolvedValue(overrides);
+
+    const result = (await handleCodelistsTool({
+      action: 'list_overrides',
+      code: 'regions',
+      account_id: 'acct-a',
+    })) as any;
+
+    expect(mockClient.codelists.listOverrides).toHaveBeenCalledWith('regions', 'acct-a');
+    expect(result.content[0].text).toBe(JSON.stringify(overrides, null, 2));
+  });
+
+  it('handles export action', async () => {
+    const pkg = { code: 'regions', values: [] };
+    mockClient.codelists.export.mockResolvedValue(pkg);
+
+    const result = (await handleCodelistsTool({ action: 'export', code: 'regions' })) as any;
+
+    expect(mockClient.codelists.export).toHaveBeenCalledWith('regions');
+    expect(result.content[0].text).toBe(JSON.stringify(pkg, null, 2));
+  });
+
+  it('handles import action', async () => {
+    const pkg = { code: 'regions', values: [] };
+    mockClient.codelists.import.mockResolvedValue({ code: 'regions' });
+
+    const result = (await handleCodelistsTool({ action: 'import', package: pkg })) as any;
+
+    expect(mockClient.codelists.import).toHaveBeenCalledWith(pkg);
+    expect(result.content[0].text).toBe(JSON.stringify({ code: 'regions' }, null, 2));
+  });
+
+  it('errors when package is missing for import', async () => {
+    const result = (await handleCodelistsTool({ action: 'import' })) as any;
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain('package is required');
   });
 });

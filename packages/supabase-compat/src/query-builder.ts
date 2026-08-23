@@ -359,6 +359,8 @@ export class SnackbaseQueryBuilder<T = Record<string, unknown>>
       })();
     }
 
+    let total: number | null = null;
+
     return wrap<T[]>(async () => {
       const res = await this.snackbase.records.list<T>(this.collection, {
         filter: this._buildFilterString(),
@@ -367,12 +369,13 @@ export class SnackbaseQueryBuilder<T = Record<string, unknown>>
         skip: this._skip,
         limit: this._limit,
       });
+      total = res.total ?? null;
       return res.items as (T & { id: string; account_id: string; created_at: string; updated_at: string })[];
     }).then((result) => {
-      // Attach count when requested
+      // Supabase reports `count` only when select() asked for one; null otherwise.
       return {
         ...result,
-        count: this._selectCount ? undefined : null,
+        count: this._selectCount ? total : null,
       };
     });
   }
