@@ -268,7 +268,7 @@ describe('Users Integration Tests', () => {
       trackUser(user.id);
 
       const result = await client.users.verifyEmail(user.id);
-      expect(result.success).toBe(true);
+      expect(result.message).toMatch(/verified/i);
     });
   });
 

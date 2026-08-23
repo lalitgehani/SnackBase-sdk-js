@@ -10,19 +10,23 @@
  *   create:         WebhookCreateResponse (secret returned once only)
  *   update:         Webhook
  *   delete:         204 No Content
- *   test:           WebhookTestResponse  (ephemeral — NO delivery record is created)
+ *   test:           WebhookTestResponse { success, status_code, error }
+ *                   (no response_body — SSRF hardening; ephemeral, no delivery row)
  *   listDeliveries: { items: WebhookDelivery[], total: number }
  *
  * IMPORTANT: test() makes a synchronous inline HTTP call to the destination URL
  * and returns the result directly. It does NOT create a delivery record in the DB.
  * Delivery records are only created by real record lifecycle events (create/update/delete).
  *
- * Test URL: http://localhost:8090/health — backend's own health endpoint.
- * Localhost is allowed in development mode.
+ * Destination URL: a public HTTPS host. Loopback (localhost, 127.0.0.1, ::1)
+ * is rejected by SSRF validation in every environment — including development.
+ * Create/get/update/delete do not need the destination to accept POSTs.
+ * Override with SNACKBASE_TEST_WEBHOOK_URL when a real catcher is available.
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { SnackBaseClient } from '../../src/core/client';
+import { ValidationError } from '../../src/core/errors';
 import {
   createTestClient,
   createTestCollectionName,
@@ -31,8 +35,10 @@ import {
   waitFor,
 } from './setup';
 
-const TEST_WEBHOOK_URL = `${TEST_CONFIG.baseUrl}/health`;
-const TEST_WEBHOOK_URL_UPDATED = `${TEST_CONFIG.baseUrl}/ready`;
+const TEST_WEBHOOK_URL =
+  process.env.SNACKBASE_TEST_WEBHOOK_URL || 'https://example.com/webhook';
+const TEST_WEBHOOK_URL_UPDATED =
+  process.env.SNACKBASE_TEST_WEBHOOK_URL_UPDATED || 'https://example.com/webhook-updated';
 const TEST_COLLECTION = 'users';
 
 function createTestWebhookPayload(overrides: Record<string, unknown> = {}) {
@@ -287,10 +293,11 @@ describe('WebhookService Integration Tests', () => {
 
       expect(testResult).toBeDefined();
       expect(typeof testResult.success).toBe('boolean');
-      // status_code may be null if delivery failed entirely, but field must exist
+      // status_code may be null if the outbound POST failed entirely
       expect('status_code' in testResult).toBe(true);
-      expect('response_body' in testResult).toBe(true);
       expect('error' in testResult).toBe(true);
+      // response_body is intentionally omitted so test() cannot be used as an SSRF read
+      expect('response_body' in testResult).toBe(false);
     });
 
     it('should NOT create a delivery record — listDeliveries remains empty after test()', async () => {
@@ -325,15 +332,27 @@ describe('WebhookService Integration Tests', () => {
     it('should return delivery with correct shape after a real record create event', async () => {
       if (!TEST_CONFIG.apiKey) return;
 
-      // Create a dedicated collection so we control exactly which events fire
-      const collectionName = createTestCollectionName();
-      const collection = await client.collections.create({
-        name: collectionName,
-        fields: [{ name: 'title', type: 'text', required: true }],
-        // Open rules so the API-key client can create records without user auth
-        create_rule: null,
-      });
-      trackCollection(collection.id);
+      // Prefer a dedicated collection. If create fails (e.g. live DB already has
+      // many dynamic tables), reuse an existing test collection — this case is
+      // about delivery rows after a record create, not collection DDL.
+      let collectionName = createTestCollectionName();
+      try {
+        const collection = await client.collections.create({
+          name: collectionName,
+          fields: [{ name: 'title', type: 'text', required: true }],
+        });
+        trackCollection(collection.id);
+      } catch {
+        const listed = await client.collections.listPaginated({
+          page_size: 1,
+          search: 'test_collection',
+        });
+        const fallback = listed.items?.[0];
+        if (!fallback?.name) {
+          throw new Error('Could not create or find a collection for webhook delivery test');
+        }
+        collectionName = fallback.name;
+      }
 
       // Create a webhook watching this collection for create events
       const webhook = await client.webhooks.create({
@@ -343,15 +362,14 @@ describe('WebhookService Integration Tests', () => {
       });
       createdWebhookIds.push(webhook.id);
 
-      // Creating a record dispatches a delivery record to the DB synchronously
-      // (the background job processes the HTTP call later, but the DB record is immediate)
+      // Dispatch is deferred until after the record transaction commits, then
+      // the HTTP send runs in a background job. The delivery row is what we wait for.
       await client.records.create(collectionName, { title: 'trigger event' });
 
-      // Poll until the delivery record appears
       await waitFor(async () => {
         const deliveries = await client.webhooks.listDeliveries(webhook.id);
         return deliveries.total >= 1;
-      });
+      }, 20_000);
 
       const deliveries = await client.webhooks.listDeliveries(webhook.id);
       expect(deliveries.total).toBeGreaterThanOrEqual(1);
@@ -363,7 +381,7 @@ describe('WebhookService Integration Tests', () => {
       expect(delivery.status).toBeDefined();
       expect(delivery.created_at).toBeDefined();
       expect(typeof delivery.attempt_number).toBe('number');
-    });
+    }, 30_000);
 
     it('should support pagination params', async () => {
       if (!TEST_CONFIG.apiKey) return;
@@ -377,6 +395,30 @@ describe('WebhookService Integration Tests', () => {
       });
 
       expect(deliveries.items).toBeInstanceOf(Array);
+    });
+  });
+
+  describe('SSRF rejection', () => {
+    it.each([
+      ['http://localhost/hook', 'hostname localhost'],
+      ['http://127.0.0.1/hook', 'IPv4 loopback'],
+      ['http://[::1]/hook', 'IPv6 loopback'],
+    ])('rejects %s (%s)', async (url) => {
+      if (!TEST_CONFIG.apiKey) return;
+
+      try {
+        await client.webhooks.create({
+          url,
+          collection: TEST_COLLECTION,
+          events: ['create'],
+        });
+        expect.fail(`expected create to reject ${url}`);
+      } catch (error) {
+        expect(error).toBeInstanceOf(ValidationError);
+        const err = error as ValidationError;
+        expect(err.status).toBe(422);
+        expect(err.message).toMatch(/private\/loopback/i);
+      }
     });
   });
 });

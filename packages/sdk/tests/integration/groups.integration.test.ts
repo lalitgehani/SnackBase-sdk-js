@@ -112,9 +112,8 @@ describe('Groups Integration Tests', () => {
       // Superadmin API keys receive all groups across all accounts via list_all().
       const result = await client.groups.list({ limit: 9999 } as any);
 
-      // Backend returns a plain array (not a paginated wrapper)
-      expect(result).toBeInstanceOf(Array);
-      const found = result.find((g) => g.id === group.id);
+      expect(result.items).toBeInstanceOf(Array);
+      const found = result.items.find((g) => g.id === group.id);
       expect(found).toBeDefined();
       expect(found!.name).toBe(name);
     });

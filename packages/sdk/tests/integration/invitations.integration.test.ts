@@ -140,10 +140,14 @@ describe('Invitations Integration Tests', () => {
 
       try {
         const result = await noRetryClient.invitations.resend(invitation.id);
-        expect(result.success).toBe(true);
-      } catch (error: any) {
-        // 500 is acceptable when no email provider is configured
-        expect(error.status).toBe(500);
+        expect(result.message).toBeDefined();
+        expect(result.token).toBeTruthy();
+      } catch (error: unknown) {
+        // Backend 500s only when send_template_email throws. Do not swallow Vitest asserts.
+        if (typeof error !== 'object' || error === null || !('status' in error)) {
+          throw error;
+        }
+        expect((error as { status?: number }).status).toBe(500);
       }
     });
 

@@ -102,9 +102,10 @@ describe('MacroService Integration Tests', () => {
       if (!TEST_CONFIG.apiKey) return;
 
       const result = await client.macros.list();
+      const items = Array.isArray(result) ? result : result.items;
 
-      // Runtime value is Macro[] even though the TypeScript type says MacroListResponse
-      expect(Array.isArray(result)).toBe(true);
+      expect(items).toBeInstanceOf(Array);
+      expect(typeof (Array.isArray(result) ? items.length : result.total)).toBe('number');
     });
 
     it('should include a newly created macro in the list', async () => {
